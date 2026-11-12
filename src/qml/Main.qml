@@ -209,6 +209,7 @@ Window {
             height: parent.height - 2 * Theme.sidebarInset
             sections: root.sections
             currentIndex: Theme.section
+            version: root.app.version
             badges: ({ [root.sectionEmails]: root.app.inbox.newCount })
             focus: true
             onActivated: (index, origin) => root.navigate(index, origin)

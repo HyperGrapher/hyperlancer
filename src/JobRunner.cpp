@@ -4,12 +4,14 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QProcessEnvironment>
 
 #include "AppSettings.h"
 #include "Database.h"
 #include "JobStore.h"
+#include "CrawlStore.h"
 #include "ProfileIngest.h"
 #include "ToolPaths.h"
 
@@ -131,6 +133,31 @@ void JobRunner::enqueueProfile(qint64 siteId, const QString &url,
         });
 }
 
+void JobRunner::enqueueCrawl(qint64 siteId, const QString &url, int maxPages,
+                             std::function<void(qint64, QString)> done)
+{
+    // The folder defaults to jobs/<job id>/crawl; a polite delay keeps the load on the site low.
+    const QJsonObject params{{QStringLiteral("startUrls"), QJsonArray{url}},
+                             {QStringLiteral("maxPages"), maxPages},
+                             {QStringLiteral("delay"), 0.5},
+                             {QStringLiteral("types"), QJsonObject{{QStringLiteral("images"), true},
+                                                                     {QStringLiteral("documents"), true}}}};
+    m_database.run(
+        this,
+        [siteId, params](QSqlDatabase &db) {
+            return JobStore::create(db, QStringLiteral("crawl"), siteId, params);
+        },
+        [this, done = std::move(done)](const JobStore::CreateResult &result) {
+            if (done) {
+                done(result.jobId, result.error);
+            }
+            if (result.error.isEmpty() && !result.alreadyQueued) {
+                emit jobsChanged();
+                schedulePump();
+            }
+        });
+}
+
 void JobRunner::cancel(qint64 jobId)
 {
     const auto found = m_running.find(jobId);
@@ -207,7 +234,8 @@ void JobRunner::pump()
 
 void JobRunner::launch(qint64 jobId, const QString &type, qint64 siteId, const QJsonObject &params)
 {
-    if (type != QStringLiteral("profile")) {
+    const bool isCrawl = type == QStringLiteral("crawl");
+    if (type != QStringLiteral("profile") && !isCrawl) {
         failBeforeStart(jobId, siteId, type, tr("Job type '%1' is not supported yet.").arg(type));
         return;
     }
@@ -232,7 +260,9 @@ void JobRunner::launch(qint64 jobId, const QString &type, qint64 siteId, const Q
     job->dir = m_paths.jobDir(jobId);
     QDir().mkpath(job->dir);
     job->cancelFile = QDir(job->dir).filePath(QStringLiteral("cancel"));
-    job->resultPath = QDir(job->dir).filePath(QStringLiteral("profile.json"));
+    // The crawl reports the real manifest path when it finishes; this is where it goes by default.
+    job->resultPath = QDir(job->dir).filePath(isCrawl ? QStringLiteral("crawl/manifest.json")
+                                                       : QStringLiteral("profile.json"));
     QFile::remove(job->cancelFile);
     QFile::remove(job->resultPath);
 
@@ -257,7 +287,8 @@ void JobRunner::launch(qint64 jobId, const QString &type, qint64 siteId, const Q
     process.setWorkingDirectory(tools.scriptsDir);
     process.setProgram(tools.python);
     process.setArguments(
-        {QStringLiteral("-m"), QStringLiteral("site_profile"), QStringLiteral("--spec"), specPath});
+        {QStringLiteral("-m"), isCrawl ? QStringLiteral("site_crawl") : QStringLiteral("site_profile"),
+         QStringLiteral("--spec"), specPath});
     const QString logPath = QDir(job->dir).filePath(QStringLiteral("job.log"));
     process.setStandardErrorFile(logPath, QIODevice::Append);
     process.setStandardInputFile(QProcess::nullDevice());
@@ -287,7 +318,7 @@ void JobRunner::launch(qint64 jobId, const QString &type, qint64 siteId, const Q
     m_running.emplace(jobId, std::move(job));
     emit runningChanged();
     emit jobsChanged();
-    emit jobProgress(jobId, siteId, 0, 0, tr("starting"));
+    reportProgress(type, jobId, siteId, 0, 0, tr("starting"));
     qInfo("job %lld: started %s (site %lld)", jobId, qPrintable(type), siteId);
     stored.process->start();
 }
@@ -314,7 +345,7 @@ void JobRunner::handleEvent(RunningJob &job, const QJsonObject &event)
         m_database.post([jobId, current, total, label](QSqlDatabase &db) {
             JobStore::updateProgress(db, jobId, current, total, label);
         });
-        emit jobProgress(job.id, job.siteId, current, total, label);
+        reportProgress(job.type, job.id, job.siteId, current, total, label);
     } else if (type == QStringLiteral("result")) {
         const QString path = event.value(QStringLiteral("path")).toString();
         if (!path.isEmpty()) {
@@ -375,12 +406,26 @@ void JobRunner::handleExit(qint64 jobId, int exitCode, QProcess::ExitStatus exit
     const QString resultPath = job->resultPath;
     // A failed profile usually still wrote a report (unreachable, blocked); store it so the
     // history shows what happened. Canceled jobs leave no snapshot.
-    const bool ingest =
-        job->type == QStringLiteral("profile") && status != QStringLiteral("canceled");
+    const QString type = job->type;
+    const bool ingest = type == QStringLiteral("profile") && status != QStringLiteral("canceled");
+    const bool ingestCrawl = type == QStringLiteral("crawl") && status != QStringLiteral("canceled");
+    const QString crawlFolder = QFileInfo(resultPath).absolutePath();
+    const QString dataDir = m_paths.dataDir;
+    if (type == QStringLiteral("crawl") && status == QStringLiteral("canceled")) {
+        QDir(crawlFolder).removeRecursively(); // a half crawl is not worth keeping
+    }
     m_database.run(
         this,
-        [jobId, siteId, status, exitCode, error, resultPath, ingest](QSqlDatabase &db) {
+        [jobId, siteId, status, exitCode, error, resultPath, ingest, ingestCrawl, dataDir](QSqlDatabase &db) {
             QJsonObject result;
+            if (ingestCrawl) {
+                const CrawlStore::IngestResult stored =
+                    CrawlStore::ingest(db, dataDir, siteId, jobId, resultPath);
+                result.insert(QStringLiteral("crawlId"), stored.crawlId);
+                if (!stored.error.isEmpty()) {
+                    result.insert(QStringLiteral("ingestError"), stored.error);
+                }
+            }
             if (ingest) {
                 const ProfileIngest::Result stored = ProfileIngest::ingestFile(
                     db, siteId, jobId, resultPath,
@@ -394,11 +439,11 @@ void JobRunner::handleExit(qint64 jobId, int exitCode, QProcess::ExitStatus exit
             JobStore::finish(db, jobId, status, exitCode, error, result);
             return result.value(QStringLiteral("ingestError")).toString();
         },
-        [this, jobId, siteId, status](const QString &ingestError) {
+        [this, jobId, siteId, status, type](const QString &ingestError) {
             if (!ingestError.isEmpty()) {
-                emit notice(tr("Could not store the analysis: %1").arg(ingestError), true);
+                emit notice(tr("Could not store the result: %1").arg(ingestError), true);
             }
-            emit jobFinished(jobId, siteId, status);
+            reportFinished(type, jobId, siteId, status);
             emit jobsChanged();
         });
 
@@ -422,11 +467,30 @@ void JobRunner::failBeforeStart(qint64 jobId, qint64 siteId, const QString &type
             JobStore::finish(db, jobId, QStringLiteral("failed"), -1, message, {});
             return true;
         },
-        [this, jobId, siteId, message](bool) {
+        [this, jobId, siteId, message, type](bool) {
             emit notice(message, true);
-            emit jobFinished(jobId, siteId, QStringLiteral("failed"));
+            reportFinished(type, jobId, siteId, QStringLiteral("failed"));
             emit jobsChanged();
         });
+}
+
+void JobRunner::reportProgress(const QString &type, qint64 jobId, qint64 siteId, int current,
+                               int total, const QString &label)
+{
+    if (type == QStringLiteral("crawl")) {
+        emit crawlProgress(jobId, siteId, current, total, label);
+    } else {
+        emit jobProgress(jobId, siteId, current, total, label);
+    }
+}
+
+void JobRunner::reportFinished(const QString &type, qint64 jobId, qint64 siteId, const QString &status)
+{
+    if (type == QStringLiteral("crawl")) {
+        emit crawlFinished(jobId, siteId, status);
+    } else {
+        emit jobFinished(jobId, siteId, status);
+    }
 }
 
 void JobRunner::softCancel(RunningJob &job)

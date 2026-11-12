@@ -22,10 +22,11 @@ JobListModel::JobListModel(Database &database, JobRunner &runner, QObject *paren
     m_refreshDelay.setInterval(250);
     connect(&m_refreshDelay, &QTimer::timeout, this, &JobListModel::refresh);
     connect(&runner, &JobRunner::jobsChanged, &m_refreshDelay, qOverload<>(&QTimer::start));
-    connect(&runner, &JobRunner::jobProgress, this,
-            [this](qint64 jobId, qint64, int current, int total, const QString &label) {
-                applyProgress(jobId, current, total, label);
-            });
+    const auto onProgress = [this](qint64 jobId, qint64, int current, int total, const QString &label) {
+        applyProgress(jobId, current, total, label);
+    };
+    connect(&runner, &JobRunner::jobProgress, this, onProgress);
+    connect(&runner, &JobRunner::crawlProgress, this, onProgress);
 }
 
 int JobListModel::rowCount(const QModelIndex &parent) const

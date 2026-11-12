@@ -117,7 +117,7 @@ void AppSettingsTest::soundAssignmentsDefaultAndPersist()
     QCOMPARE(reloaded.soundFor(QStringLiteral("mailArrived")), QStringLiteral("idea"));
     QVERIFY(reloaded.soundFor(QStringLiteral("discoveryDone")).isEmpty());
     QCOMPARE(reloaded.soundFor(QStringLiteral("analysisDone")), QStringLiteral("ding"));
-    QCOMPARE(reloaded.soundAssignments().size(), 6);
+    QCOMPARE(reloaded.soundAssignments().size(), 7);
     QCOMPARE(reloaded.soundVolume(), 1.0);
 }
 

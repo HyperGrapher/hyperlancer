@@ -39,6 +39,12 @@ class SiteDetail : public QObject
     Q_PROPERTY(QVariantMap screenshots READ screenshots NOTIFY loadedChanged)
     Q_PROPERTY(QVariantMap organizer READ organizer NOTIFY loadedChanged)
     Q_PROPERTY(QStringList statuses READ statuses CONSTANT)
+    // The latest content crawl (see CrawlStore::latest) and its pages; empty when never crawled.
+    Q_PROPERTY(QVariantMap crawl READ crawl NOTIFY loadedChanged)
+    Q_PROPERTY(QVariantList crawlPages READ crawlPages NOTIFY loadedChanged)
+    Q_PROPERTY(bool crawlRunning READ isCrawlRunning NOTIFY crawlProgressChanged)
+    Q_PROPERTY(double crawlFraction READ crawlFraction NOTIFY crawlProgressChanged)
+    Q_PROPERTY(QString crawlLabel READ crawlLabel NOTIFY crawlProgressChanged)
     Q_PROPERTY(bool analyzing READ isAnalyzing NOTIFY progressChanged)
     Q_PROPERTY(double progress READ progress NOTIFY progressChanged)
     Q_PROPERTY(QString progressLabel READ progressLabel NOTIFY progressChanged)
@@ -68,6 +74,11 @@ public:
     [[nodiscard]] QVariantMap screenshots() const { return m_screenshots; }
     [[nodiscard]] QVariantMap organizer() const { return m_organizer; }
     [[nodiscard]] QStringList statuses() const;
+    [[nodiscard]] QVariantMap crawl() const { return m_crawl; }
+    [[nodiscard]] QVariantList crawlPages() const { return m_crawlPages; }
+    [[nodiscard]] bool isCrawlRunning() const { return m_crawlRunning; }
+    [[nodiscard]] double crawlFraction() const { return m_crawlFraction; }
+    [[nodiscard]] QString crawlLabel() const { return m_crawlLabel; }
     [[nodiscard]] bool isAnalyzing() const { return m_analyzing; }
     [[nodiscard]] double progress() const { return m_progress; }
     [[nodiscard]] QString progressLabel() const { return m_progressLabel; }
@@ -82,6 +93,10 @@ public:
     // Runs PageSpeed Insights for mobile and desktop: two scores and two screenshots.
     Q_INVOKABLE void checkSpeed();
     Q_INVOKABLE void loadEmails();
+    // Crawls the website's pages into Markdown (up to maxPages) and downloads its images and
+    // documents; the result is the "Content" tab.
+    Q_INVOKABLE void startCrawl(int maxPages);
+    Q_INVOKABLE void cancelCrawl();
 
     // Status, category, tags, notes and to-dos. Each saves, then reloads the detail.
     Q_INVOKABLE void setStatus(const QString &status);
@@ -104,6 +119,7 @@ signals:
     void siteIdChanged();
     void loadedChanged();
     void progressChanged();
+    void crawlProgressChanged();
     void speedRunningChanged();
     void snapshotDiffChanged();
     // Both PageSpeed calls answered; ok is false when either failed.
@@ -115,6 +131,7 @@ signals:
 
 private:
     void saveOrganizer(std::function<bool(QSqlDatabase &)> change);
+    void setCrawlProgress(bool running, double fraction, const QString &label);
     void setProgress(bool analyzing, double progress, const QString &label, int step);
 
     Database &m_database;
@@ -131,6 +148,12 @@ private:
     QVariantList m_snapshots;
     QVariantList m_activity;
     QVariantMap m_speed;
+    QVariantMap m_crawl;
+    QVariantList m_crawlPages;
+    bool m_crawlRunning = false;
+    double m_crawlFraction = 0.0;
+    QString m_crawlLabel;
+    qint64 m_crawlJobId = 0;
     QVariantMap m_snapshotDiff;
     bool m_diffLoading = false;
     QVariantMap m_speedDesktop;

@@ -92,6 +92,8 @@ public:
     Q_INVOKABLE void openExternal(const QString &url) const;
     Q_INVOKABLE void copyText(const QString &text) const;
     Q_INVOKABLE void openDataFolder() const;
+    // Opens a file or folder inside the data folder (a crawled page, the crawl folder).
+    Q_INVOKABLE void openLocalPath(const QString &path) const;
     // Asks the main window to show the Emails section (used by the mail notification).
     Q_INVOKABLE void requestOpenEmails() { emit openEmailsRequested(); }
     Q_INVOKABLE void openJobLog(qint64 jobId) const;

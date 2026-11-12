@@ -288,8 +288,7 @@ Flickable {
                 value: sections.tls.validUntil ? Format.shortDate(sections.tls.validUntil) + "  (" + Format.daysLabel(Math.floor(sections.tls.daysLeft)) + ")" : "—"
                 valueColor: Format.daysColor(sections.tls.daysLeft === null || sections.tls.daysLeft === undefined ? null : Math.floor(sections.tls.daysLeft))
             }
-            Fact { label: qsTr("Names covered"); value: (sections.tls.sanCount || 0) + ((sections.tls.sans || []).length ? "  ·  " + sections.tls.sans.slice(0, 4).join(", ") : "") }
-            Fact { label: qsTr("Fingerprint"); value: Format.orDash(sections.tls.fingerprint); mono: true; last: true }
+            Fact { label: qsTr("Names covered"); value: (sections.tls.sanCount || 0) + ((sections.tls.sans || []).length ? "  ·  " + sections.tls.sans.slice(0, 4).join(", ") : ""); last: true }
         }
 
         Section {

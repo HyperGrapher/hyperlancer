@@ -5,6 +5,7 @@ FocusScope {
     id: sidebar
 
     property var sections: []
+    property string version: ""
     // Count shown on a section's entry, by section index; absent or 0 shows nothing.
     property var badges: ({})
     property int currentIndex: 0
@@ -129,5 +130,17 @@ FocusScope {
                 }
             }
         }
+    }
+
+    // Which build this is; shown small at the bottom.
+    Text {
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 16
+        visible: sidebar.version.length > 0
+        text: "v" + sidebar.version
+        color: Theme.textMuted
+        font.family: Theme.fontFamily
+        font.pixelSize: Theme.fontCaption
     }
 }

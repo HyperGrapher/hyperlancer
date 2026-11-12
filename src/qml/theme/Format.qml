@@ -4,7 +4,7 @@ import QtQuick
 // Text formatting shared by every page: relative times, dates, days left, numbers.
 QtObject {
     // Lead statuses in pipeline order; the same list as SiteOrganizer::statuses().
-    readonly property var leadStatusOptions: ["none", "consider", "design", "contacted", "replied",
+    readonly property var leadStatusOptions: ["none", "consider", "design", "contacted", "waiting", "replied",
                                               "client", "completed", "canceled"]
         .map(status => ({ value: status, label: leadStatusLabel(status), tint: leadStatusColor(status) }))
 
@@ -14,6 +14,7 @@ QtObject {
         case "consider": return qsTr("Consider");
         case "design": return qsTr("Design");
         case "contacted": return qsTr("Contacted");
+        case "waiting": return qsTr("Waiting");
         case "replied": return qsTr("Replied");
         case "client": return qsTr("Client");
         case "completed": return qsTr("Completed");
@@ -27,6 +28,7 @@ QtObject {
         case "consider": return Theme.info;
         case "design": return Theme.accent;
         case "contacted": return Theme.warning;
+        case "waiting": return "#C9A0FF";
         case "replied": return Theme.accentSecondary;
         case "client": return Theme.success;
         case "completed": return "#7CF5C8";

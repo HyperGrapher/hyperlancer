@@ -40,6 +40,7 @@ set(HYPERLANCER_CORE_SOURCES
     src/LangSearchClient.h src/LangSearchClient.cpp
     src/GmailQuery.h src/GmailQuery.cpp
     src/ChromeProfile.h src/ChromeProfile.cpp
+    src/CrawlStore.h src/CrawlStore.cpp
     src/SnapshotDiff.h src/SnapshotDiff.cpp
     src/MailStore.h src/MailStore.cpp
     src/SiteOrganizer.h src/SiteOrganizer.cpp
@@ -70,11 +71,13 @@ qt_add_resources(HyperlancerCore "hyperlancer_data"
         resources/migrations/sqlite/0003_deadline_notes.sql
         resources/migrations/sqlite/0004_screenshots.sql
         resources/migrations/sqlite/0005_saved_views.sql
+        resources/migrations/sqlite/0006_crawls.sql
         resources/migrations/mysql/0001_init.sql
         resources/migrations/mysql/0002_organize.sql
         resources/migrations/mysql/0003_deadline_notes.sql
         resources/migrations/mysql/0004_screenshots.sql
         resources/migrations/mysql/0005_saved_views.sql
+        resources/migrations/mysql/0006_crawls.sql
 )
 
 # Every file in resources/sounds is bundled and offered in Settings → Appearance → Sounds.
@@ -145,6 +148,7 @@ set(HYPERLANCER_QML_FILES
     src/qml/pages/EmailsPage.qml
     src/qml/pages/SiteWorkspace.qml
     src/qml/pages/SiteScreenshots.qml
+    src/qml/pages/SiteContent.qml
     src/qml/pages/SnapshotChanges.qml
     src/qml/pages/TodosPage.qml
     src/qml/pages/DiscoverPage.qml
@@ -229,7 +233,9 @@ qt_add_resources(Hyperlancer "hyperlancer_fonts"
 )
 
 target_include_directories(Hyperlancer PRIVATE src)
-target_compile_definitions(Hyperlancer PRIVATE PROJECT_VERSION_STRING="${PROJECT_VERSION}")
+# The release workflow passes the tag (for example 0.2.12); other builds show the project version.
+set(HYPERLANCER_VERSION "${PROJECT_VERSION}" CACHE STRING "Version shown in the app")
+target_compile_definitions(Hyperlancer PRIVATE PROJECT_VERSION_STRING="${HYPERLANCER_VERSION}")
 
 target_link_libraries(Hyperlancer
     PRIVATE

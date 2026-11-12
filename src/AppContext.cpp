@@ -15,6 +15,7 @@
 #include <QUrl>
 
 #include "AppSettings.h"
+#include "CrawlStore.h"
 #include "PublicSuffixList.h"
 #include "SiteStore.h"
 #include "SqlExec.h"
@@ -58,6 +59,13 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
                     m_sounds.playEvent(QStringLiteral("analysisDone"));
                 }
             });
+    connect(&m_runner, &JobRunner::crawlFinished, &m_sounds, [this](qint64, qint64, const QString &status) {
+        if (status == QStringLiteral("failed")) {
+            m_sounds.playEvent(QStringLiteral("error"));
+        } else if (status != QStringLiteral("canceled")) {
+            m_sounds.playEvent(QStringLiteral("crawlDone"));
+        }
+    });
     connect(&m_siteDetail, &SiteDetail::speedCheckFinished, &m_sounds, [this](bool ok) {
         m_sounds.playEvent(ok ? QStringLiteral("speedCheckDone") : QStringLiteral("error"));
     });
@@ -218,7 +226,11 @@ void AppContext::analyzeSite(qint64 siteId, const QString &url)
 void AppContext::removeSite(qint64 siteId)
 {
     m_database.run(
-        this, [siteId](QSqlDatabase &db) { return SiteStore::deleteSite(db, siteId); },
+        this,
+        [siteId, dataDir = m_paths.dataDir](QSqlDatabase &db) {
+            CrawlStore::removeFiles(db, dataDir, siteId);
+            return SiteStore::deleteSite(db, siteId);
+        },
         [this, siteId](bool removed) {
             if (removed) {
                 QDir(QDir(m_paths.screenshotsDir).filePath(QString::number(siteId))).removeRecursively();
@@ -227,6 +239,15 @@ void AppContext::removeSite(qint64 siteId)
                 emit siteRemoved(siteId);
             }
         });
+}
+
+void AppContext::openLocalPath(const QString &path) const
+{
+    const QString absolute = QDir::cleanPath(QDir(m_paths.dataDir).absoluteFilePath(path));
+    // Only the app's own folder: the path may come from crawled content.
+    if (absolute.startsWith(QDir::cleanPath(m_paths.dataDir) + QLatin1Char('/')) && QFileInfo::exists(absolute)) {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(absolute));
+    }
 }
 
 void AppContext::openExternal(const QString &url) const

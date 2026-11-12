@@ -4,6 +4,7 @@
 #include <QSqlQuery>
 #include <QTest>
 
+#include "CrawlStore.h"
 #include "PublicSuffixList.h"
 #include "SiteOrganizer.h"
 #include "SiteStore.h"
@@ -28,6 +29,7 @@ private slots:
     void speedChecksAreKeptPerStrategy();
     void dashboardListsDueTodosAndDeadlines();
     void diffComparesWithTheEarlierSuccessfulAnalysis();
+    void crawlStoreKeepsOnlyTheLatestCrawl();
     void deletingSiteRemovesItsRecords();
 
 private:
@@ -61,6 +63,9 @@ void SiteOrganizerTest::statusCategoryAndTags()
     QCOMPARE(SiteOrganizer::load(db, site).value(QStringLiteral("status")).toString(),
              QStringLiteral("none"));
 
+    QVERIFY(SiteOrganizer::setStatus(db, site, QStringLiteral("contacted")));
+    QVERIFY(SiteOrganizer::setStatus(db, site, QStringLiteral("waiting")));
+    QVERIFY(SiteOrganizer::statuses().indexOf(QStringLiteral("waiting")) < SiteOrganizer::statuses().indexOf(QStringLiteral("replied")));
     QVERIFY(SiteOrganizer::setStatus(db, site, QStringLiteral("contacted")));
     QVERIFY(!SiteOrganizer::setStatus(db, site, QStringLiteral("bogus")));
     QVERIFY(SiteOrganizer::setCategory(db, site, QStringLiteral("  Dental ")));
@@ -322,6 +327,46 @@ void SiteOrganizerTest::diffComparesWithTheEarlierSuccessfulAnalysis()
     QVERIFY(!result.contains(QStringLiteral("error")));
     QCOMPARE(result.value(QStringLiteral("count")).toInt(), 1);
     QVERIFY(result.value(QStringLiteral("beforeAt")).toString().startsWith(QStringLiteral("2030-01-01")));
+}
+
+void SiteOrganizerTest::crawlStoreKeepsOnlyTheLatestCrawl()
+{
+    QSqlDatabase db = m_database->db();
+    const qint64 site = addSite(QStringLiteral("firma.com.tr"));
+    const QString dataDir = m_database->dir();
+    const auto writeCrawl = [&dataDir](const QString &job, int pages) {
+        const QString folder = QDir(dataDir).filePath(QStringLiteral("jobs/%1/crawl").arg(job));
+        QDir().mkpath(folder);
+        QFile manifest(folder + QStringLiteral("/manifest.json"));
+        manifest.open(QIODevice::WriteOnly);
+        manifest.write(QStringLiteral(R"({"status":"partial","stop_reason":"max_pages","counts":{"pages":%1,"images":2,"files":1,"bytes":2048,"errors":0}})")
+                           .arg(pages).toUtf8());
+        QFile structure(folder + QStringLiteral("/structure.json"));
+        structure.open(QIODevice::WriteOnly);
+        structure.write(R"({"pages":[{"title":"Home","url":"https://firma.com.tr/","file":"pages/index.md","word_count":120,"depth":0,"lang":"tr"}]})");
+        return folder + QStringLiteral("/manifest.json");
+    };
+    QVERIFY(CrawlStore::latest(db, site).isEmpty());
+
+    const QString first = writeCrawl(QStringLiteral("1"), 5);
+    QVERIFY(CrawlStore::ingest(db, dataDir, site, 1, first).error.isEmpty());
+    QVariantMap latest = CrawlStore::latest(db, site);
+    QCOMPARE(latest.value(QStringLiteral("pages")).toInt(), 5);
+    QCOMPARE(latest.value(QStringLiteral("stopReason")).toString(), QStringLiteral("max_pages"));
+    QCOMPARE(latest.value(QStringLiteral("path")).toString(), QStringLiteral("jobs/1/crawl"));
+    const QVariantList pages = CrawlStore::pages(dataDir, latest.value(QStringLiteral("path")).toString());
+    QCOMPARE(pages.size(), 1);
+    QCOMPARE(pages.front().toMap().value(QStringLiteral("wordCount")).toInt(), 120);
+
+    const QString second = writeCrawl(QStringLiteral("2"), 9);
+    QVERIFY(CrawlStore::ingest(db, dataDir, site, 2, second).error.isEmpty());
+    QCOMPARE(CrawlStore::latest(db, site).value(QStringLiteral("pages")).toInt(), 9);
+    QVERIFY(!QDir(QDir(dataDir).filePath(QStringLiteral("jobs/1/crawl"))).exists()); // the older crawl is gone
+    QVERIFY(QDir(QDir(dataDir).filePath(QStringLiteral("jobs/2/crawl"))).exists());
+
+    QVERIFY(!CrawlStore::ingest(db, dataDir, site, 3, QDir(dataDir).filePath(QStringLiteral("missing.json"))).error.isEmpty());
+    CrawlStore::removeFiles(db, dataDir, site);
+    QVERIFY(!QDir(QDir(dataDir).filePath(QStringLiteral("jobs/2/crawl"))).exists());
 }
 
 void SiteOrganizerTest::deletingSiteRemovesItsRecords()

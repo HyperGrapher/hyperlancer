@@ -6,6 +6,7 @@
 #include <QPointer>
 #include <QUrl>
 
+#include "CrawlStore.h"
 #include "Database.h"
 #include "GmailService.h"
 #include "Integrations.h"
@@ -39,6 +40,20 @@ SiteDetail::SiteDetail(Database &database, JobRunner &runner, PageSpeedClient &p
                     reload();
                 }
             });
+    connect(&m_runner, &JobRunner::crawlProgress, this,
+            [this](qint64 jobId, qint64 siteId, int current, int total, const QString &label) {
+                if (siteId == m_siteId) {
+                    m_crawlJobId = jobId;
+                    setCrawlProgress(true, total > 0 ? static_cast<double>(current) / total : 0.0, label);
+                }
+            });
+    connect(&m_runner, &JobRunner::crawlFinished, this, [this](qint64, qint64 siteId, const QString &) {
+        if (siteId == m_siteId) {
+            m_crawlJobId = 0;
+            setCrawlProgress(false, 1.0, QString());
+            reload();
+        }
+    });
     connect(&m_gmail, &GmailService::siteMessagesLoaded, this,
             [this](qint64 siteId, const QVariantList &messages, const QString &error) {
                 if (siteId != m_siteId) {
@@ -63,6 +78,10 @@ void SiteDetail::setSiteId(qint64 siteId)
     m_snapshots.clear();
     m_activity.clear();
     m_speed.clear();
+    m_crawl.clear();
+    m_crawlPages.clear();
+    m_crawlJobId = 0;
+    setCrawlProgress(false, 0.0, QString());
     closeComparison();
     m_speedDesktop.clear();
     m_screenshots.clear();
@@ -86,8 +105,14 @@ void SiteDetail::reload()
     emit loadedChanged();
     m_database.run(
         this,
-        [siteId](QSqlDatabase &db) {
+        [siteId, dataDir = m_dataDir](QSqlDatabase &db) {
             QVariantMap detail = SiteStore::loadDetail(db, siteId);
+            const QVariantMap crawl = CrawlStore::latest(db, siteId);
+            detail.insert(QStringLiteral("crawl"), crawl);
+            if (!crawl.isEmpty()) {
+                detail.insert(QStringLiteral("crawlPages"),
+                              CrawlStore::pages(dataDir, crawl.value(QStringLiteral("path")).toString()));
+            }
             detail.insert(QStringLiteral("organizer"), SiteOrganizer::load(db, siteId));
             return detail;
         },
@@ -102,6 +127,8 @@ void SiteDetail::reload()
             m_snapshots = detail.value(QStringLiteral("snapshots")).toList();
             m_activity = detail.value(QStringLiteral("activity")).toList();
             m_speed = detail.value(QStringLiteral("speed")).toMap();
+            m_crawl = detail.value(QStringLiteral("crawl")).toMap();
+            m_crawlPages = detail.value(QStringLiteral("crawlPages")).toList();
             m_speedDesktop = detail.value(QStringLiteral("speedDesktop")).toMap();
             m_screenshots.clear();
             const QVariantMap stored = detail.value(QStringLiteral("screenshots")).toMap();
@@ -195,6 +222,41 @@ void SiteDetail::checkSpeed()
                     });
             });
     }
+}
+
+void SiteDetail::startCrawl(int maxPages)
+{
+    if (m_siteId <= 0 || m_crawlRunning) {
+        return;
+    }
+    QString url = m_site.value(QStringLiteral("final_url")).toString();
+    if (url.isEmpty()) {
+        url = m_site.value(QStringLiteral("url")).toString();
+    }
+    setCrawlProgress(true, 0.0, tr("queued"));
+    m_runner.enqueueCrawl(m_siteId, url, maxPages, [this](qint64 jobId, const QString &error) {
+        if (!error.isEmpty()) {
+            setCrawlProgress(false, 0.0, QString());
+            emit notice(error, true);
+        } else {
+            m_crawlJobId = jobId;
+        }
+    });
+}
+
+void SiteDetail::cancelCrawl()
+{
+    if (m_crawlJobId > 0) {
+        m_runner.cancel(m_crawlJobId);
+    }
+}
+
+void SiteDetail::setCrawlProgress(bool running, double fraction, const QString &label)
+{
+    m_crawlRunning = running;
+    m_crawlFraction = fraction;
+    m_crawlLabel = label;
+    emit crawlProgressChanged();
 }
 
 void SiteDetail::loadEmails()

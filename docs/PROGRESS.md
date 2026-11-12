@@ -124,6 +124,13 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - The summary now has `emailAuth` and `trackers` (SUMMARY_VERSION 2); the Profile tab shows "Email authentication" and "Ads and analytics". 11 new pytest tests (99 pass).
 - Not done from the PRD's contact-channels item: phone normalization (needs the `phonenumbers` dependency), contact-page crawling and person extraction.
 
+### Content crawl, waiting status, version tag (migration 0006)
+- **Content crawl** (website detail → new **Content** tab): runs the existing `site_crawl` tool as a job (type `crawl`, one at a time, 2 hour limit, cancel, live progress). Saves every page as Markdown plus images and documents under `jobs/<job id>/crawl` in the data folder; only the latest crawl of a website is kept (older folders are deleted; deleting the website removes them). The tab shows the summary, whether it stopped at the page limit, the page list (open the page or its Markdown file) and "Open folder". Up to 50/100/200/500 pages per crawl. Code: `JobRunner::enqueueCrawl` (new `crawlProgress`/`crawlFinished` signals so a crawl is never mistaken for an analysis), `CrawlStore`, `SiteDetail::startCrawl`, `SiteContent.qml`, table `crawls`. A new sound event "Content crawl finished".
+- Verified end to end against a local test site (3 pages, 1 image) with real clicks; the crawl needs `allowPrivate` for local addresses, which the app does not offer, so that was a temporary test-only change (reverted). Not tested: a big public site, Windows.
+- New status **Waiting** (between Contacted and Replied; mail never moves a status backwards, so a sent mail leaves Waiting alone).
+- The sidebar shows the version at the bottom; the release workflow passes the tag as `HYPERLANCER_VERSION`, other builds show the project version (0.2).
+- The Fingerprint line is gone from SSL / TLS.
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

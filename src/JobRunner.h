@@ -50,6 +50,11 @@ public:
     void enqueueProfile(qint64 siteId, const QString &url,
                         std::function<void(qint64, QString)> done = {});
 
+    // Queues a content crawl (site_crawl): Markdown pages, images and documents of the site,
+    // up to maxPages pages. done(jobId, error) runs on the UI thread.
+    void enqueueCrawl(qint64 siteId, const QString &url, int maxPages,
+                      std::function<void(qint64, QString)> done = {});
+
     Q_INVOKABLE void cancel(qint64 jobId);
     Q_INVOKABLE void retry(qint64 jobId);
     // Asks every running job to stop (used when the app quits).
@@ -61,6 +66,10 @@ signals:
     void jobsChanged();
     void jobProgress(qint64 jobId, qint64 siteId, int current, int total, const QString &label);
     void jobFinished(qint64 jobId, qint64 siteId, const QString &status);
+    // The same two events for content crawls, kept apart so a crawl never looks like an
+    // analysis in the places that listen for those.
+    void crawlProgress(qint64 jobId, qint64 siteId, int current, int total, const QString &label);
+    void crawlFinished(qint64 jobId, qint64 siteId, const QString &status);
     void notice(const QString &message, bool isError);
 
 private:
@@ -87,6 +96,9 @@ private:
     void handleEvent(RunningJob &job, const QJsonObject &event);
     void handleExit(qint64 jobId, int exitCode, QProcess::ExitStatus exitStatus);
     void failBeforeStart(qint64 jobId, qint64 siteId, const QString &type, const QString &message);
+    void reportProgress(const QString &type, qint64 jobId, qint64 siteId, int current, int total,
+                        const QString &label);
+    void reportFinished(const QString &type, qint64 jobId, qint64 siteId, const QString &status);
     void softCancel(RunningJob &job);
     void tick();
     [[nodiscard]] int limitFor(const QString &type) const;

@@ -47,8 +47,8 @@ QStringList names(QSqlDatabase &db, const QString &sql)
 QStringList statuses()
 {
     return {QStringLiteral("none"),      QStringLiteral("consider"),  QStringLiteral("design"),
-            QStringLiteral("contacted"), QStringLiteral("replied"),   QStringLiteral("client"),
-            QStringLiteral("completed"), QStringLiteral("canceled")};
+            QStringLiteral("contacted"), QStringLiteral("waiting"),   QStringLiteral("replied"),
+            QStringLiteral("client"),    QStringLiteral("completed"), QStringLiteral("canceled")};
 }
 
 bool setStatus(QSqlDatabase &db, qint64 siteId, const QString &status, const QString &activityText)

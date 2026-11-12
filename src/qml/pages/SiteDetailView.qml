@@ -39,6 +39,7 @@ Item {
         emailsTab.resetScroll();
         historyList.resetScroll();
         activityList.resetScroll();
+        contentTab.resetScroll();
     }
 
     onSiteKeyChanged: {
@@ -355,7 +356,7 @@ Item {
 
         anchors.top: facts.bottom
         anchors.topMargin: Theme.spacingL
-        options: [qsTr("Profile"), qsTr("Workspace"), qsTr("Emails"), qsTr("History"), qsTr("Activity"), qsTr("Screenshots")]
+        options: [qsTr("Profile"), qsTr("Workspace"), qsTr("Emails"), qsTr("History"), qsTr("Activity"), qsTr("Screenshots"), qsTr("Content")]
         currentIndex: view.currentTab
         onActivated: index => {
             view.currentTab = index;
@@ -429,6 +430,14 @@ Item {
 
             anchors.fill: parent
             visible: view.currentTab === 3
+        }
+
+        SiteContent {
+            id: contentTab
+
+            anchors.fill: parent
+            visible: view.currentTab === 6
+            app: view.app
         }
 
         SiteScreenshots {

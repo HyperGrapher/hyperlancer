@@ -16,11 +16,12 @@ struct Event
     const char *defaultSound;
 };
 
-inline constexpr std::array<Event, 6> kEvents{{
+inline constexpr std::array<Event, 7> kEvents{{
     {"mailArrived", "New email", "message"},
     {"analysisDone", "Analysis finished", "ding"},
     {"analysisFailed", "Analysis failed", "error"},
     {"speedCheckDone", "Speed check finished", "ding"},
+    {"crawlDone", "Content crawl finished", "ding"},
     {"discoveryDone", "Discovery finished", "idea"},
     {"error", "Other errors", "error"},
 }};

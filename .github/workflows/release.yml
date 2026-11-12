@@ -91,13 +91,18 @@ jobs:
 
       - name: Configure (Linux)
         if: runner.os == 'Linux'
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DHYPERLANCER_BUILD_TESTS=OFF
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DHYPERLANCER_BUILD_TESTS=OFF -DHYPERLANCER_VERSION="${RELEASE_TAG#v}"
 
       - name: Configure (Windows)
         if: runner.os == 'Windows'
         shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DHYPERLANCER_BUILD_TESTS=OFF \
+            -DHYPERLANCER_VERSION="${RELEASE_TAG#v}" \
             -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" \
             -DCMAKE_CXX_COMPILER="$IQTA_TOOLS/mingw1310_64/bin/g++.exe"
 
