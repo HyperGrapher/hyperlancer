@@ -114,6 +114,14 @@ Item {
             color: Qt.rgba(0.07, 0.05, 0.12, 0.97)
             border.width: 1
             border.color: Theme.glassStroke
+
+            // A TapHandler only watches; it does not stop the click from reaching the items
+            // behind the popup (a table row would open). An item that accepts the mouse does.
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.AllButtons
+                onWheel: wheel => wheel.accepted = true
+            }
         }
 
         function pick(value) {
@@ -166,7 +174,7 @@ Item {
                     Rectangle {
                         anchors.fill: parent
                         radius: Theme.radiusSmall
-                        color: optionHover.hovered ? Theme.rowHover : "transparent"
+                        color: optionArea.containsMouse ? Theme.rowHover : "transparent"
                     }
 
                     Rectangle {
@@ -205,14 +213,13 @@ Item {
                         visible: option.modelData.value === control.currentValue
                     }
 
-                    HoverHandler {
-                        id: optionHover
+                    MouseArea {
+                        id: optionArea
 
+                        anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                    }
-
-                    TapHandler {
-                        onTapped: popup.pick(option.modelData.value)
+                        onClicked: popup.pick(option.modelData.value)
                     }
                 }
             }
@@ -225,7 +232,7 @@ Item {
                 Rectangle {
                     anchors.fill: parent
                     radius: Theme.radiusSmall
-                    color: createHover.hovered ? Theme.rowHover : "transparent"
+                    color: createArea.containsMouse ? Theme.rowHover : "transparent"
                 }
 
                 Row {
@@ -250,14 +257,13 @@ Item {
                     }
                 }
 
-                HoverHandler {
-                    id: createHover
+                MouseArea {
+                    id: createArea
 
+                    anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                }
-
-                TapHandler {
-                    onTapped: popup.create(searchField.text)
+                    onClicked: popup.create(searchField.text)
                 }
             }
 

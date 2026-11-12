@@ -19,8 +19,10 @@ Flickable {
     property int expandedNote: -1
     readonly property string todayIso: Qt.formatDate(new Date(), "yyyy-MM-dd")
 
+    // An opened note is scrolled up to the top edge. Room below it is added while one is
+    // open, otherwise a note near the end of the page could not reach the top.
     contentWidth: width
-    contentHeight: column.implicitHeight + Theme.spacingL
+    contentHeight: column.implicitHeight + Theme.spacingL + (expandedNote >= 0 ? height : 0)
     clip: true
     boundsBehavior: Flickable.StopAtBounds
 
@@ -368,8 +370,15 @@ Flickable {
                         TapHandler {
                             // The delete button handles its own taps.
                             onTapped: eventPoint => {
-                                if (!removeNote.contains(removeNote.mapFromItem(noteHeader, eventPoint.position)))
-                                    workspace.expandedNote = noteCard.expanded ? -1 : noteCard.modelData.id;
+                                if (removeNote.contains(removeNote.mapFromItem(noteHeader, eventPoint.position)))
+                                    return;
+                                workspace.expandedNote = noteCard.expanded ? -1 : noteCard.modelData.id;
+                                if (!noteCard.expanded)
+                                    return;
+                                // Another open note may be closing above this one, which moves it;
+                                // measure once the animations have settled.
+                                workspace.pendingCard = noteCard;
+                                scrollTimer.restart();
                             }
                         }
                     }
@@ -409,6 +418,30 @@ Flickable {
             expandedNote = notes[0].id;
             contentY = Math.max(0, contentHeight - height);
         }
+    }
+
+    function scrollTo(card) {
+        scrollAnimation.stop();
+        scrollAnimation.to = Math.max(0, card.mapToItem(column, 0, 0).y - Theme.spacingS);
+        scrollAnimation.start();
+    }
+
+    property Item pendingCard: null
+
+    Timer {
+        id: scrollTimer
+
+        interval: Motion.normal + 40
+        onTriggered: if (workspace.pendingCard) workspace.scrollTo(workspace.pendingCard)
+    }
+
+    NumberAnimation {
+        id: scrollAnimation
+
+        target: workspace
+        property: "contentY"
+        duration: Motion.slow
+        easing.type: Easing.OutCubic
     }
 
     function addTodo() {

@@ -9,6 +9,7 @@ AbstractButton {
     property string glyph: Icons.house
     property bool selected: false
     property string shortcutHint: ""
+    property int badge: 0
     readonly property point iconCenter: Qt.point(iconSlot.x + iconSlot.width / 2,
                                                  iconSlot.y + iconSlot.height / 2)
 
@@ -67,10 +68,33 @@ AbstractButton {
             Behavior on color { ColorAnimation { duration: Motion.fast } }
         }
 
+        Rectangle {
+            anchors.right: parent.right
+            anchors.rightMargin: Theme.spacingM
+            anchors.verticalCenter: parent.verticalCenter
+            width: Math.max(20, badgeText.implicitWidth + 12)
+            height: 20
+            radius: 10
+            color: Theme.accent
+            visible: control.badge > 0
+
+            Text {
+                id: badgeText
+
+                anchors.centerIn: parent
+                text: control.badge > 99 ? "99+" : String(control.badge)
+                color: "#160B24"
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontCaption
+                font.weight: Font.Bold
+            }
+        }
+
         Text {
             anchors.right: parent.right
             anchors.rightMargin: Theme.spacingM
             anchors.verticalCenter: parent.verticalCenter
+            visible: control.badge === 0
             text: control.shortcutHint
             color: Theme.textMuted
             font.family: Theme.fontFamily

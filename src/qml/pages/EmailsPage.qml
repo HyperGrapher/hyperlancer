@@ -11,7 +11,25 @@ PageBase {
     readonly property GmailInbox inbox: app.inbox
     property var openMessage: null
 
-    onEntered: if (app.gmail.connected && inbox.messages.length === 0) inbox.refresh()
+    // The user is looking at the inbox while the window is on screen.
+    readonly property bool watching: isCurrent && Window.window !== null && Window.window.visible
+
+    onEntered: {
+        if (app.gmail.connected && inbox.messages.length === 0)
+            inbox.refresh();
+        inbox.markSeen();
+    }
+    onWatchingChanged: if (watching) inbox.markSeen()
+
+    Connections {
+        target: page.inbox
+
+        // Mail that arrives while the inbox is open is seen at once.
+        function onNewCountChanged() {
+            if (page.watching)
+                page.inbox.markSeen();
+        }
+    }
     Keys.onEscapePressed: openMessage = null
 
     PageHeader {

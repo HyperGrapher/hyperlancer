@@ -110,6 +110,7 @@ set(HYPERLANCER_SINGLETONS
 
 set(HYPERLANCER_QML_FILES
     src/qml/Main.qml
+    src/qml/MailNotifications.qml
     ${HYPERLANCER_SINGLETONS}
     src/qml/shell/ResizeBorder.qml
     src/qml/shell/TitleBar.qml

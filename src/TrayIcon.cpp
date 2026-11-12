@@ -54,18 +54,10 @@ TrayIcon::TrayIcon(QObject *parent)
             emit showRequested();
         }
     });
-    connect(&m_icon, &QSystemTrayIcon::messageClicked, this, &TrayIcon::notificationClicked);
     m_icon.show();
 }
 
 TrayIcon::~TrayIcon()
 {
     delete m_menu; // the icon does not own its menu
-}
-
-void TrayIcon::notify(const QString &title, const QString &message)
-{
-    if (m_available && QSystemTrayIcon::supportsMessages()) {
-        m_icon.showMessage(title, message, QSystemTrayIcon::Information, 8000);
-    }
 }

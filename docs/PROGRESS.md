@@ -89,6 +89,13 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - New "Open to-dos" tile (with the overdue count) and a "Coming up" panel: open to-dos and website deadlines that are overdue or due within 30 days, soonest first (up to 8); a click opens the website. Query in `SiteStore::dashboard`, test `dashboardListsDueTodosAndDeadlines`.
 - Still open: a global to-do list page, websites per status on the dashboard.
 
+### Fixes after use (mail notices, notes, dropdowns)
+- **New-mail notices** are now an always-on-top window in the screen corner (`MailNotifications.qml`, opened from `Main.qml`), not a tray balloon: a notice stays until the user clicks Dismiss, Open (shows the Emails section) or Dismiss all, or opens the Emails page. The tray icon no longer shows balloons.
+- **Emails badge:** the sidebar entry shows how many messages arrived since the Emails page was last open (`GmailInbox.newCount`, cleared by `markSeen()`).
+- **Notes:** opening a note scrolls it to the top of the Workspace viewport (extra room is added below while one is open).
+- **Click-through:** a click on a dropdown or calendar popup also hit the row behind it, because TapHandler is passive. Popups now have a MouseArea behind their content and options use MouseArea. Reproduced and verified with real mouse clicks under Xvfb (`xdotool`): the old code opened the website, the new code does not. Rule: items inside a Popup that sits over other clickable items must use MouseArea, not TapHandler.
+- Known cosmetic: Markdown links in notes use Qt's default blue (the importer ignores `Text.linkColor`).
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

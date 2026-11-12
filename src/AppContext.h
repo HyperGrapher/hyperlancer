@@ -81,6 +81,8 @@ public:
     Q_INVOKABLE void openExternal(const QString &url) const;
     Q_INVOKABLE void copyText(const QString &text) const;
     Q_INVOKABLE void openDataFolder() const;
+    // Asks the main window to show the Emails section (used by the mail notification).
+    Q_INVOKABLE void requestOpenEmails() { emit openEmailsRequested(); }
     Q_INVOKABLE void openJobLog(qint64 jobId) const;
     // Starts a new instance with the same arguments and quits this one.
     Q_INVOKABLE void restart();
@@ -89,6 +91,7 @@ signals:
     void notice(const QString &message, bool isError);
     void siteAdded(qint64 siteId, bool created);
     void siteRemoved(qint64 siteId);
+    void openEmailsRequested();
 
 private:
     void onDatabaseReady();

@@ -138,8 +138,19 @@ Window {
             introAnimation.start();
     }
 
+    MailNotifications {
+        id: mailNotifications
+
+        app: root.app
+        appSettings: root.appSettings
+    }
+
     Connections {
         target: root.app
+
+        function onOpenEmailsRequested() {
+            root.openEmails();
+        }
 
         function onNotice(message, isError) {
             toasts.show(message, isError);
@@ -196,6 +207,7 @@ Window {
             height: parent.height - 2 * Theme.sidebarInset
             sections: root.sections
             currentIndex: Theme.section
+            badges: ({ [root.sectionEmails]: root.app.inbox.newCount })
             focus: true
             onActivated: (index, origin) => root.navigate(index, origin)
         }
@@ -455,6 +467,10 @@ Window {
             sectionCount: root.sections.length
             onNavigateRequested: index => sidebar.select(index)
             onSampleSiteRequested: root.app.addSite("example.org", false)
+            onSampleMailRequested: mailNotifications.pending = [
+                { gmailId: "a", from: "Ayşe Demir <ayse@firma.com.tr>", subject: "Re: Website offer", snippet: "" },
+                { gmailId: "b", from: "info@baska.com", subject: "Meeting on Thursday?", snippet: "" }]
+            onMailPopupCaptureRequested: path => mailNotifications.contentItem.grabToImage(result => result.saveToFile(path))
             onDetailTabRequested: tab => root.tourTabRequested(tab)
         }
     }

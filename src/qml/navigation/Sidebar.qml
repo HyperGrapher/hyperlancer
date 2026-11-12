@@ -5,6 +5,8 @@ FocusScope {
     id: sidebar
 
     property var sections: []
+    // Count shown on a section's entry, by section index; absent or 0 shows nothing.
+    property var badges: ({})
     property int currentIndex: 0
 
     // origin: center of the clicked icon in sidebar coordinates (start of the mood spread)
@@ -122,6 +124,7 @@ FocusScope {
                     glyph: modelData.glyph
                     shortcutHint: "Ctrl+" + (index + 1)
                     selected: index === sidebar.currentIndex
+                    badge: sidebar.badges[index] || 0
                     onClicked: sidebar.select(index)
                 }
             }

@@ -95,6 +95,7 @@ void GmailInbox::onStateChanged()
     m_pollTimer.stop();
     m_historyId.clear();
     m_messages.clear();
+    markSeen();
     m_error.clear();
     m_loading = false;
     emit changed();
@@ -105,6 +106,15 @@ void GmailInbox::setError(const QString &error)
     m_error = error;
     m_loading = false;
     emit changed();
+}
+
+void GmailInbox::markSeen()
+{
+    if (m_newCount == 0) {
+        return;
+    }
+    m_newCount = 0;
+    emit newCountChanged();
 }
 
 void GmailInbox::refresh()
@@ -323,8 +333,10 @@ void GmailInbox::handleNewMessages(const QList<GmailQuery::MessageMeta> &incomin
         added.append(GmailQuery::toVariantMap(meta));
     }
     m_messages = added + m_messages;
+    m_newCount += static_cast<int>(added.size());
     emit changed();
-    emit newMessages(added);
+    emit newMessages(added); // before the count: a watcher that clears the count also clears the notice
+    emit newCountChanged();
 
     const qint64 accountId = m_gmail.accountId();
     m_database.run(

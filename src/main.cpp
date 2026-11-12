@@ -93,27 +93,6 @@ void loadBundledFonts()
 
 } // namespace
 
-// "Ayşe Demir <ayse@firma.com>" becomes "Ayşe Demir"; a bare address stays as it is.
-QString senderName(const QString &fromHeader)
-{
-    const int angle = fromHeader.indexOf(QLatin1Char('<'));
-    QString name = (angle > 0 ? fromHeader.left(angle) : fromHeader).trimmed();
-    name.remove(QLatin1Char('"'));
-    return name;
-}
-
-void notifyNewMail(TrayIcon &tray, const QVariantList &messages)
-{
-    const QVariantMap newest = messages.constFirst().toMap();
-    if (messages.size() == 1) {
-        tray.notify(QObject::tr("New email from %1").arg(senderName(newest.value(QStringLiteral("from")).toString())),
-                    newest.value(QStringLiteral("subject")).toString());
-        return;
-    }
-    tray.notify(QObject::tr("%1 new emails").arg(messages.size()),
-                QObject::tr("Latest: %1").arg(newest.value(QStringLiteral("subject")).toString()));
-}
-
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
@@ -166,14 +145,8 @@ int main(int argc, char *argv[])
                      [root]() { QMetaObject::invokeMethod(root, "showFromTray"); });
     QObject::connect(&tray, &TrayIcon::quitRequested, root,
                      [root]() { QMetaObject::invokeMethod(root, "requestQuit"); });
-    QObject::connect(&tray, &TrayIcon::notificationClicked, root,
+    QObject::connect(&context, &AppContext::openEmailsRequested, root,
                      [root]() { QMetaObject::invokeMethod(root, "openEmails"); });
-    QObject::connect(context.inbox(), &GmailInbox::newMessages, &tray,
-                     [&tray, &settings](const QVariantList &messages) {
-                         if (settings.notifyNewMail() && !messages.isEmpty()) {
-                             notifyNewMail(tray, messages);
-                         }
-                     });
 
     return QApplication::exec();
 }

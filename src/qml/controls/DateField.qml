@@ -96,6 +96,13 @@ Item {
             color: Qt.rgba(0.07, 0.05, 0.12, 0.97)
             border.width: 1
             border.color: Theme.glassStroke
+
+            // Keeps clicks from reaching the items behind the calendar.
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.AllButtons
+                onWheel: wheel => wheel.accepted = true
+            }
         }
 
         contentItem: Column {
