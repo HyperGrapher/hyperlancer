@@ -1,6 +1,10 @@
 #pragma once
 
+#include <functional>
+
 #include <QObject>
+#include <QSqlDatabase>
+#include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
 #include <QtQml/qqmlregistration.h>
@@ -27,6 +31,8 @@ class SiteDetail : public QObject
     Q_PROPERTY(QVariantList snapshots READ snapshots NOTIFY loadedChanged)
     Q_PROPERTY(QVariantList activity READ activity NOTIFY loadedChanged)
     Q_PROPERTY(QVariantMap speed READ speed NOTIFY loadedChanged)
+    Q_PROPERTY(QVariantMap organizer READ organizer NOTIFY loadedChanged)
+    Q_PROPERTY(QStringList statuses READ statuses CONSTANT)
     Q_PROPERTY(bool analyzing READ isAnalyzing NOTIFY progressChanged)
     Q_PROPERTY(double progress READ progress NOTIFY progressChanged)
     Q_PROPERTY(QString progressLabel READ progressLabel NOTIFY progressChanged)
@@ -49,6 +55,8 @@ public:
     [[nodiscard]] QVariantList snapshots() const { return m_snapshots; }
     [[nodiscard]] QVariantList activity() const { return m_activity; }
     [[nodiscard]] QVariantMap speed() const { return m_speed; }
+    [[nodiscard]] QVariantMap organizer() const { return m_organizer; }
+    [[nodiscard]] QStringList statuses() const;
     [[nodiscard]] bool isAnalyzing() const { return m_analyzing; }
     [[nodiscard]] double progress() const { return m_progress; }
     [[nodiscard]] QString progressLabel() const { return m_progressLabel; }
@@ -62,6 +70,17 @@ public:
     Q_INVOKABLE void analyze();
     Q_INVOKABLE void checkSpeed();
     Q_INVOKABLE void loadEmails();
+
+    // Status, category, tags, notes and to-dos. Each saves, then reloads the detail.
+    Q_INVOKABLE void setStatus(const QString &status);
+    Q_INVOKABLE void setCategory(const QString &name);
+    Q_INVOKABLE void addTag(const QString &name);
+    Q_INVOKABLE void removeTag(qint64 tagId);
+    Q_INVOKABLE void addNote(const QString &body);
+    Q_INVOKABLE void deleteNote(qint64 noteId);
+    Q_INVOKABLE void addTodo(const QString &title, const QString &dueOn);
+    Q_INVOKABLE void setTodoDone(qint64 todoId, bool done);
+    Q_INVOKABLE void deleteTodo(qint64 todoId);
     // Shows an older snapshot instead of the latest.
     Q_INVOKABLE void showSnapshot(qint64 snapshotId);
 
@@ -72,8 +91,11 @@ signals:
     void speedRunningChanged();
     void emailsChanged();
     void notice(const QString &message, bool isError);
+    // A status, category, tag or to-do changed: the Websites list should refresh.
+    void organizerChanged();
 
 private:
+    void saveOrganizer(std::function<bool(QSqlDatabase &)> change);
     void setProgress(bool analyzing, double progress, const QString &label, int step);
 
     Database &m_database;
@@ -90,6 +112,7 @@ private:
     QVariantList m_snapshots;
     QVariantList m_activity;
     QVariantMap m_speed;
+    QVariantMap m_organizer;
     bool m_analyzing = false;
     double m_progress = 0.0;
     QString m_progressLabel;

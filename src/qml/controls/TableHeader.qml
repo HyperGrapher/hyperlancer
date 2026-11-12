@@ -38,4 +38,31 @@ Item {
         elide: Text.ElideRight
         Layout.alignment: Qt.AlignVCenter
     }
+
+    // A caption that sorts the list when clicked; the active one shows its direction.
+    component SortCaption: Caption {
+        id: sortCaption
+
+        property int sortKey: 0
+        property int activeKey: 0
+        property bool descending: false
+        readonly property bool active: sortKey === activeKey
+
+        signal sortRequested(int key)
+
+        text: baseText + (active ? (descending ? "  ↓" : "  ↑") : "")
+        color: active ? Theme.textPrimary : (sortHover.hovered ? Theme.textSecondary : Theme.textMuted)
+
+        property string baseText: ""
+
+        HoverHandler {
+            id: sortHover
+
+            cursorShape: Qt.PointingHandCursor
+        }
+
+        TapHandler {
+            onTapped: sortCaption.sortRequested(sortCaption.sortKey)
+        }
+    }
 }

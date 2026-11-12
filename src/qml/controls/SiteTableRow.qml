@@ -10,6 +10,10 @@ Item {
     required property var siteId
     required property string siteKey
     required property string faviconUrl
+    required property string status
+    required property string category
+    required property string tags
+    required property int openTodos
     required property string url
     required property string title
     required property string cms
@@ -75,11 +79,24 @@ Item {
 
             Text {
                 width: parent.width
-                text: row.title.length > 0 ? row.title : row.url
+                text: [row.category, row.tags, row.openTodos > 0 ? qsTr("%n to-do(s)", "", row.openTodos) : "",
+                       row.title.length > 0 ? row.title : row.url]
+                      .filter(part => part.length > 0).join("  ·  ")
                 color: Theme.textMuted
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontCaption + 1
                 elide: Text.ElideRight
+            }
+        }
+
+        Item {
+            Layout.preferredWidth: 84
+            Layout.fillHeight: true
+
+            Badge {
+                anchors.verticalCenter: parent.verticalCenter
+                text: Format.leadStatusLabel(row.status)
+                tint: Format.leadStatusColor(row.status)
             }
         }
 

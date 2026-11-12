@@ -7,6 +7,7 @@
 #include "Integrations.h"
 #include "JobRunner.h"
 #include "PageSpeedClient.h"
+#include "SiteOrganizer.h"
 #include "SiteStore.h"
 
 SiteDetail::SiteDetail(Database &database, JobRunner &runner, PageSpeedClient &pageSpeed,
@@ -55,6 +56,7 @@ void SiteDetail::setSiteId(qint64 siteId)
     m_snapshots.clear();
     m_activity.clear();
     m_speed.clear();
+    m_organizer.clear();
     m_emails.clear();
     m_emailsError.clear();
     setProgress(false, 0.0, QString(), 0);
@@ -73,7 +75,12 @@ void SiteDetail::reload()
     m_loading = true;
     emit loadedChanged();
     m_database.run(
-        this, [siteId](QSqlDatabase &db) { return SiteStore::loadDetail(db, siteId); },
+        this,
+        [siteId](QSqlDatabase &db) {
+            QVariantMap detail = SiteStore::loadDetail(db, siteId);
+            detail.insert(QStringLiteral("organizer"), SiteOrganizer::load(db, siteId));
+            return detail;
+        },
         [this, generation](const QVariantMap &detail) {
             if (generation != m_generation) {
                 return;
@@ -85,6 +92,7 @@ void SiteDetail::reload()
             m_snapshots = detail.value(QStringLiteral("snapshots")).toList();
             m_activity = detail.value(QStringLiteral("activity")).toList();
             m_speed = detail.value(QStringLiteral("speed")).toMap();
+            m_organizer = detail.value(QStringLiteral("organizer")).toMap();
             emit loadedChanged();
         });
 }
@@ -154,6 +162,86 @@ void SiteDetail::loadEmails()
     m_emailsLoading = true;
     emit emailsChanged();
     m_gmail.syncSite(m_siteId);
+}
+
+QStringList SiteDetail::statuses() const
+{
+    return SiteOrganizer::statuses();
+}
+
+void SiteDetail::saveOrganizer(std::function<bool(QSqlDatabase &)> change)
+{
+    if (m_siteId <= 0) {
+        return;
+    }
+    m_database.run(
+        this, [change = std::move(change)](QSqlDatabase &db) { return change(db); },
+        [this](bool saved) {
+            if (!saved) {
+                emit notice(tr("Could not save the change."), true);
+            }
+            emit organizerChanged();
+            reload();
+        });
+}
+
+void SiteDetail::setStatus(const QString &status)
+{
+    saveOrganizer([siteId = m_siteId, status](QSqlDatabase &db) {
+        return SiteOrganizer::setStatus(db, siteId, status);
+    });
+}
+
+void SiteDetail::setCategory(const QString &name)
+{
+    saveOrganizer([siteId = m_siteId, name](QSqlDatabase &db) {
+        return SiteOrganizer::setCategory(db, siteId, name);
+    });
+}
+
+void SiteDetail::addTag(const QString &name)
+{
+    saveOrganizer([siteId = m_siteId, name](QSqlDatabase &db) {
+        return SiteOrganizer::addTag(db, siteId, name);
+    });
+}
+
+void SiteDetail::removeTag(qint64 tagId)
+{
+    saveOrganizer([siteId = m_siteId, tagId](QSqlDatabase &db) {
+        return SiteOrganizer::removeTag(db, siteId, tagId);
+    });
+}
+
+void SiteDetail::addNote(const QString &body)
+{
+    saveOrganizer([siteId = m_siteId, body](QSqlDatabase &db) {
+        return SiteOrganizer::addNote(db, siteId, body);
+    });
+}
+
+void SiteDetail::deleteNote(qint64 noteId)
+{
+    saveOrganizer([noteId](QSqlDatabase &db) { return SiteOrganizer::deleteNote(db, noteId); });
+}
+
+void SiteDetail::addTodo(const QString &title, const QString &dueOn)
+{
+    saveOrganizer([siteId = m_siteId, title, dueOn](QSqlDatabase &db) {
+        return SiteOrganizer::addTodo(db, siteId, title, dueOn);
+    });
+}
+
+void SiteDetail::setTodoDone(qint64 todoId, bool done)
+{
+    saveOrganizer([todoId, done](QSqlDatabase &db) {
+        return SiteOrganizer::setTodoDone(db, todoId, done);
+    });
+}
+
+void SiteDetail::deleteTodo(qint64 todoId)
+{
+    saveOrganizer([todoId](QSqlDatabase &db) { return SiteOrganizer::deleteTodo(db, todoId); });
 }
 
 void SiteDetail::showSnapshot(qint64 snapshotId)

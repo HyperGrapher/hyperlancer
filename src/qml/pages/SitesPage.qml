@@ -13,6 +13,20 @@ PageBase {
 
     readonly property bool wide: width > 1020
     readonly property var filterNames: [qsTr("All"), qsTr("Not analyzed"), qsTr("Unreachable"), qsTr("Expiring")]
+    readonly property var statusValues: ["", "new", "contacted", "replied", "client", "rejected"]
+    readonly property var statusNames: [qsTr("Any status"), qsTr("New"), qsTr("Contacted"), qsTr("Replied"), qsTr("Client"), qsTr("Rejected")]
+
+    // Clicking the active column flips the direction; a new column starts ascending, except
+    // "Analyzed", where newest first is the useful order.
+    function sortBy(key) {
+        const sites = app.sites;
+        if (sites.sortKey === key) {
+            sites.sortDescending = !sites.sortDescending;
+        } else {
+            sites.sortKey = key;
+            sites.sortDescending = key === 0;
+        }
+    }
 
     function openSite(siteId) {
         app.siteDetail.siteId = siteId;
@@ -96,7 +110,7 @@ PageBase {
             anchors.top: header.bottom
             anchors.topMargin: Theme.spacingL + 2
             width: parent.width
-            height: Theme.inputHeight
+            height: Theme.inputHeight * 2 + Theme.spacingS
             opacity: page.reveal(1)
             transform: Translate { y: page.revealShift(1) }
 
@@ -106,7 +120,7 @@ PageBase {
                 width: Math.min(340, parent.width * 0.36)
                 glyph: Icons.search
                 clearable: true
-                placeholderText: qsTr("Search domain, title, CMS or host")
+                placeholderText: qsTr("Search domain, title, CMS, host, tag or category")
                 onTextChanged: page.app.sites.search = text
             }
 
@@ -118,6 +132,14 @@ PageBase {
                 options: page.filterNames
                 currentIndex: page.app.sites.filter
                 onActivated: index => page.app.sites.filter = index
+            }
+
+            SegmentedControl {
+                y: Theme.inputHeight + Theme.spacingS
+                implicitHeight: Theme.inputHeight
+                options: page.statusNames
+                currentIndex: Math.max(0, page.statusValues.indexOf(page.app.sites.statusFilter))
+                onActivated: index => page.app.sites.statusFilter = page.statusValues[index]
             }
         }
 
@@ -140,13 +162,14 @@ PageBase {
                 width: parent.width
                 horizontalPadding: Theme.spacingL + 2
 
-                TableHeader.Caption { text: qsTr("Site"); Layout.fillWidth: true; Layout.minimumWidth: 200; Layout.leftMargin: 44 }
-                TableHeader.Caption { text: qsTr("CMS"); Layout.preferredWidth: 110 }
-                TableHeader.Caption { text: qsTr("Hosting"); Layout.preferredWidth: 140; visible: page.wide }
-                TableHeader.Caption { text: qsTr("HTTP"); Layout.preferredWidth: 46 }
-                TableHeader.Caption { text: qsTr("SSL"); Layout.preferredWidth: 64 }
-                TableHeader.Caption { text: qsTr("Domain"); Layout.preferredWidth: 64; visible: page.wide }
-                TableHeader.Caption { text: qsTr("Analyzed"); Layout.preferredWidth: 128 }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Site"); sortKey: 1; Layout.fillWidth: true; Layout.minimumWidth: 200; Layout.leftMargin: 44 }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Status"); sortKey: 2; Layout.preferredWidth: 84 }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("CMS"); sortKey: 3; Layout.preferredWidth: 110 }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Hosting"); sortKey: 4; Layout.preferredWidth: 140; visible: page.wide }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("HTTP"); sortKey: 5; Layout.preferredWidth: 46 }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("SSL"); sortKey: 6; Layout.preferredWidth: 64 }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Domain"); sortKey: 7; Layout.preferredWidth: 64; visible: page.wide }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Analyzed"); sortKey: 0; Layout.preferredWidth: 128 }
                 Item { Layout.preferredWidth: 72 }
             }
 

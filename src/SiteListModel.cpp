@@ -69,6 +69,14 @@ QVariant SiteListModel::data(const QModelIndex &index, int role) const
         return row.domainExpiresOn;
     case FaviconUrlRole:
         return row.faviconUrl;
+    case StatusRole:
+        return row.status;
+    case CategoryRole:
+        return row.category;
+    case TagsRole:
+        return row.tags;
+    case OpenTodosRole:
+        return row.openTodos;
     case SourceRole:
         return row.source;
     case JobStatusRole:
@@ -98,6 +106,10 @@ QHash<int, QByteArray> SiteListModel::roleNames() const
             {DomainExpiresOnRole, "domainExpiresOn"},
             {SourceRole, "source"},
             {FaviconUrlRole, "faviconUrl"},
+            {StatusRole, "status"},
+            {CategoryRole, "category"},
+            {TagsRole, "tags"},
+            {OpenTodosRole, "openTodos"},
             {JobStatusRole, "jobStatus"},
             {ProgressRole, "progress"},
             {ProgressLabelRole, "progressLabel"}};
@@ -125,6 +137,38 @@ void SiteListModel::setFilter(int filter)
     refresh();
 }
 
+void SiteListModel::setStatusFilter(const QString &status)
+{
+    if (m_statusFilter == status) {
+        return;
+    }
+    m_statusFilter = status;
+    emit statusFilterChanged();
+    refresh();
+}
+
+void SiteListModel::setSortKey(int key)
+{
+    const auto value = static_cast<SiteStore::SortKey>(
+        std::clamp(key, 0, static_cast<int>(SiteStore::SortKey::Domain)));
+    if (m_sortKey == value) {
+        return;
+    }
+    m_sortKey = value;
+    emit sortChanged();
+    refresh();
+}
+
+void SiteListModel::setSortDescending(bool descending)
+{
+    if (m_sortDescending == descending) {
+        return;
+    }
+    m_sortDescending = descending;
+    emit sortChanged();
+    refresh();
+}
+
 void SiteListModel::refresh()
 {
     m_refreshDelay.stop();
@@ -132,6 +176,9 @@ void SiteListModel::refresh()
     SiteStore::ListQuery query;
     query.search = m_search;
     query.filter = m_filter;
+    query.status = m_statusFilter;
+    query.sortKey = m_sortKey;
+    query.descending = m_sortDescending;
     m_database.run(
         this, [query](QSqlDatabase &db) { return SiteStore::listSites(db, query); },
         [this, generation](SiteStore::ListResult result) {

@@ -34,6 +34,50 @@ QVariantMap parseJsonObject(const QVariant &value)
     return document.isObject() ? document.object().toVariantMap() : QVariantMap();
 }
 
+// Comma separated tag names of the outer row "s", alphabetical. SQLite has no ordered
+// GROUP_CONCAT, so it sorts in a derived table first.
+QString tagNamesSubquery(const QSqlDatabase &db)
+{
+    if (SqlExec::isMySql(db)) {
+        return QStringLiteral(
+            "(SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ', ') FROM site_tags st JOIN "
+            "tags t ON t.id = st.tag_id WHERE st.site_id = s.id)");
+    }
+    return QStringLiteral(
+        "(SELECT GROUP_CONCAT(name, ', ') FROM (SELECT t.name AS name FROM site_tags st JOIN tags "
+        "t ON t.id = st.tag_id WHERE st.site_id = s.id ORDER BY t.name))");
+}
+
+// ORDER BY expression for the list. Empty values always sort last, whatever the direction.
+QString orderBy(const ListQuery &query)
+{
+    const QString direction = query.descending ? QStringLiteral("DESC") : QStringLiteral("ASC");
+    const auto nullsLast = [&direction](const QString &column) {
+        return QStringLiteral("(%1 IS NULL OR %1 = ''), %1 %2").arg(column, direction);
+    };
+    switch (query.sortKey) {
+    case SortKey::Site:
+        return QStringLiteral("s.site_key %1").arg(direction);
+    case SortKey::Status:
+        return QStringLiteral("(CASE s.status WHEN 'new' THEN 0 WHEN 'contacted' THEN 1 WHEN "
+                              "'replied' THEN 2 WHEN 'client' THEN 3 ELSE 4 END) %1")
+            .arg(direction);
+    case SortKey::Cms:
+        return nullsLast(QStringLiteral("s.cms"));
+    case SortKey::Hosting:
+        return nullsLast(QStringLiteral("s.hosting"));
+    case SortKey::Http:
+        return nullsLast(QStringLiteral("s.http_status"));
+    case SortKey::Ssl:
+        return nullsLast(QStringLiteral("s.tls_valid_until"));
+    case SortKey::Domain:
+        return nullsLast(QStringLiteral("s.domain_expires_on"));
+    case SortKey::Analyzed:
+        break;
+    }
+    return QStringLiteral("COALESCE(s.last_fetched_at, s.created_at) %1").arg(direction);
+}
+
 QString likePattern(const QString &search)
 {
     QString escaped = search.trimmed().toLower();
@@ -87,9 +131,16 @@ ListResult listSites(QSqlDatabase &db, const ListQuery &listQuery)
         where += QStringLiteral(
             " AND (LOWER(s.site_key) LIKE ? ESCAPE '\\' OR LOWER(COALESCE(s.title, '')) LIKE ? "
             "ESCAPE '\\' OR LOWER(COALESCE(s.cms, '')) LIKE ? ESCAPE '\\' OR "
-            "LOWER(COALESCE(s.hosting, '')) LIKE ? ESCAPE '\\')");
+            "LOWER(COALESCE(s.hosting, '')) LIKE ? ESCAPE '\\' OR EXISTS (SELECT 1 FROM "
+            "categories c WHERE c.id = s.category_id AND LOWER(c.name) LIKE ? ESCAPE '\\') OR "
+            "EXISTS (SELECT 1 FROM site_tags st JOIN tags t ON t.id = st.tag_id WHERE "
+            "st.site_id = s.id AND LOWER(t.name) LIKE ? ESCAPE '\\'))");
         const QString pattern = likePattern(listQuery.search);
-        binds << pattern << pattern << pattern << pattern;
+        binds << pattern << pattern << pattern << pattern << pattern << pattern;
+    }
+    if (!listQuery.status.isEmpty()) {
+        where += QStringLiteral(" AND s.status = ?");
+        binds << listQuery.status;
     }
     switch (listQuery.filter) {
     case Filter::All:
@@ -116,14 +167,19 @@ ListResult listSites(QSqlDatabase &db, const ListQuery &listQuery)
             "SELECT s.id, s.site_key, s.url, s.title, s.cms, s.hosting, s.email_provider, "
             "s.http_status, "
             "s.last_fetch_outcome, s.last_fetched_at, s.tls_valid_until, s.domain_expires_on, "
-            "s.source, s.favicon_url, "
+            "s.source, s.favicon_url, s.status, "
+            "(SELECT c.name FROM categories c WHERE c.id = s.category_id), "
+            "%3, "
+            "(SELECT COUNT(*) FROM todos td WHERE td.site_id = s.id AND td.done_at IS NULL), "
             "(SELECT j.status FROM jobs j WHERE j.site_id = s.id AND j.status IN "
             "('queued','running') "
             " ORDER BY j.id DESC LIMIT 1) AS active_job "
             "FROM sites s WHERE %1 "
-            "ORDER BY COALESCE(s.last_fetched_at, s.created_at) DESC, s.id DESC LIMIT %2")
+            "ORDER BY %4, s.id DESC LIMIT %2")
             .arg(where)
-            .arg(listQuery.limit);
+            .arg(listQuery.limit)
+            .arg(tagNamesSubquery(db))
+            .arg(orderBy(listQuery));
     QSqlQuery query(db);
     query.setForwardOnly(true);
     if (!query.prepare(sql)) {
@@ -154,7 +210,11 @@ ListResult listSites(QSqlDatabase &db, const ListQuery &listQuery)
         row.domainExpiresOn = query.value(11).toString();
         row.source = query.value(12).toString();
         row.faviconUrl = query.value(13).toString();
-        row.activeJobStatus = query.value(14).toString();
+        row.status = query.value(14).toString();
+        row.category = query.value(15).toString();
+        row.tags = query.value(16).toString();
+        row.openTodos = query.value(17).toInt();
+        row.activeJobStatus = query.value(18).toString();
         result.rows.push_back(row);
     }
 

@@ -63,6 +63,12 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - Emails tab: click a row to read the body (fetched from Gmail on demand, never stored); icon button opens the thread in Gmail, in the Chrome profile named in Settings → Connections (`ChromeProfile`, reads Chrome's `Local State`; falls back to the default browser).
 - Not built here (Qt 6.11 missing in this environment): only `GmailQuery::bodyText` was compiled and tested.
 
+### Organize round (migration 0002)
+- Per site: lead **status** (new, contacted, replied, client, rejected), one **category**, **tags**, **notes**, **to-dos** (optional due date). Tables `categories`, `tags`, `site_tags`, `notes`, `todos`, columns `sites.status` and `sites.category_id`. Code: `SiteOrganizer` (store functions) and `SiteDetail` (invokables; every change reloads the detail and refreshes the list). New detail tab **Workspace** (`SiteWorkspace.qml`).
+- Websites list: Status column, category/tags/open to-dos in the second line, status filter row, click a column header to sort (Site, Status, CMS, Hosting, HTTP, SSL, Domain, Analyzed; empty values always last). Search also matches tags and categories.
+- Tested on SQLite with Qt 6.4 (`tst_siteorganizer`: 7 pass). Not run: MySQL migration 0002, the QML (Qt 6.11 missing here).
+- Still open from §5: saved views, snapshot diff, bulk actions, a global to-do list.
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

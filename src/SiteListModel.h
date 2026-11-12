@@ -22,6 +22,9 @@ class SiteListModel : public QAbstractListModel
 
     Q_PROPERTY(QString search READ search WRITE setSearch NOTIFY searchChanged)
     Q_PROPERTY(int filter READ filter WRITE setFilter NOTIFY filterChanged)
+    Q_PROPERTY(QString statusFilter READ statusFilter WRITE setStatusFilter NOTIFY statusFilterChanged)
+    Q_PROPERTY(int sortKey READ sortKey WRITE setSortKey NOTIFY sortChanged)
+    Q_PROPERTY(bool sortDescending READ sortDescending WRITE setSortDescending NOTIFY sortChanged)
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
     Q_PROPERTY(int total READ total NOTIFY countChanged)
     Q_PROPERTY(bool loaded READ isLoaded NOTIFY countChanged)
@@ -43,6 +46,10 @@ public:
         DomainExpiresOnRole,
         SourceRole,
         FaviconUrlRole,
+        StatusRole,
+        CategoryRole,
+        TagsRole,
+        OpenTodosRole,
         JobStatusRole,
         ProgressRole,
         ProgressLabelRole
@@ -58,6 +65,12 @@ public:
     void setSearch(const QString &search);
     [[nodiscard]] int filter() const { return static_cast<int>(m_filter); }
     void setFilter(int filter);
+    [[nodiscard]] QString statusFilter() const { return m_statusFilter; }
+    void setStatusFilter(const QString &status);
+    [[nodiscard]] int sortKey() const { return static_cast<int>(m_sortKey); }
+    void setSortKey(int key);
+    [[nodiscard]] bool sortDescending() const { return m_sortDescending; }
+    void setSortDescending(bool descending);
     [[nodiscard]] int total() const { return m_total; }
     [[nodiscard]] bool isLoaded() const { return m_loaded; }
 
@@ -68,6 +81,8 @@ public:
 signals:
     void searchChanged();
     void filterChanged();
+    void statusFilterChanged();
+    void sortChanged();
     void countChanged();
 
 private:
@@ -85,6 +100,9 @@ private:
     QHash<qint64, Progress> m_progress; // live progress of running analyses, by site
     QString m_search;
     SiteStore::Filter m_filter = SiteStore::Filter::All;
+    QString m_statusFilter;
+    SiteStore::SortKey m_sortKey = SiteStore::SortKey::Analyzed;
+    bool m_sortDescending = true;
     int m_total = 0;
     bool m_loaded = false;
     int m_generation = 0; // drops results of superseded queries

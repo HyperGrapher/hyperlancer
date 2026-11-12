@@ -337,11 +337,11 @@ Item {
 
         anchors.top: facts.bottom
         anchors.topMargin: Theme.spacingL
-        options: [qsTr("Profile"), qsTr("Emails"), qsTr("History"), qsTr("Activity")]
+        options: [qsTr("Profile"), qsTr("Workspace"), qsTr("Emails"), qsTr("History"), qsTr("Activity")]
         currentIndex: view.currentTab
         onActivated: index => {
             view.currentTab = index;
-            if (index === 1)
+            if (index === 2)
                 view.detail.loadEmails();
         }
     }
@@ -387,20 +387,26 @@ Item {
                                         : qsTr("Run an analysis to see hosting, technology, SEO, security and contact details.")
         }
 
-        SiteEmails {
+        SiteWorkspace {
             anchors.fill: parent
             visible: view.currentTab === 1
             app: view.app
         }
 
-        HistoryList {
+        SiteEmails {
             anchors.fill: parent
             visible: view.currentTab === 2
+            app: view.app
+        }
+
+        HistoryList {
+            anchors.fill: parent
+            visible: view.currentTab === 3
         }
 
         ActivityList {
             anchors.fill: parent
-            visible: view.currentTab === 3
+            visible: view.currentTab === 4
         }
     }
 

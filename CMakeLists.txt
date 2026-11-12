@@ -40,6 +40,7 @@ set(HYPERLANCER_CORE_SOURCES
     src/LangSearchClient.h src/LangSearchClient.cpp
     src/GmailQuery.h src/GmailQuery.cpp
     src/ChromeProfile.h src/ChromeProfile.cpp
+    src/SiteOrganizer.h src/SiteOrganizer.cpp
     src/PageSpeedClient.h src/PageSpeedClient.cpp
 )
 
@@ -63,7 +64,9 @@ qt_add_resources(HyperlancerCore "hyperlancer_data"
     FILES
         resources/data/public_suffix_list.dat
         resources/migrations/sqlite/0001_init.sql
+        resources/migrations/sqlite/0002_organize.sql
         resources/migrations/mysql/0001_init.sql
+        resources/migrations/mysql/0002_organize.sql
 )
 
 set(HYPERLANCER_APP_SOURCES
@@ -115,6 +118,7 @@ set(HYPERLANCER_QML_FILES
     src/qml/pages/SiteDetailView.qml
     src/qml/pages/ProfileSections.qml
     src/qml/pages/SiteEmails.qml
+    src/qml/pages/SiteWorkspace.qml
     src/qml/pages/DiscoverPage.qml
     src/qml/pages/JobsPage.qml
     src/qml/pages/SettingsPage.qml

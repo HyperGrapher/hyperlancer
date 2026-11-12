@@ -3,6 +3,27 @@ import QtQuick
 
 // Text formatting shared by every page: relative times, dates, days left, numbers.
 QtObject {
+    function leadStatusLabel(status) {
+        switch (status) {
+        case "new": return qsTr("New");
+        case "contacted": return qsTr("Contacted");
+        case "replied": return qsTr("Replied");
+        case "client": return qsTr("Client");
+        case "rejected": return qsTr("Rejected");
+        default: return status;
+        }
+    }
+
+    function leadStatusColor(status) {
+        switch (status) {
+        case "contacted": return Theme.info;
+        case "replied": return Theme.warning;
+        case "client": return Theme.success;
+        case "rejected": return Theme.danger;
+        default: return Theme.textMuted;
+        }
+    }
+
     function relativeTime(iso) {
         if (!iso)
             return "";

@@ -39,6 +39,10 @@ struct SiteRow
     QString domainExpiresOn;
     QString source;
     QString faviconUrl;
+    QString status;   // lead status, see SiteOrganizer::statuses()
+    QString category;
+    QString tags;     // comma separated names
+    int openTodos = 0;
     QString activeJobStatus; // "queued" or "running" while a profile job is pending
 
     friend bool operator==(const SiteRow &, const SiteRow &) = default;
@@ -52,10 +56,25 @@ enum class Filter
     Expiring
 };
 
+enum class SortKey
+{
+    Analyzed,
+    Site,
+    Status,
+    Cms,
+    Hosting,
+    Http,
+    Ssl,
+    Domain
+};
+
 struct ListQuery
 {
     QString search;
     Filter filter = Filter::All;
+    QString status; // empty: every status
+    SortKey sortKey = SortKey::Analyzed;
+    bool descending = true;
     int limit = 5000;
 };
 

@@ -39,6 +39,7 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     connect(&m_runner, &JobRunner::notice, this, &AppContext::notice);
     connect(&m_gmail, &GmailService::notice, this, &AppContext::notice);
     connect(&m_siteDetail, &SiteDetail::notice, this, &AppContext::notice);
+    connect(&m_siteDetail, &SiteDetail::organizerChanged, &m_sites, &SiteListModel::refreshSoon);
     connect(&m_discovery, &Discovery::notice, this, &AppContext::notice);
     connect(&m_integrations, &Integrations::restartRequested, this, &AppContext::restart);
 }
