@@ -126,6 +126,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Ship only the SQL drivers the app uses. The others need client libraries (Oracle,
+          # DB2, ...) that are not installed, and linuxdeploy fails on missing dependencies.
+          sudo apt-get install -y --no-install-recommends libmysqlclient21
+          find "$QT_ROOT_DIR/plugins/sqldrivers" -name 'libqsql*.so' \
+            ! -name 'libqsqlite.so' ! -name 'libqsqlmysql.so' -delete
           mkdir -p AppDir/usr/bin dist
           cp build/Hyperlancer AppDir/usr/bin/
           curl -L --fail --retry 3 -o linuxdeploy.AppImage \
