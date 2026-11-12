@@ -9,6 +9,7 @@ struct AppPaths
     QString dataDir;
     QString jobsDir;
     QString logsDir;
+    QString screenshotsDir;
     QString sqlitePath;
 
     // Builds the layout under dataDir and creates the folders that are missing.
@@ -17,5 +18,7 @@ struct AppPaths
     [[nodiscard]] static QString defaultDataDir();
 
     [[nodiscard]] QString jobDir(qint64 jobId) const;
+    // A path stored in the database (relative to dataDir) as an absolute path.
+    [[nodiscard]] QString absolutePath(const QString &relativePath) const;
     [[nodiscard]] bool isWritable() const;
 };

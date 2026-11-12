@@ -79,6 +79,12 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - **Tray:** `TrayIcon` (Qt Widgets; the app now runs on `QApplication`). Closing the window hides it; the tray menu has Show and Quit (Quit asks first when analyses run). Without a system tray the window closes normally. There is no icon file yet: the icon is drawn in code.
 - Verified on Linux with Qt 6.11.3 (installed here with `aqt install-qt linux desktop 6.11.3 linux_gcc_64 -m qtshadertools qtwebsockets qtnetworkauth qttasktree -O /opt/Qt`, plus the xcb libraries from ci.yml): full build, `ctest` 9 of 9, and the tour. The tour now also covers Emails, a sample website with its Workspace tab, the calendar popup, the tag dropdown and a Markdown note (`08`–`11` screenshots). Not verified: the tray and notifications (no tray under Xvfb), a real Gmail inbox, MySQL migration 0003, Windows.
 
+### Speed and screenshots (migration 0004)
+- The site's speed button now runs PageSpeed Insights twice (mobile and desktop, two API units). Both scores show as rings in the facts strip; the Performance section lists both. Mobile still feeds `sites.mobile_score`.
+- Each call returns Lighthouse's `final-screenshot` (a JPEG). It is saved in `<data>/screenshots/<site id>/<kind>-<ms>.jpg` and recorded in the new `screenshots` table (relative path). Only the newest of each kind is kept; deleting a website removes its folder. New **Screenshots** tab on the website detail page.
+- Tests: `tst_langsearch` (screenshot parsing), `tst_siteorganizer` (storage, per-strategy scores). Tour step `09e`.
+- The full-page screenshot audit exists in the same response but was left out (large); a later Playwright `site_render` job (PRD M3) will give real 1440×900 and 390×844 captures.
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

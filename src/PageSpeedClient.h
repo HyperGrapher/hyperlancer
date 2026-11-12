@@ -9,7 +9,8 @@
 
 class QNetworkAccessManager;
 
-// PageSpeed Insights API v5 (runPagespeed), mobile strategy, performance category.
+// PageSpeed Insights API v5 (runPagespeed), performance category, one call per strategy
+// (mobile or desktop). Each result carries the Lighthouse final screenshot (a JPEG).
 // Authenticated with an API key when one is saved; without a key Google allows anonymous
 // calls on a small shared quota. An OAuth client secret or the Gmail sign-in token is not a
 // substitute for the key.
@@ -21,6 +22,7 @@ struct Result
     QVariantMap
         metrics; // firstContentfulPaint, largestContentfulPaint, ... (display strings and ms)
     QString finalUrl;
+    QByteArray screenshot; // JPEG of the page as Lighthouse saw it; empty when absent
     QString error;
     int httpStatus = 0;
 };
@@ -42,7 +44,8 @@ public:
     explicit PageSpeedClient(QNetworkAccessManager &network, QObject *parent = nullptr);
 
     // apiKey may be empty (anonymous call). done runs on this object's thread.
-    void run(const QString &url, const QString &apiKey,
+    // strategy is "mobile" or "desktop".
+    void run(const QString &url, const QString &apiKey, const QString &strategy,
              std::function<void(PageSpeed::Result)> done);
 
 private:

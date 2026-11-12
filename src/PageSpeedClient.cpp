@@ -127,6 +127,17 @@ Result parseResponse(int httpStatus, const QByteArray &body, bool usedKey)
         result.score = static_cast<int>(std::lround(score.toDouble() * 100.0));
     }
     const QJsonObject audits = lighthouse.value(QStringLiteral("audits")).toObject();
+    // details.data is a data URI: "data:image/jpeg;base64,...".
+    const QString shot = audits.value(QStringLiteral("final-screenshot"))
+                             .toObject()
+                             .value(QStringLiteral("details"))
+                             .toObject()
+                             .value(QStringLiteral("data"))
+                             .toString();
+    const int comma = shot.indexOf(QLatin1Char(','));
+    if (shot.startsWith(QStringLiteral("data:image/")) && comma > 0) {
+        result.screenshot = QByteArray::fromBase64(shot.mid(comma + 1).toLatin1());
+    }
     const QList<std::pair<QString, QString>> wanted{
         {QStringLiteral("first-contentful-paint"), QStringLiteral("firstContentfulPaint")},
         {QStringLiteral("largest-contentful-paint"), QStringLiteral("largestContentfulPaint")},
@@ -160,13 +171,13 @@ PageSpeedClient::PageSpeedClient(QNetworkAccessManager &network, QObject *parent
     , m_network(network)
 {}
 
-void PageSpeedClient::run(const QString &url, const QString &apiKey,
+void PageSpeedClient::run(const QString &url, const QString &apiKey, const QString &strategy,
                           std::function<void(PageSpeed::Result)> done)
 {
     QUrl endpoint(QStringLiteral("https://www.googleapis.com/pagespeedonline/v5/runPagespeed"));
     QUrlQuery query;
     query.addQueryItem(QStringLiteral("url"), url);
-    query.addQueryItem(QStringLiteral("strategy"), QStringLiteral("mobile"));
+    query.addQueryItem(QStringLiteral("strategy"), strategy);
     query.addQueryItem(QStringLiteral("category"), QStringLiteral("performance"));
     const bool usedKey = !apiKey.isEmpty();
     if (usedKey) {

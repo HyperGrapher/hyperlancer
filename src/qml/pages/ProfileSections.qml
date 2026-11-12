@@ -9,6 +9,7 @@ Flickable {
 
     property var summary: ({})
     property var speed: ({})
+    property var speedDesktop: ({})
 
     signal copyRequested(string text)
     signal linkRequested(string url)
@@ -330,8 +331,14 @@ Flickable {
             Fact { label: qsTr("Compression"); value: Format.orDash(sections.http.compression) }
             Fact { label: qsTr("HTTP version"); value: Format.orDash(sections.http.httpVersion) }
             Fact {
+                label: qsTr("Desktop score")
+                value: sections.speedDesktop.score !== undefined && sections.speedDesktop.score !== null ? sections.speedDesktop.score + " / 100" : qsTr("Not measured")
+                valueColor: sections.speedDesktop.score === undefined || sections.speedDesktop.score === null ? Theme.textMuted
+                            : sections.speedDesktop.score < 50 ? Theme.danger : sections.speedDesktop.score < 90 ? Theme.warning : Theme.success
+            }
+            Fact {
                 label: qsTr("Mobile score")
-                value: sections.speed.score !== undefined && sections.speed.score !== null ? sections.speed.score + " / 100" : qsTr("Not measured — use Mobile speed")
+                value: sections.speed.score !== undefined && sections.speed.score !== null ? sections.speed.score + " / 100" : qsTr("Not measured — use the speed button")
                 valueColor: sections.speed.score === undefined || sections.speed.score === null ? Theme.textMuted
                             : sections.speed.score < 50 ? Theme.danger : sections.speed.score < 90 ? Theme.warning : Theme.success
             }

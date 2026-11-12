@@ -31,6 +31,9 @@ class SiteDetail : public QObject
     Q_PROPERTY(QVariantList snapshots READ snapshots NOTIFY loadedChanged)
     Q_PROPERTY(QVariantList activity READ activity NOTIFY loadedChanged)
     Q_PROPERTY(QVariantMap speed READ speed NOTIFY loadedChanged)
+    Q_PROPERTY(QVariantMap speedDesktop READ speedDesktop NOTIFY loadedChanged)
+    // "mobile" and "desktop": { url (file URL), createdAt } of the newest screenshot.
+    Q_PROPERTY(QVariantMap screenshots READ screenshots NOTIFY loadedChanged)
     Q_PROPERTY(QVariantMap organizer READ organizer NOTIFY loadedChanged)
     Q_PROPERTY(QStringList statuses READ statuses CONSTANT)
     Q_PROPERTY(bool analyzing READ isAnalyzing NOTIFY progressChanged)
@@ -44,7 +47,8 @@ class SiteDetail : public QObject
 
 public:
     SiteDetail(Database &database, JobRunner &runner, PageSpeedClient &pageSpeed,
-               Integrations &integrations, GmailService &gmail, QObject *parent = nullptr);
+               Integrations &integrations, GmailService &gmail, QString dataDir,
+               QObject *parent = nullptr);
 
     [[nodiscard]] qint64 siteId() const { return m_siteId; }
     void setSiteId(qint64 siteId);
@@ -55,6 +59,8 @@ public:
     [[nodiscard]] QVariantList snapshots() const { return m_snapshots; }
     [[nodiscard]] QVariantList activity() const { return m_activity; }
     [[nodiscard]] QVariantMap speed() const { return m_speed; }
+    [[nodiscard]] QVariantMap speedDesktop() const { return m_speedDesktop; }
+    [[nodiscard]] QVariantMap screenshots() const { return m_screenshots; }
     [[nodiscard]] QVariantMap organizer() const { return m_organizer; }
     [[nodiscard]] QStringList statuses() const;
     [[nodiscard]] bool isAnalyzing() const { return m_analyzing; }
@@ -68,6 +74,7 @@ public:
 
     Q_INVOKABLE void reload();
     Q_INVOKABLE void analyze();
+    // Runs PageSpeed Insights for mobile and desktop: two scores and two screenshots.
     Q_INVOKABLE void checkSpeed();
     Q_INVOKABLE void loadEmails();
 
@@ -113,6 +120,9 @@ private:
     QVariantList m_snapshots;
     QVariantList m_activity;
     QVariantMap m_speed;
+    QVariantMap m_speedDesktop;
+    QVariantMap m_screenshots;
+    QString m_dataDir;
     QVariantMap m_organizer;
     bool m_analyzing = false;
     double m_progress = 0.0;

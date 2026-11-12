@@ -139,7 +139,7 @@ Item {
                 implicitWidth: 40
                 implicitHeight: 40
                 glyph: Icons.deviceMobile
-                hint: view.detail.speedRunning ? qsTr("Measuring…") : qsTr("Check mobile speed")
+                hint: view.detail.speedRunning ? qsTr("Measuring…") : qsTr("Check speed (mobile and desktop)")
                 enabled: !view.detail.speedRunning
                 onClicked: view.detail.checkSpeed()
             }
@@ -293,49 +293,45 @@ Item {
             detail: Format.orDash(view.site.registrar)
         }
 
+        // Mobile and desktop PageSpeed scores side by side.
         GlassCard {
-            Layout.preferredWidth: 168
+            Layout.preferredWidth: 212
             Layout.fillHeight: true
             interactive: false
 
-            ProgressRing {
-                id: scoreRing
+            Row {
+                anchors.centerIn: parent
+                spacing: Theme.spacingL
 
-                x: Theme.spacingM
-                anchors.verticalCenter: parent.verticalCenter
-                width: 56
-                height: 56
-                thickness: 6
-                value: view.speed.score !== undefined && view.speed.score !== null ? view.speed.score / 100 : 0
-                label: view.speed.score !== undefined && view.speed.score !== null ? String(view.speed.score) : "—"
-            }
+                Repeater {
+                    model: [{ label: qsTr("Mobile"), speed: view.speed }, { label: qsTr("Desktop"), speed: view.detail.speedDesktop }]
 
-            Column {
-                anchors.left: scoreRing.right
-                anchors.leftMargin: Theme.spacingM
-                anchors.right: parent.right
-                anchors.rightMargin: Theme.spacingS
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
+                    delegate: Column {
+                        id: scoreColumn
 
-                Text {
-                    text: qsTr("Mobile score")
-                    color: Theme.textMuted
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontCaption + 1
-                }
+                        required property var modelData
+                        readonly property bool hasScore: modelData.speed.score !== undefined && modelData.speed.score !== null
+                        readonly property bool failed: !!modelData.speed.error && !hasScore
 
-                Text {
-                    width: parent.width
-                    readonly property bool failed: !!view.speed.error && (view.speed.score === undefined || view.speed.score === null)
+                        spacing: 4
 
-                    text: view.detail.speedRunning ? qsTr("measuring…")
-                          : failed ? qsTr("check failed")
-                          : view.speed.fetchedAt ? Format.relativeTime(view.speed.fetchedAt) : qsTr("not measured")
-                    color: failed && !view.detail.speedRunning ? Theme.warning : Theme.textSecondary
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontCaption + 1
-                    elide: Text.ElideRight
+                        ProgressRing {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: 52
+                            height: 52
+                            thickness: 6
+                            value: scoreColumn.hasScore ? scoreColumn.modelData.speed.score / 100 : 0
+                            label: scoreColumn.hasScore ? String(scoreColumn.modelData.speed.score) : "—"
+                        }
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: view.detail.speedRunning ? qsTr("measuring…") : scoreColumn.failed ? qsTr("failed") : scoreColumn.modelData.label
+                            color: scoreColumn.failed && !view.detail.speedRunning ? Theme.warning : Theme.textMuted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontCaption + 1
+                        }
+                    }
                 }
             }
         }
@@ -346,7 +342,7 @@ Item {
 
         anchors.top: facts.bottom
         anchors.topMargin: Theme.spacingL
-        options: [qsTr("Profile"), qsTr("Workspace"), qsTr("Emails"), qsTr("History"), qsTr("Activity")]
+        options: [qsTr("Profile"), qsTr("Workspace"), qsTr("Emails"), qsTr("History"), qsTr("Activity"), qsTr("Screenshots")]
         currentIndex: view.currentTab
         onActivated: index => {
             view.currentTab = index;
@@ -379,6 +375,7 @@ Item {
             visible: view.currentTab === 0 && view.hasProfile
             summary: view.summary
             speed: view.speed
+            speedDesktop: view.detail.speedDesktop
             onCopyRequested: text => {
                 view.app.copyText(text);
                 toastHint.show();
@@ -413,6 +410,14 @@ Item {
         HistoryList {
             anchors.fill: parent
             visible: view.currentTab === 3
+        }
+
+        SiteScreenshots {
+            anchors.fill: parent
+            visible: view.currentTab === 5
+            screenshots: view.detail.screenshots
+            running: view.detail.speedRunning
+            onCheckRequested: view.detail.checkSpeed()
         }
 
         ActivityList {

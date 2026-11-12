@@ -1,8 +1,12 @@
 #include "SiteStore.h"
 
 #include <QDate>
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSaveFile>
 #include <QSqlRecord>
 
 #include "DbTime.h"
@@ -278,18 +282,35 @@ QVariantMap loadDetail(QSqlDatabase &db, qint64 siteId)
     }
     detail.insert(QStringLiteral("activity"), activity);
 
-    QSqlQuery speed = SqlExec::run(
-        db,
-        QStringLiteral("SELECT score, metrics_json, error, fetched_at FROM speed_checks WHERE "
-                       "site_id = ? ORDER BY fetched_at DESC, id DESC LIMIT 1"),
-        {siteId});
-    if (speed.next()) {
-        detail.insert(QStringLiteral("speed"),
-                      QVariantMap{{QStringLiteral("score"), speed.value(0)},
-                                  {QStringLiteral("metrics"), parseJsonObject(speed.value(1))},
-                                  {QStringLiteral("error"), speed.value(2)},
-                                  {QStringLiteral("fetchedAt"), DbTime::toIso(speed.value(3))}});
+    for (const QString &strategy : {QStringLiteral("mobile"), QStringLiteral("desktop")}) {
+        QSqlQuery speed = SqlExec::run(
+            db,
+            QStringLiteral("SELECT score, metrics_json, error, fetched_at FROM speed_checks WHERE "
+                           "site_id = ? AND strategy = ? ORDER BY fetched_at DESC, id DESC LIMIT 1"),
+            {siteId, strategy});
+        if (speed.next()) {
+            detail.insert(strategy == QStringLiteral("mobile") ? QStringLiteral("speed")
+                                                               : QStringLiteral("speedDesktop"),
+                          QVariantMap{{QStringLiteral("score"), speed.value(0)},
+                                      {QStringLiteral("metrics"), parseJsonObject(speed.value(1))},
+                                      {QStringLiteral("error"), speed.value(2)},
+                                      {QStringLiteral("fetchedAt"), DbTime::toIso(speed.value(3))}});
+        }
     }
+
+    // Newest screenshot of each kind, as paths relative to the data folder.
+    QVariantMap screenshots;
+    QSqlQuery shots = SqlExec::run(
+        db,
+        QStringLiteral("SELECT kind, path, created_at FROM screenshots WHERE site_id = ? ORDER BY "
+                       "id"),
+        {siteId});
+    while (shots.next()) {
+        screenshots.insert(shots.value(0).toString(),
+                           QVariantMap{{QStringLiteral("path"), shots.value(1)},
+                                       {QStringLiteral("createdAt"), DbTime::toIso(shots.value(2))}});
+    }
+    detail.insert(QStringLiteral("screenshots"), screenshots);
     return detail;
 }
 
@@ -377,8 +398,8 @@ bool setPreviewUrl(QSqlDatabase &db, qint64 siteId, const QString &url)
     return error.isEmpty();
 }
 
-void saveSpeedCheck(QSqlDatabase &db, qint64 siteId, int score, const QVariantMap &metrics,
-                    const QString &error)
+void saveSpeedCheck(QSqlDatabase &db, qint64 siteId, const QString &strategy, int score,
+                    const QVariantMap &metrics, const QString &error)
 {
     const QVariant scoreValue = score >= 0 ? QVariant(score) : SqlExec::nullInt();
     const QString metricsJson = QString::fromUtf8(
@@ -386,18 +407,56 @@ void saveSpeedCheck(QSqlDatabase &db, qint64 siteId, int score, const QVariantMa
     const QString now = DbTime::now();
     SqlExec::run(db,
                  QStringLiteral("INSERT INTO speed_checks (site_id, strategy, score, metrics_json, "
-                                "error, fetched_at) VALUES (?, 'mobile', ?, ?, ?, ?)"),
-                 {siteId, scoreValue, metricsJson, SqlExec::textOrNull(error), now});
+                                "error, fetched_at) VALUES (?, ?, ?, ?, ?, ?)"),
+                 {siteId, strategy, scoreValue, metricsJson, SqlExec::textOrNull(error), now});
+    const bool isMobile = strategy == QStringLiteral("mobile");
     if (score >= 0) {
-        SqlExec::run(
-            db, QStringLiteral("UPDATE sites SET mobile_score = ?, updated_at = ? WHERE id = ?"),
-            {score, now, siteId});
+        if (isMobile) {
+            SqlExec::run(db,
+                         QStringLiteral("UPDATE sites SET mobile_score = ?, updated_at = ? WHERE id = ?"),
+                         {score, now, siteId});
+        }
         logActivity(db, siteId, QStringLiteral("speed.checked"),
-                    QObject::tr("Mobile performance score %1").arg(score));
+                    (isMobile ? QObject::tr("Mobile performance score %1")
+                              : QObject::tr("Desktop performance score %1"))
+                        .arg(score));
     } else {
         logActivity(db, siteId, QStringLiteral("speed.failed"),
-                    QObject::tr("Speed check failed: %1").arg(error.left(300)));
+                    QObject::tr("Speed check (%1) failed: %2").arg(strategy, error.left(300)));
     }
+}
+
+bool saveScreenshot(QSqlDatabase &db, const QString &dataDir, qint64 siteId, const QString &kind,
+                    const QByteArray &jpeg)
+{
+    if (jpeg.isEmpty()) {
+        return false;
+    }
+    const QString folder = QStringLiteral("screenshots/%1").arg(siteId);
+    const QString relativePath =
+        QStringLiteral("%1/%2-%3.jpg").arg(folder, kind).arg(QDateTime::currentMSecsSinceEpoch());
+    const QDir root(dataDir);
+    root.mkpath(folder);
+    QSaveFile file(root.filePath(relativePath));
+    if (!file.open(QIODevice::WriteOnly) || file.write(jpeg) != jpeg.size() || !file.commit()) {
+        qWarning("Could not write screenshot %s", qPrintable(relativePath));
+        return false;
+    }
+    // Keep only the newest screenshot of each kind.
+    QSqlQuery old = SqlExec::run(
+        db, QStringLiteral("SELECT id, path FROM screenshots WHERE site_id = ? AND kind = ?"),
+        {siteId, kind});
+    while (old.next()) {
+        QFile::remove(root.filePath(old.value(1).toString()));
+    }
+    SqlExec::run(db, QStringLiteral("DELETE FROM screenshots WHERE site_id = ? AND kind = ?"),
+                 {siteId, kind});
+    QString error;
+    SqlExec::run(db,
+                 QStringLiteral("INSERT INTO screenshots (site_id, kind, source, path, created_at) "
+                                "VALUES (?, ?, 'pagespeed', ?, ?)"),
+                 {siteId, kind, relativePath, DbTime::now()}, &error);
+    return error.isEmpty();
 }
 
 QVariantMap dashboard(QSqlDatabase &db)

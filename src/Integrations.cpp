@@ -168,7 +168,7 @@ void Integrations::removePageSpeedKey()
 
 void Integrations::testPageSpeed()
 {
-    m_pageSpeed.run(QStringLiteral("https://example.com/"), pageSpeedKey(),
+    m_pageSpeed.run(QStringLiteral("https://example.com/"), pageSpeedKey(), QStringLiteral("mobile"),
                     [this](const PageSpeed::Result &result) {
                         if (result.error.isEmpty()) {
                             emit testFinished(

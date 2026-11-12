@@ -1,3 +1,5 @@
+#include <QDir>
+#include <QFile>
 #include <QSqlQuery>
 #include <QTest>
 
@@ -21,6 +23,8 @@ private slots:
     void deadlineAndNoteTitle();
     void categoryFilter();
     void mailMovesStatusForwardOnly();
+    void screenshotsKeepTheNewestPerKind();
+    void speedChecksAreKeptPerStrategy();
     void deletingSiteRemovesItsRecords();
 
 private:
@@ -237,6 +241,37 @@ void SiteOrganizerTest::mailMovesStatusForwardOnly()
     QVERIFY(SiteOrganizer::setStatus(db, site, QStringLiteral("client")));
     QVERIFY(!SiteOrganizer::applyMailStatus(db, site)); // never moves back from client
     QCOMPARE(status(), QStringLiteral("client"));
+}
+
+void SiteOrganizerTest::screenshotsKeepTheNewestPerKind()
+{
+    QSqlDatabase db = m_database->db();
+    const qint64 site = addSite(QStringLiteral("firma.com.tr"));
+    QVERIFY(SiteStore::saveScreenshot(db, m_database->dir(), site, QStringLiteral("mobile"), "one"));
+    QVERIFY(SiteStore::saveScreenshot(db, m_database->dir(), site, QStringLiteral("desktop"), "two"));
+    QTest::qWait(3); // file names carry a millisecond stamp
+    QVERIFY(SiteStore::saveScreenshot(db, m_database->dir(), site, QStringLiteral("mobile"), "three"));
+    QVERIFY(!SiteStore::saveScreenshot(db, m_database->dir(), site, QStringLiteral("mobile"), QByteArray()));
+
+    const QVariantMap shots = SiteStore::loadDetail(db, site).value(QStringLiteral("screenshots")).toMap();
+    QCOMPARE(shots.size(), 2);
+    QFile mobile(QDir(m_database->dir()).filePath(shots.value(QStringLiteral("mobile")).toMap().value(QStringLiteral("path")).toString()));
+    QVERIFY(mobile.open(QIODevice::ReadOnly));
+    QCOMPARE(mobile.readAll(), QByteArray("three"));
+    QCOMPARE(QDir(QDir(m_database->dir()).filePath(QStringLiteral("screenshots/%1").arg(site))).entryList(QDir::Files).size(), 2);
+}
+
+void SiteOrganizerTest::speedChecksAreKeptPerStrategy()
+{
+    QSqlDatabase db = m_database->db();
+    const qint64 site = addSite(QStringLiteral("firma.com.tr"));
+    SiteStore::saveSpeedCheck(db, site, QStringLiteral("mobile"), 41, {}, QString());
+    SiteStore::saveSpeedCheck(db, site, QStringLiteral("desktop"), 88, {}, QString());
+    const QVariantMap detail = SiteStore::loadDetail(db, site);
+    QCOMPARE(detail.value(QStringLiteral("speed")).toMap().value(QStringLiteral("score")).toInt(), 41);
+    QCOMPARE(detail.value(QStringLiteral("speedDesktop")).toMap().value(QStringLiteral("score")).toInt(), 88);
+    // Only the mobile score lands on the site row.
+    QCOMPARE(detail.value(QStringLiteral("site")).toMap().value(QStringLiteral("mobile_score")).toInt(), 41);
 }
 
 void SiteOrganizerTest::deletingSiteRemovesItsRecords()

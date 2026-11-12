@@ -91,6 +91,12 @@ void LangSearchTest::parsesPageSpeed()
                  .value(QStringLiteral("display"))
                  .toString(),
              QStringLiteral("5.1 s"));
+    QVERIFY(result.screenshot.isEmpty()); // no final-screenshot audit in this answer
+
+    const QByteArray withShot = QByteArray(R"({"lighthouseResult":{"categories":{"performance":{"score":0.9}},
+        "audits":{"final-screenshot":{"details":{"data":"data:image/jpeg;base64,)") +
+                                QByteArray("JPEGDATA").toBase64() + R"("}}}}})";
+    QCOMPARE(PageSpeed::parseResponse(200, withShot).screenshot, QByteArray("JPEGDATA"));
     const PageSpeed::Result quota =
         PageSpeed::parseResponse(429, R"({"error":{"message":"Quota exceeded"}})");
     QVERIFY(quota.error.contains(QStringLiteral("quota")));

@@ -28,7 +28,7 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     , m_inbox(m_gmail, m_database, m_network)
     , m_sites(m_database, m_runner)
     , m_jobs(m_database, m_runner)
-    , m_siteDetail(m_database, m_runner, m_pageSpeed, m_integrations, m_gmail)
+    , m_siteDetail(m_database, m_runner, m_pageSpeed, m_integrations, m_gmail, paths.dataDir)
     , m_dashboard(m_database, m_runner)
     , m_discovery(m_database, m_runner, m_langSearch, m_integrations)
     , m_health(m_paths, m_database, m_runner, m_integrations, m_gmail)
@@ -122,6 +122,7 @@ void AppContext::removeSite(qint64 siteId)
         this, [siteId](QSqlDatabase &db) { return SiteStore::deleteSite(db, siteId); },
         [this, siteId](bool removed) {
             if (removed) {
+                QDir(QDir(m_paths.screenshotsDir).filePath(QString::number(siteId))).removeRecursively();
                 m_sites.refresh();
                 m_dashboard.refresh();
                 emit siteRemoved(siteId);

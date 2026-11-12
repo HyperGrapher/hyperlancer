@@ -48,6 +48,8 @@ Item {
         { wait: 800, run: () => capture("09c-tag-dropdown") },
         { wait: 400, run: () => detailTabRequested(12) },
         { wait: 900, run: () => capture("09d-note-markdown") },
+        { wait: 400, run: () => detailTabRequested(5) },
+        { wait: 900, run: () => capture("09e-screenshots") },
         { wait: 400, run: () => detailTabRequested(2) },
         { wait: 1000, run: () => capture("10-site-emails") },
         { wait: 400, run: () => detailTabRequested(-1) },

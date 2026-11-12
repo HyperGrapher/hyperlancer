@@ -67,9 +67,11 @@ qt_add_resources(HyperlancerCore "hyperlancer_data"
         resources/migrations/sqlite/0001_init.sql
         resources/migrations/sqlite/0002_organize.sql
         resources/migrations/sqlite/0003_deadline_notes.sql
+        resources/migrations/sqlite/0004_screenshots.sql
         resources/migrations/mysql/0001_init.sql
         resources/migrations/mysql/0002_organize.sql
         resources/migrations/mysql/0003_deadline_notes.sql
+        resources/migrations/mysql/0004_screenshots.sql
 )
 
 set(HYPERLANCER_APP_SOURCES
@@ -126,6 +128,7 @@ set(HYPERLANCER_QML_FILES
     src/qml/pages/MailView.qml
     src/qml/pages/EmailsPage.qml
     src/qml/pages/SiteWorkspace.qml
+    src/qml/pages/SiteScreenshots.qml
     src/qml/pages/DiscoverPage.qml
     src/qml/pages/JobsPage.qml
     src/qml/pages/SettingsPage.qml

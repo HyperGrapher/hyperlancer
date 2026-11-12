@@ -1,6 +1,10 @@
 #include "SiteDetail.h"
 
+#include <memory>
+
+#include <QDir>
 #include <QPointer>
+#include <QUrl>
 
 #include "Database.h"
 #include "GmailService.h"
@@ -11,13 +15,15 @@
 #include "SiteStore.h"
 
 SiteDetail::SiteDetail(Database &database, JobRunner &runner, PageSpeedClient &pageSpeed,
-                       Integrations &integrations, GmailService &gmail, QObject *parent)
+                       Integrations &integrations, GmailService &gmail, QString dataDir,
+                       QObject *parent)
     : QObject(parent)
     , m_database(database)
     , m_runner(runner)
     , m_pageSpeed(pageSpeed)
     , m_integrations(integrations)
     , m_gmail(gmail)
+    , m_dataDir(std::move(dataDir))
 {
     connect(&m_runner, &JobRunner::jobProgress, this,
             [this](qint64, qint64 siteId, int current, int total, const QString &label) {
@@ -57,6 +63,8 @@ void SiteDetail::setSiteId(qint64 siteId)
     m_snapshots.clear();
     m_activity.clear();
     m_speed.clear();
+    m_speedDesktop.clear();
+    m_screenshots.clear();
     m_organizer.clear();
     m_emails.clear();
     m_emailsError.clear();
@@ -93,6 +101,18 @@ void SiteDetail::reload()
             m_snapshots = detail.value(QStringLiteral("snapshots")).toList();
             m_activity = detail.value(QStringLiteral("activity")).toList();
             m_speed = detail.value(QStringLiteral("speed")).toMap();
+            m_speedDesktop = detail.value(QStringLiteral("speedDesktop")).toMap();
+            m_screenshots.clear();
+            const QVariantMap stored = detail.value(QStringLiteral("screenshots")).toMap();
+            for (auto it = stored.begin(); it != stored.end(); ++it) {
+                const QVariantMap shot = it.value().toMap();
+                m_screenshots.insert(
+                    it.key(),
+                    QVariantMap{{QStringLiteral("url"),
+                                 QUrl::fromLocalFile(QDir(m_dataDir).filePath(
+                                                         shot.value(QStringLiteral("path")).toString()))},
+                                {QStringLiteral("createdAt"), shot.value(QStringLiteral("createdAt"))}});
+            }
             m_organizer = detail.value(QStringLiteral("organizer")).toMap();
             emit loadedChanged();
         });
@@ -125,34 +145,54 @@ void SiteDetail::checkSpeed()
     }
     m_speedRunning = true;
     emit speedRunningChanged();
+
+    // Both strategies run at once; the check is over when both have answered.
+    struct Pending
+    {
+        int remaining = 2;
+        QString firstError;
+    };
+    auto pending = std::make_shared<Pending>();
     QPointer<SiteDetail> self(this);
-    m_pageSpeed.run(url, m_integrations.pageSpeedKey(),
-                    [self, siteId](const PageSpeed::Result &result) {
+    for (const QString &strategy : {QStringLiteral("mobile"), QStringLiteral("desktop")}) {
+        m_pageSpeed.run(
+            url, m_integrations.pageSpeedKey(), strategy,
+            [self, siteId, strategy, pending](const PageSpeed::Result &result) {
+                if (!self) {
+                    return;
+                }
+                self->m_database.run(
+                    self,
+                    [siteId, strategy, result, dataDir = self->m_dataDir](QSqlDatabase &db) {
+                        SiteStore::saveSpeedCheck(db, siteId, strategy, result.score, result.metrics,
+                                                  result.error);
+                        SiteStore::addApiUsage(db, QStringLiteral("pagespeed"), 1);
+                        if (!result.screenshot.isEmpty()) {
+                            SiteStore::saveScreenshot(db, dataDir, siteId, strategy, result.screenshot);
+                        }
+                        return true;
+                    },
+                    [self, siteId, pending, error = result.error](bool) {
                         if (!self) {
                             return;
                         }
-                        self->m_database.run(
-                            self,
-                            [siteId, result](QSqlDatabase &db) {
-                                SiteStore::saveSpeedCheck(db, siteId, result.score, result.metrics,
-                                                          result.error);
-                                SiteStore::addApiUsage(db, QStringLiteral("pagespeed"), 1);
-                                return true;
-                            },
-                            [self, siteId, error = result.error](bool) {
-                                if (!self) {
-                                    return;
-                                }
-                                self->m_speedRunning = false;
-                                emit self->speedRunningChanged();
-                                if (!error.isEmpty()) {
-                                    emit self->notice(error, true);
-                                }
-                                if (siteId == self->m_siteId) {
-                                    self->reload();
-                                }
-                            });
+                        if (pending->firstError.isEmpty()) {
+                            pending->firstError = error;
+                        }
+                        if (--pending->remaining > 0) {
+                            return;
+                        }
+                        self->m_speedRunning = false;
+                        emit self->speedRunningChanged();
+                        if (!pending->firstError.isEmpty()) {
+                            emit self->notice(pending->firstError, true);
+                        }
+                        if (siteId == self->m_siteId) {
+                            self->reload();
+                        }
                     });
+            });
+    }
 }
 
 void SiteDetail::loadEmails()
