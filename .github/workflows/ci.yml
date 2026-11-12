@@ -73,6 +73,15 @@ jobs:
           echo "$kit/bin" >> "$GITHUB_PATH"
           echo "$(cygpath -m "$IQTA_TOOLS")/mingw1310_64/bin" >> "$GITHUB_PATH"
 
+      - name: Build MySQL driver (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          .github/scripts/build_mysql_driver.sh 6.11.3 "$QT_ROOT_DIR" \
+            "$(cygpath -m "$IQTA_TOOLS")/mingw1310_64/bin/g++.exe" \
+            "$(cygpath -m "$RUNNER_TEMP")/mysql-runtime"
+          echo "MYSQL_RUNTIME=$(cygpath -m "$RUNNER_TEMP")/mysql-runtime" >> "$GITHUB_ENV"
+
       - name: Install Linux runtime packages
         if: runner.os == 'Linux'
         run: |

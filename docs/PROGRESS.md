@@ -56,6 +56,12 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - Tour (`--tour`): all sections, rapid switching check prints `TOUR stress OK`.
 - `SecretStoreWin.cpp` compiles with MinGW (syntax check only; not run).
 
+### CI and releases
+- Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
+- The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.
+- The Windows release zip also contains `web-dashboard/scripts` (run `uv sync` in it once).
+- Releases: push a `v*.*.*` tag (`.github/workflows/release.yml`).
+
 **Not verified here:** anything on Windows; Gmail sign-in (no client file in this environment); a successful PageSpeed call (anonymous quota was exhausted, the 429 was handled and shown); real SSL dates (this environment's proxy re-signs TLS, so every SSL shows ~30 days and issuer "Anthropic").
 
 ## 3. What the user should check on Windows

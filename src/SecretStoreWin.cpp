@@ -3,8 +3,11 @@
 #include <string>
 #include <utility>
 
-#include <wincred.h>
+// windows.h must come first: wincred.h relies on its types. The blank line keeps
+// clang-format from sorting them.
 #include <windows.h>
+
+#include <wincred.h>
 
 namespace {
 

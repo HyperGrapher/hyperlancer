@@ -123,15 +123,14 @@ supports it.
 
 ### MySQL driver on Windows
 
-Qt's official Windows packages may not include a working MySQL driver. Settings → Health shows
-"MySQL driver" in green when it is available. If it is not:
+Qt's official Windows packages do not include the MySQL driver. The release package built by
+GitHub Actions (`hyperlancer-windows-x64.zip`) contains it: `sqldrivers\qsqlmysql.dll`, built
+against the MariaDB client, plus `libmariadb.dll` and the DLLs it needs next to
+`Hyperlancer.exe`. Settings → Health shows "MySQL driver" in green when it is available.
 
-1. Install [MariaDB Connector/C](https://mariadb.com/downloads/connectors/) (64-bit).
-2. Build the Qt plugin against it, as described in Qt's
-   [SQL driver documentation](https://doc.qt.io/qt-6/sql-driver.html#qmysql), from the
-   `qtbase/src/plugins/sqldrivers` sources of your Qt version (Qt Maintenance Tool → *Sources*).
-3. Put `qsqlmysql.dll` into `C:\Qt\6.11.3\mingw_64\plugins\sqldrivers` (and next to the app's
-   `sqldrivers` folder when deployed), and `libmariadb.dll` next to `Hyperlancer.exe`.
+For your own local build, either copy those files from the release zip into
+`C:\Qt\6.11.3\mingw_64\plugins\sqldrivers` (the plugin) and next to your `Hyperlancer.exe`
+(the DLLs), or build the plugin yourself as `.github/scripts/build_mysql_driver.sh` does.
 
 ## Run options
 
@@ -159,7 +158,9 @@ settings. To also run the migration test against MySQL, set
 `HYPERLANCER_TEST_MYSQL=host;port;database;user;password` (an empty test database).
 
 CI (`.github/workflows/ci.yml`) builds and tests on Linux and Windows with Qt 6.11.3, runs the
-screenshot tour under Xvfb, and runs the Python tests.
+screenshot tour under Xvfb, and runs the Python tests. On Windows, Qt is installed by
+`.github/scripts/install_qt_windows.py` (aqtinstall cannot read Qt 6.11's new Windows package
+layout yet) and the MySQL driver is built by `.github/scripts/build_mysql_driver.sh`.
 
 ## Project layout
 
@@ -185,7 +186,9 @@ Settings → Appearance has reduced motion and a performance overlay.
 
 ## GitHub releases
 
-Push a version tag such as `v0.2.0` to build portable packages for Windows x64 and Linux x64:
+Push a version tag such as `v0.2.0` to build portable packages for Windows x64 and Linux x64.
+The Windows zip contains the app, the Qt runtime, the MySQL driver and the Python tools folder;
+after unpacking, run `uv sync --project web-dashboard\scripts` inside it once.
 
 ```bash
 git tag v0.2.0
