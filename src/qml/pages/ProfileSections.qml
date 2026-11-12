@@ -18,6 +18,8 @@ Flickable {
     readonly property var urls: summary.url || ({})
     readonly property var hosting: summary.hosting || ({})
     readonly property var dns: summary.dns || ({})
+    readonly property var emailAuth: summary.emailAuth || ({})
+    readonly property var trackers: summary.trackers || ({})
     readonly property var tls: summary.tls || ({})
     readonly property var domain: summary.domain || ({})
     readonly property var seo: summary.seo || ({})
@@ -189,6 +191,84 @@ Flickable {
             }
             Fact { label: qsTr("DNSSEC"); value: Format.yesNo(sections.dns.dnssec) }
             Fact { label: qsTr("CAA"); value: sections.list(sections.dns.caa); last: true }
+        }
+
+        // Verdicts per record; DKIM is probed with common selectors, so "none found" is not "missing".
+        Section {
+            title: qsTr("Email authentication")
+            glyph: Icons.shieldCheck
+            failure: sections.errorFor("email_auth")
+            visible: sections.emailAuth.spf !== undefined
+
+            Fact {
+                label: qsTr("Overall")
+                value: sections.verdictText(sections.emailAuth.overall)
+                valueColor: sections.verdictColor(sections.emailAuth.overall)
+            }
+            Fact {
+                label: qsTr("SPF")
+                value: sections.verdictText((sections.emailAuth.spf || {}).verdict)
+                      + (sections.emailAuth.spf && sections.emailAuth.spf.lookups !== null && sections.emailAuth.spf.lookups !== undefined ? "  ·  " + qsTr("%n DNS lookup(s)", "", sections.emailAuth.spf.lookups) : "")
+                      + sections.issueLines((sections.emailAuth.spf || {}).issues)
+                valueColor: sections.verdictColor((sections.emailAuth.spf || {}).verdict)
+            }
+            Fact {
+                label: qsTr("DMARC")
+                value: sections.verdictText((sections.emailAuth.dmarc || {}).verdict)
+                      + (sections.emailAuth.dmarc && sections.emailAuth.dmarc.policy ? "  ·  p=" + sections.emailAuth.dmarc.policy : "")
+                      + sections.issueLines((sections.emailAuth.dmarc || {}).issues)
+                valueColor: sections.verdictColor((sections.emailAuth.dmarc || {}).verdict)
+            }
+            Fact {
+                label: qsTr("DKIM")
+                value: sections.dkimText(sections.emailAuth.dkim || {})
+                valueColor: sections.verdictColor((sections.emailAuth.dkim || {}).verdict)
+                last: true
+            }
+        }
+
+        // Pixels and tags found in the page HTML. A pixel is not proof of a running campaign.
+        Section {
+            title: qsTr("Ads and analytics")
+            glyph: Icons.chartBar
+            failure: sections.errorFor("trackers")
+            visible: sections.trackers.items !== undefined
+
+            Fact {
+                label: qsTr("Ad pixels")
+                value: sections.trackers.runsAds ? qsTr("Yes: %1").arg((sections.trackers.adPlatforms || []).join(", ")) : qsTr("None found in the page")
+                valueColor: sections.trackers.runsAds ? Theme.warning : Theme.textPrimary
+            }
+            Fact {
+                label: qsTr("Analytics")
+                value: sections.trackers.staleAnalytics ? qsTr("Only Universal Analytics: it stopped recording in 2023")
+                       : (sections.trackers.items || []).some(t => t.kind === "analytics") ? qsTr("Present") : qsTr("None found")
+                valueColor: sections.trackers.staleAnalytics ? Theme.warning : Theme.textPrimary
+            }
+
+            Repeater {
+                model: sections.trackers.items || []
+
+                delegate: Fact {
+                    required property var modelData
+                    required property int index
+
+                    label: modelData.product
+                    value: (modelData.ids.length > 0 ? modelData.ids.join(", ") : qsTr("detected"))
+                           + (modelData.status === "deprecated" ? "  ·  " + qsTr("deprecated") : "")
+                    valueColor: modelData.status === "deprecated" ? Theme.warning : Theme.textPrimary
+                    mono: modelData.ids.length > 0
+                    last: index === (sections.trackers.items || []).length - 1 && !sections.trackers.hasTagManager
+                }
+            }
+
+            Fact {
+                visible: !!sections.trackers.hasTagManager
+                label: qsTr("Note")
+                value: qsTr("Tag Manager found; tags it loads later are not in the HTML.")
+                valueColor: Theme.textMuted
+                last: true
+            }
         }
 
         Section {
@@ -426,6 +506,30 @@ Flickable {
                 last: true
             }
         }
+    }
+
+    function verdictText(verdict) {
+        switch (verdict) {
+        case "pass": return "✓ " + qsTr("Pass");
+        case "weak": return qsTr("Weak");
+        case "missing": return qsTr("Missing");
+        default: return qsTr("Unknown");
+        }
+    }
+
+    function verdictColor(verdict) {
+        return verdict === "pass" ? Theme.textPrimary : verdict === "weak" ? Theme.warning : verdict === "missing" ? Theme.danger : Theme.textMuted;
+    }
+
+    function issueLines(issues) {
+        return issues && issues.length > 0 ? "\n" + issues.join("\n") : "";
+    }
+
+    function dkimText(dkim) {
+        const found = dkim.found || [];
+        if (found.length === 0)
+            return qsTr("No common selector answered (not proof that DKIM is missing)");
+        return found.map(key => key.selector + (key.bits ? " (" + key.bits + " bit)" : "")).join(", ") + sections.issueLines(dkim.issues);
     }
 
     // A SectionPanel sized to the column, with the check's failure shown in its header.

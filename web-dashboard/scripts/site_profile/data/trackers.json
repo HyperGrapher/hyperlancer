@@ -1,0 +1,22 @@
+{
+  "note": "Rules for static tracker detection. 'patterns' are regexes searched in the page HTML (case-insensitive); 'id' is a regex whose first group (or whole match) is the tracker ID; 'kind' is ads, analytics, tagmanager or behavior; 'status' is current or deprecated. Edit this file to follow vendor changes.",
+  "rules": [
+    {"vendor": "Google", "product": "Google Ads conversion (legacy conversion.js)", "kind": "ads", "patterns": ["googleadservices\\.com/pagead/conversion\\.js"], "id": "AW-\\d{6,}", "status": "deprecated", "note": "conversion.js is replaced by gtag.js"},
+    {"vendor": "Google", "product": "Google Ads", "kind": "ads", "patterns": ["googleadservices\\.com/pagead/conversion(?!\\.js)", "gtag\\(\\s*['\"]config['\"]\\s*,\\s*['\"]AW-", "googletagmanager\\.com/gtag/js\\?id=AW-"], "id": "AW-\\d{6,}", "status": "current"},
+    {"vendor": "Google", "product": "Google Analytics 4", "kind": "analytics", "patterns": ["googletagmanager\\.com/gtag/js\\?id=G-", "gtag\\(\\s*['\"]config['\"]\\s*,\\s*['\"]G-"], "id": "G-[A-Z0-9]{6,}", "status": "current"},
+    {"vendor": "Google", "product": "Universal Analytics", "kind": "analytics", "patterns": ["google-analytics\\.com/(analytics|ga)\\.js", "\\bUA-\\d{4,}-\\d+", "gtag\\(\\s*['\"]config['\"]\\s*,\\s*['\"]UA-"], "id": "UA-\\d{4,}-\\d+", "status": "deprecated", "note": "Stopped processing data in July 2023"},
+    {"vendor": "Google", "product": "Google Tag Manager", "kind": "tagmanager", "patterns": ["googletagmanager\\.com/gtm\\.js", "\\bGTM-[A-Z0-9]{4,}"], "id": "GTM-[A-Z0-9]{4,}", "status": "current"},
+    {"vendor": "Meta", "product": "Meta Pixel", "kind": "ads", "patterns": ["connect\\.facebook\\.net/[^\"']+/fbevents\\.js", "fbq\\(\\s*['\"]init['\"]"], "id": "fbq\\(\\s*['\"]init['\"]\\s*,\\s*['\"]?(\\d{8,})", "status": "current"},
+    {"vendor": "Meta", "product": "Facebook pixel (legacy fbds.js)", "kind": "ads", "patterns": ["connect\\.facebook\\.net/[^\"']*/fbds\\.js"], "id": null, "status": "deprecated", "note": "Pre-fbevents pixel code"},
+    {"vendor": "TikTok", "product": "TikTok Pixel", "kind": "ads", "patterns": ["analytics\\.tiktok\\.com", "ttq\\.load\\("], "id": "ttq\\.load\\(\\s*['\"]([A-Z0-9]{8,})", "status": "current"},
+    {"vendor": "LinkedIn", "product": "LinkedIn Insight Tag", "kind": "ads", "patterns": ["snap\\.licdn\\.com", "_linkedin_partner_id"], "id": "_linkedin_partner_id\\s*=\\s*['\"]?(\\d+)", "status": "current"},
+    {"vendor": "Microsoft", "product": "Microsoft Ads UET", "kind": "ads", "patterns": ["bat\\.bing\\.com"], "id": "bat\\.bing\\.com/bat\\.js[^>]*|ti\\s*:\\s*['\"]?(\\d{6,})", "status": "current"},
+    {"vendor": "Yandex", "product": "Yandex Metrica", "kind": "analytics", "patterns": ["mc\\.yandex\\.(ru|com)/metrika", "\\bym\\(\\s*\\d+"], "id": "\\bym\\(\\s*(\\d+)", "status": "current"},
+    {"vendor": "X", "product": "X (Twitter) Pixel", "kind": "ads", "patterns": ["static\\.ads-twitter\\.com", "platform\\.twitter\\.com/oct\\.js"], "id": "twq\\(\\s*['\"]init['\"]\\s*,\\s*['\"]([a-z0-9]+)", "status": "current"},
+    {"vendor": "Pinterest", "product": "Pinterest Tag", "kind": "ads", "patterns": ["s\\.pinimg\\.com/ct/core\\.js", "pintrk\\(\\s*['\"]load['\"]"], "id": "pintrk\\(\\s*['\"]load['\"]\\s*,\\s*['\"](\\d+)", "status": "current"},
+    {"vendor": "Snapchat", "product": "Snap Pixel", "kind": "ads", "patterns": ["sc-static\\.net/scevent\\.min\\.js", "snaptr\\(\\s*['\"]init['\"]"], "id": "snaptr\\(\\s*['\"]init['\"]\\s*,\\s*['\"]([0-9a-f-]{20,})", "status": "current"},
+    {"vendor": "Criteo", "product": "Criteo OneTag", "kind": "ads", "patterns": ["static\\.criteo\\.net/js/ld/", "criteo\\.com/js/ld/"], "id": null, "status": "current"},
+    {"vendor": "Hotjar", "product": "Hotjar", "kind": "behavior", "patterns": ["static\\.hotjar\\.com", "\\bhjid\\s*:"], "id": "\\bhjid\\s*:\\s*(\\d+)", "status": "current"},
+    {"vendor": "Microsoft", "product": "Microsoft Clarity", "kind": "behavior", "patterns": ["clarity\\.ms/tag"], "id": "clarity\\.ms/tag/([a-z0-9]{8,})", "status": "current"}
+  ]
+}

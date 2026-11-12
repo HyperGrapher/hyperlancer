@@ -12,7 +12,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-SUMMARY_VERSION = 1
+SUMMARY_VERSION = 2
 
 SECURITY_HEADERS = [
     "Strict-Transport-Security", "Content-Security-Policy", "X-Frame-Options",
@@ -251,6 +251,8 @@ def summarize(raw: dict[str, Any]) -> dict[str, Any]:
             "caa": [str(v) for v in _list(domain_records.get("CAA"))],
             "txt": [str(v) for v in _list(domain_records.get("TXT"))],
         },
+        "emailAuth": _dict(raw.get("email_auth")),
+        "trackers": _dict(raw.get("trackers")),
         "tls": {
             "verified": bool(tls.get("connection_verified")),
             "issuer": _issuer(tls.get("issuer")),

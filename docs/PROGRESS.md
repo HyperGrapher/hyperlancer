@@ -118,6 +118,12 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - **To-dos page** (new sidebar section between Emails and Jobs; Jobs and Settings moved to 5 and 6): all open to-dos of all websites grouped Overdue / Today / Next 7 days / Later / No date, or the completed ones; tick off, delete, click the website to open it. Code: `TodoList`, `TodosPage.qml`.
 - The Websites toolbar columns were re-sized so the saved-views dropdown fits.
 
+### M2 checks: email authentication and trackers (summary version 2)
+- Python (`site_profile/mailauth.py`): SPF (qualifier, include chain with the DNS lookup count against the limit of 10, multiple-record error), DMARC (policy, sp, pct, rua, ruf, adkim, aspf) and DKIM probing (provider selectors first, then a common list; "no selector answered" is *unknown*, not missing). One verdict per record (pass / weak / missing) and an overall label. The probing list is a constant for now (not yet editable in Settings).
+- Python (`site_profile/trackers.py` + `site_profile/data/trackers.json`): static detection from the page HTML of Google Ads, GA4, Universal Analytics (deprecated), Tag Manager, Meta Pixel, TikTok, LinkedIn, Microsoft UET, Yandex, X, Pinterest, Snapchat, Criteo, Hotjar and Clarity with IDs, plus `runsAds`, `adPlatforms`, `staleAnalytics`, `hasTagManager`. Rules are JSON instead of the PRD's YAML to avoid a new dependency. The rendered pass (tags injected by Tag Manager) needs the later `site_render` job.
+- The summary now has `emailAuth` and `trackers` (SUMMARY_VERSION 2); the Profile tab shows "Email authentication" and "Ads and analytics". 11 new pytest tests (99 pass).
+- Not done from the PRD's contact-channels item: phone normalization (needs the `phonenumbers` dependency), contact-page crawling and person extraction.
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

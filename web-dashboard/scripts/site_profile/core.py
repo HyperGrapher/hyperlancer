@@ -15,7 +15,7 @@ from site_tools.cancel import CancelToken, Cancelled
 from site_tools.events import Emitter
 from site_tools.netguard import BlockedTarget, check_url
 
-from . import SCHEMA_VERSION, TOOL_VERSION, archive, design, dnsinfo, hosting, page as page_mod, registration, sitemaps, tech, tls
+from . import SCHEMA_VERSION, TOOL_VERSION, archive, design, dnsinfo, hosting, mailauth, page as page_mod, registration, sitemaps, tech, tls, trackers
 from .http import Response, decode_body, fetch, fetch_once
 from .urls import domain_parts, get_host, normalize_url, strip_www
 
@@ -408,6 +408,13 @@ def collect(params: ProfileParams, emit: Emitter, cancel: CancelToken) -> tuple[
     if archive_error and not report["website_history"].get("earliest_capture_utc"):
         errors.append({"section": "archive", "code": "unavailable", "message": archive_error})
 
+    report["trackers"] = _section("trackers", lambda: trackers.detect(body_text if is_html else ""), timings, trackers.empty(), errors)
+    mail_hosts = report["email"].get("mx") or []
+    report["email_auth"] = _section(
+        "email_auth",
+        lambda: mailauth.analyze(registrable, domain_records, report["email"].get("provider"), timeout, params.resolver, bool(mail_hosts)),
+        timings, mailauth.empty(), errors,
+    ) if not domain_records.get("nxdomain") else mailauth.empty()
     report["technologies"] = _section(
         "technologies",
         lambda: tech.detect_technologies(body_text if is_html else "", headers, cookies, page, host_records),
