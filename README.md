@@ -194,3 +194,6 @@ after unpacking, run `uv sync --project web-dashboard\scripts` inside it once.
 git tag v0.2.0
 git push origin v0.2.0
 ```
+
+Or, without pushing a tag: GitHub → Actions → "Build portable releases" → **Run workflow**,
+enter the version (for example `v0.3.0`); the workflow creates the tag with the release.

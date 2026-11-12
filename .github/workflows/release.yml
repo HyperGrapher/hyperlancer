@@ -4,6 +4,13 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  # Manual run: builds the current commit and creates the tag together with the release.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag to create, for example v0.2.0'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -165,6 +172,8 @@ jobs:
       - name: Publish release and packages
         uses: softprops/action-gh-release@v3
         with:
-          name: ${{ github.ref_name }}
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+          name: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
           files: release-assets/*
