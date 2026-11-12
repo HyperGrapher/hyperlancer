@@ -147,7 +147,13 @@ void Integrations::testLangSearch()
 
 bool Integrations::setPageSpeedKey(const QString &key)
 {
-    if (key.trimmed().isEmpty() || !m_secrets.write(kPageSpeedKey, key.trimmed())) {
+    if (const QString problem = PageSpeed::checkKeyFormat(key); !problem.isEmpty()) {
+        emit testFinished(QStringLiteral("pagespeed"), false, problem);
+        return false;
+    }
+    if (!m_secrets.write(kPageSpeedKey, key.trimmed())) {
+        emit testFinished(QStringLiteral("pagespeed"), false,
+                          tr("Could not save the key in %1.").arg(SecretStore::backendName()));
         return false;
     }
     emit keysChanged();
@@ -162,7 +168,7 @@ void Integrations::removePageSpeedKey()
 
 void Integrations::testPageSpeed()
 {
-    m_pageSpeed.run(QStringLiteral("https://example.com/"), pageSpeedKey(), QString(),
+    m_pageSpeed.run(QStringLiteral("https://example.com/"), pageSpeedKey(),
                     [this](const PageSpeed::Result &result) {
                         if (result.error.isEmpty()) {
                             emit testFinished(

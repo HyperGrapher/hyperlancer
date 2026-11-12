@@ -117,44 +117,33 @@ void SiteDetail::checkSpeed()
     m_speedRunning = true;
     emit speedRunningChanged();
     QPointer<SiteDetail> self(this);
-    const QString apiKey = m_integrations.pageSpeedKey();
-    // Without a key, the Gmail sign-in token of the same Google Cloud project is used.
-    const auto runWithToken = [self, siteId, url, apiKey](const QString &token) {
-        if (!self) {
-            return;
-        }
-        self->m_pageSpeed.run(url, apiKey, token, [self, siteId](const PageSpeed::Result &result) {
-            if (!self) {
-                return;
-            }
-            self->m_database.run(
-                self,
-                [siteId, result](QSqlDatabase &db) {
-                    SiteStore::saveSpeedCheck(db, siteId, result.score, result.metrics,
-                                              result.error);
-                    SiteStore::addApiUsage(db, QStringLiteral("pagespeed"), 1);
-                    return true;
-                },
-                [self, siteId, error = result.error](bool) {
-                    if (!self) {
-                        return;
-                    }
-                    self->m_speedRunning = false;
-                    emit self->speedRunningChanged();
-                    if (!error.isEmpty()) {
-                        emit self->notice(error, true);
-                    }
-                    if (siteId == self->m_siteId) {
-                        self->reload();
-                    }
-                });
-        });
-    };
-    if (apiKey.isEmpty()) {
-        m_gmail.withAccessToken(runWithToken);
-    } else {
-        runWithToken(QString());
-    }
+    m_pageSpeed.run(url, m_integrations.pageSpeedKey(),
+                    [self, siteId](const PageSpeed::Result &result) {
+                        if (!self) {
+                            return;
+                        }
+                        self->m_database.run(
+                            self,
+                            [siteId, result](QSqlDatabase &db) {
+                                SiteStore::saveSpeedCheck(db, siteId, result.score, result.metrics,
+                                                          result.error);
+                                SiteStore::addApiUsage(db, QStringLiteral("pagespeed"), 1);
+                                return true;
+                            },
+                            [self, siteId, error = result.error](bool) {
+                                if (!self) {
+                                    return;
+                                }
+                                self->m_speedRunning = false;
+                                emit self->speedRunningChanged();
+                                if (!error.isEmpty()) {
+                                    emit self->notice(error, true);
+                                }
+                                if (siteId == self->m_siteId) {
+                                    self->reload();
+                                }
+                            });
+                    });
 }
 
 void SiteDetail::loadEmails()

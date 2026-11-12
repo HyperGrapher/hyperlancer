@@ -91,9 +91,10 @@ quotes.
 
 Optional but recommended. In the same Google Cloud project where PageSpeed Insights is enabled:
 *APIs & Services → Credentials → Create credentials → API key*, restrict it to the PageSpeed
-Insights API, then paste it in Settings → Connections → PageSpeed Insights. Without a key the
-app uses your Gmail sign-in token from the same project, and without that, Google's small
-shared anonymous quota (which is often used up).
+Insights API, then paste it in Settings → Connections → PageSpeed Insights. The key starts with
+`AIza`; the OAuth client secret (`GOCSPX-…`) from the Gmail client file does not work here and
+is refused. Without a key the app uses Google's small shared anonymous quota, which is often
+used up.
 
 ### Gmail (your `client_secret_....apps.googleusercontent.com.json` file)
 

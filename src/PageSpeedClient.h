@@ -10,8 +10,9 @@
 class QNetworkAccessManager;
 
 // PageSpeed Insights API v5 (runPagespeed), mobile strategy, performance category.
-// Authentication, in order of preference: an API key; an OAuth access token from the same
-// Google Cloud project (the Gmail sign-in); or none (works, with a small shared quota).
+// Authenticated with an API key when one is saved; without a key Google allows anonymous
+// calls on a small shared quota. An OAuth client secret or the Gmail sign-in token is not a
+// substitute for the key.
 namespace PageSpeed {
 
 struct Result
@@ -24,7 +25,12 @@ struct Result
     int httpStatus = 0;
 };
 
-[[nodiscard]] Result parseResponse(int httpStatus, const QByteArray &body);
+// usedKey says whether the request carried an API key, so a rejected request can point at it.
+[[nodiscard]] Result parseResponse(int httpStatus, const QByteArray &body, bool usedKey = false);
+
+// Empty when the text looks like a Google API key ("AIza" + 35 characters); otherwise says
+// what it is instead (for example an OAuth client secret) and what to create.
+[[nodiscard]] QString checkKeyFormat(const QString &key);
 
 } // namespace PageSpeed
 
@@ -35,8 +41,8 @@ class PageSpeedClient : public QObject
 public:
     explicit PageSpeedClient(QNetworkAccessManager &network, QObject *parent = nullptr);
 
-    // apiKey and accessToken may be empty. done runs on this object's thread.
-    void run(const QString &url, const QString &apiKey, const QString &accessToken,
+    // apiKey may be empty (anonymous call). done runs on this object's thread.
+    void run(const QString &url, const QString &apiKey,
              std::function<void(PageSpeed::Result)> done);
 
 private:

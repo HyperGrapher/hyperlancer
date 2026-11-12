@@ -17,6 +17,8 @@ private slots:
     void cleansMarkup();
     void buildsBody();
     void parsesPageSpeed();
+    void checksPageSpeedKeyFormat();
+    void explainsPageSpeedErrors();
 };
 
 void LangSearchTest::parsesResults()
@@ -91,8 +93,43 @@ void LangSearchTest::parsesPageSpeed()
              QStringLiteral("5.1 s"));
     const PageSpeed::Result quota =
         PageSpeed::parseResponse(429, R"({"error":{"message":"Quota exceeded"}})");
-    QVERIFY(quota.error.contains(QStringLiteral("Quota exceeded")));
+    QVERIFY(quota.error.contains(QStringLiteral("quota")));
     QCOMPARE(quota.score, -1);
+}
+
+void LangSearchTest::checksPageSpeedKeyFormat()
+{
+    QVERIFY(PageSpeed::checkKeyFormat(QStringLiteral(" AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q "))
+                .isEmpty());
+    QVERIFY(PageSpeed::checkKeyFormat(QStringLiteral("GOCSPX-abcdefghijklmnop"))
+                .contains(QStringLiteral("client secret")));
+    QVERIFY(PageSpeed::checkKeyFormat(QStringLiteral("123-abc.apps.googleusercontent.com"))
+                .contains(QStringLiteral("client ID")));
+    QVERIFY(!PageSpeed::checkKeyFormat(QStringLiteral("not-a-key")).isEmpty());
+}
+
+void LangSearchTest::explainsPageSpeedErrors()
+{
+    const QByteArray invalidKey =
+        R"({"error":{"code":400,"message":"API key not valid. Please pass a valid API key.",
+        "status":"INVALID_ARGUMENT","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"API_KEY_INVALID"}]}})";
+    QVERIFY(PageSpeed::parseResponse(400, invalidKey, true)
+                .error.contains(QStringLiteral("not valid")));
+
+    const QByteArray disabled =
+        R"({"error":{"code":403,"message":"PageSpeed Insights API has not been used",
+        "status":"PERMISSION_DENIED","details":[{"reason":"SERVICE_DISABLED"}]}})";
+    QVERIFY(PageSpeed::parseResponse(403, disabled, true)
+                .error.contains(QStringLiteral("not enabled")));
+
+    const QByteArray generic =
+        R"({"error":{"code":400,"message":"Request contains an invalid argument.","status":"INVALID_ARGUMENT"}})";
+    QVERIFY(PageSpeed::parseResponse(400, generic, true)
+                .error.contains(QStringLiteral("not an API key")));
+
+    const QByteArray quota =
+        R"({"error":{"code":429,"message":"Quota exceeded","status":"RESOURCE_EXHAUSTED"}})";
+    QVERIFY(PageSpeed::parseResponse(429, quota, false).error.contains(QStringLiteral("shared")));
 }
 
 QTEST_GUILESS_MAIN(LangSearchTest)

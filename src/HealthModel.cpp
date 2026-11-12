@@ -109,10 +109,9 @@ void HealthModel::refresh()
 
     const bool pageSpeedKey = m_integrations.hasPageSpeedKey();
     setCheck(QStringLiteral("pagespeed"), tr("PageSpeed Insights"),
-             pageSpeedKey || m_gmail.isConnected() ? QStringLiteral("ok") : QStringLiteral("warn"),
-             pageSpeedKey            ? tr("API key %1").arg(m_integrations.pageSpeedKeyHint())
-             : m_gmail.isConnected() ? tr("Using the Google sign-in token")
-                                     : tr("No key: anonymous calls with a small shared quota"),
+             pageSpeedKey ? QStringLiteral("ok") : QStringLiteral("warn"),
+             pageSpeedKey ? tr("API key %1").arg(m_integrations.pageSpeedKeyHint())
+                          : tr("No key: anonymous calls with a small shared quota"),
              pageSpeedKey ? QString() : tr("Add an API key in Connections for reliable quota."));
 
     setCheck(QStringLiteral("gmail"), tr("Gmail"),

@@ -133,9 +133,7 @@ PageBase {
                         title: qsTr("API key (optional)")
                         description: page.integrations.hasPageSpeedKey
                                      ? qsTr("Saved: %1.").arg(page.integrations.pageSpeedKeyHint)
-                                     : page.gmail.connected
-                                       ? qsTr("No key: the Google sign-in below is used for quota. A key from the same Cloud project is more reliable.")
-                                       : qsTr("Without a key, speed checks use a small shared quota. Create one in Google Cloud → Credentials → API key.")
+                                     : qsTr("An API key (starts with AIza), not the OAuth client secret. Google Cloud → APIs & Services → Credentials → Create credentials → API key. Without one, speed checks use a small shared quota.")
                         hasKey: page.integrations.hasPageSpeedKey
                         onSaveRequested: key => page.integrations.setPageSpeedKey(key)
                         onRemoveRequested: page.integrations.removePageSpeedKey()

@@ -17,7 +17,7 @@ decided and why, and what to do next. The specification is
 | Gmail | Google **Workspace** account, consent screen **Internal**. The user imports the `client_secret_*.json` in the app; ID and secret go to Windows Credential Manager. |
 | Google Places | **Not available** yet. Discovery uses LangSearch web search instead. |
 | LangSearch | Available. Key must be rotatable in the app (Settings → Connections → Replace). |
-| PageSpeed Insights | Enabled in the same Google Cloud project as Gmail. The app uses an API key if set, otherwise the Gmail OAuth token, otherwise anonymous calls. |
+| PageSpeed Insights | Enabled in the same Google Cloud project as Gmail. Needs an **API key** (starts with `AIza`); the OAuth client secret is refused when saving. Without a key, anonymous calls on Google's small shared quota. (The Gmail OAuth token is no longer used for PageSpeed since v0.2.2: it only carries the Gmail scope.) |
 | QWebSocket | Linked now (`Qt6::WebSockets`) for a later feature; not used yet. |
 | Design | Keep the template's look and motion; no copy of the web dashboard. Sites list = standard table rows. Static "idea" chips were removed from Discover at the user's request. |
 

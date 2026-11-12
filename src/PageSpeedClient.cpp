@@ -2,32 +2,114 @@
 
 #include <cmath>
 
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QPointer>
+#include <QRegularExpression>
 #include <QUrl>
 #include <QUrlQuery>
 
 namespace PageSpeed {
 
-Result parseResponse(int httpStatus, const QByteArray &body)
+namespace {
+
+// The machine-readable reason Google attaches to an error (ErrorInfo.reason, or the older
+// errors[].reason), e.g. API_KEY_INVALID or SERVICE_DISABLED.
+QString errorReason(const QJsonObject &error)
+{
+    for (const QJsonValue &detail : error.value(QStringLiteral("details")).toArray()) {
+        const QString reason = detail.toObject().value(QStringLiteral("reason")).toString();
+        if (!reason.isEmpty()) {
+            return reason;
+        }
+    }
+    const QJsonArray errors = error.value(QStringLiteral("errors")).toArray();
+    return errors.isEmpty() ? QString()
+                            : errors.first().toObject().value(QStringLiteral("reason")).toString();
+}
+
+QString explainError(int httpStatus, const QJsonObject &error, bool usedKey)
+{
+    const QString message = error.value(QStringLiteral("message")).toString();
+    const QString reason = errorReason(error);
+    if (httpStatus == 0) {
+        return QObject::tr("PageSpeed Insights could not be reached.");
+    }
+    if (reason == QStringLiteral("API_KEY_INVALID") ||
+        message.contains(QStringLiteral("API key not valid"))) {
+        return QObject::tr(
+            "The PageSpeed API key is not valid. Replace it in Settings → Connections.");
+    }
+    if (reason == QStringLiteral("SERVICE_DISABLED") ||
+        reason == QStringLiteral("accessNotConfigured")) {
+        return QObject::tr(
+            "PageSpeed Insights API is not enabled in the Google Cloud project of this "
+            "API key. Enable it under APIs & Services → Library.");
+    }
+    if (reason == QStringLiteral("API_KEY_SERVICE_BLOCKED") ||
+        reason == QStringLiteral("API_KEY_HTTP_REFERRER_BLOCKED") ||
+        reason == QStringLiteral("API_KEY_IP_ADDRESS_BLOCKED")) {
+        return QObject::tr(
+            "This API key is restricted and does not allow PageSpeed Insights from this "
+            "computer. Check the key's restrictions in Google Cloud → Credentials.");
+    }
+    if (httpStatus == 429) {
+        return usedKey
+                   ? QObject::tr("PageSpeed Insights quota of this API key is used up for today.")
+                   : QObject::tr("Google's shared PageSpeed quota is used up. Add your own API key "
+                                 "in Settings → Connections.");
+    }
+    if (message.contains(QStringLiteral("Lighthouse returned error"))) {
+        return QObject::tr("PageSpeed could not test the page: %1").arg(message);
+    }
+    if (httpStatus == 400 && usedKey) {
+        return QObject::tr(
+                   "Google rejected the request (%1). This usually means the saved PageSpeed "
+                   "key is not an API key. Replace it in Settings → Connections.")
+            .arg(message.isEmpty() ? QStringLiteral("HTTP 400") : message);
+    }
+    return QObject::tr("PageSpeed Insights answered with HTTP %1. %2").arg(httpStatus).arg(message);
+}
+
+} // namespace
+
+QString checkKeyFormat(const QString &key)
+{
+    const QString value = key.trimmed();
+    if (value.startsWith(QStringLiteral("GOCSPX-"))) {
+        return QObject::tr(
+            "This is an OAuth client secret, not an API key. In Google Cloud → APIs & "
+            "Services → Credentials choose Create credentials → API key, and paste that.");
+    }
+    if (value.contains(QStringLiteral(".apps.googleusercontent.com"))) {
+        return QObject::tr(
+            "This is an OAuth client ID, not an API key. In Google Cloud → APIs & "
+            "Services → Credentials choose Create credentials → API key, and paste that.");
+    }
+    static const QRegularExpression apiKey(QStringLiteral("^AIza[0-9A-Za-z_-]{35}$"));
+    if (!apiKey.match(value).hasMatch()) {
+        return QObject::tr("This does not look like a Google API key (they start with \"AIza\" and "
+                           "are 39 characters long).");
+    }
+    return {};
+}
+
+Result parseResponse(int httpStatus, const QByteArray &body, bool usedKey)
 {
     Result result;
     result.httpStatus = httpStatus;
     QJsonParseError parseError{};
     const QJsonObject root = QJsonDocument::fromJson(body, &parseError).object();
     if (httpStatus != 200) {
-        const QString message = root.value(QStringLiteral("error"))
-                                    .toObject()
-                                    .value(QStringLiteral("message"))
-                                    .toString();
-        result.error = httpStatus == 0 ? QObject::tr("PageSpeed Insights could not be reached.")
-                                       : QObject::tr("PageSpeed Insights answered with HTTP %1. %2")
-                                             .arg(httpStatus)
-                                             .arg(message);
+        const QJsonObject error = root.value(QStringLiteral("error")).toObject();
+        result.error = explainError(httpStatus, error, usedKey);
+        qWarning("PageSpeed error HTTP %d (%s): %s", httpStatus,
+                 qPrintable(error.value(QStringLiteral("status")).toString()),
+                 qPrintable(error.value(QStringLiteral("message")).toString()));
         return result;
     }
     if (parseError.error != QJsonParseError::NoError) {
@@ -78,7 +160,7 @@ PageSpeedClient::PageSpeedClient(QNetworkAccessManager &network, QObject *parent
     , m_network(network)
 {}
 
-void PageSpeedClient::run(const QString &url, const QString &apiKey, const QString &accessToken,
+void PageSpeedClient::run(const QString &url, const QString &apiKey,
                           std::function<void(PageSpeed::Result)> done)
 {
     QUrl endpoint(QStringLiteral("https://www.googleapis.com/pagespeedonline/v5/runPagespeed"));
@@ -86,28 +168,27 @@ void PageSpeedClient::run(const QString &url, const QString &apiKey, const QStri
     query.addQueryItem(QStringLiteral("url"), url);
     query.addQueryItem(QStringLiteral("strategy"), QStringLiteral("mobile"));
     query.addQueryItem(QStringLiteral("category"), QStringLiteral("performance"));
-    if (!apiKey.isEmpty()) {
+    const bool usedKey = !apiKey.isEmpty();
+    if (usedKey) {
         query.addQueryItem(QStringLiteral("key"), apiKey);
     }
     endpoint.setQuery(query);
     QNetworkRequest request(endpoint);
-    if (apiKey.isEmpty() && !accessToken.isEmpty()) {
-        request.setRawHeader("Authorization", "Bearer " + accessToken.toUtf8());
-    }
     // A Lighthouse run takes 15-60 seconds.
     request.setTransferTimeout(90000);
     QNetworkReply *reply = m_network.get(request);
     QPointer<PageSpeedClient> self(this);
-    connect(reply, &QNetworkReply::finished, this, [self, reply, done = std::move(done)]() {
-        reply->deleteLater();
-        if (!self) {
-            return;
-        }
-        const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        PageSpeed::Result result = PageSpeed::parseResponse(status, reply->readAll());
-        if (status == 0) {
-            result.error += QStringLiteral(" ") + reply->errorString();
-        }
-        done(result);
-    });
+    connect(
+        reply, &QNetworkReply::finished, this, [self, reply, usedKey, done = std::move(done)]() {
+            reply->deleteLater();
+            if (!self) {
+                return;
+            }
+            const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            PageSpeed::Result result = PageSpeed::parseResponse(status, reply->readAll(), usedKey);
+            if (status == 0) {
+                result.error += QStringLiteral(" ") + reply->errorString();
+            }
+            done(result);
+        });
 }
