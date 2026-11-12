@@ -42,6 +42,7 @@ public:
         TlsValidUntilRole,
         DomainExpiresOnRole,
         SourceRole,
+        FaviconUrlRole,
         JobStatusRole,
         ProgressRole,
         ProgressLabelRole

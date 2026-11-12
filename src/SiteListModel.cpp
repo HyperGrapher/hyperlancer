@@ -67,6 +67,8 @@ QVariant SiteListModel::data(const QModelIndex &index, int role) const
         return row.tlsValidUntil;
     case DomainExpiresOnRole:
         return row.domainExpiresOn;
+    case FaviconUrlRole:
+        return row.faviconUrl;
     case SourceRole:
         return row.source;
     case JobStatusRole:
@@ -95,6 +97,7 @@ QHash<int, QByteArray> SiteListModel::roleNames() const
             {TlsValidUntilRole, "tlsValidUntil"},
             {DomainExpiresOnRole, "domainExpiresOn"},
             {SourceRole, "source"},
+            {FaviconUrlRole, "faviconUrl"},
             {JobStatusRole, "jobStatus"},
             {ProgressRole, "progress"},
             {ProgressLabelRole, "progressLabel"}};

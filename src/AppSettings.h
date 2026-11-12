@@ -21,6 +21,9 @@ class AppSettings : public QObject
                    ambientEnabledChanged)
     Q_PROPERTY(bool glassHighlights READ glassHighlights WRITE setGlassHighlights NOTIFY
                    glassHighlightsChanged)
+    Q_PROPERTY(QString gmailChromeProfile READ gmailChromeProfile WRITE setGmailChromeProfile NOTIFY
+                   gmailChromeProfileChanged)
+    Q_PROPERTY(bool showFavicons READ showFavicons WRITE setShowFavicons NOTIFY showFaviconsChanged)
     Q_PROPERTY(bool performanceOverlay READ performanceOverlay WRITE setPerformanceOverlay NOTIFY
                    performanceOverlayChanged)
     Q_PROPERTY(AmbientSpeed ambientSpeed READ ambientSpeed WRITE setAmbientSpeed NOTIFY
@@ -54,7 +57,11 @@ public:
     void setAmbientEnabled(bool enabled);
 
     [[nodiscard]] bool glassHighlights() const { return m_glassHighlights; }
+    [[nodiscard]] bool showFavicons() const { return m_showFavicons; }
+    [[nodiscard]] QString gmailChromeProfile() const { return m_gmailChromeProfile; }
     void setGlassHighlights(bool enabled);
+    void setShowFavicons(bool enabled);
+    void setGmailChromeProfile(const QString &profileName);
 
     [[nodiscard]] bool performanceOverlay() const { return m_performanceOverlay; }
     void setPerformanceOverlay(bool visible);
@@ -85,6 +92,8 @@ signals:
     void reducedMotionChanged();
     void ambientEnabledChanged();
     void glassHighlightsChanged();
+    void showFaviconsChanged();
+    void gmailChromeProfileChanged();
     void performanceOverlayChanged();
     void ambientSpeedChanged();
     void backgroundIntensityChanged();
@@ -96,6 +105,8 @@ private:
     bool m_reducedMotion = false;
     bool m_ambientEnabled = true;
     bool m_glassHighlights = true;
+    bool m_showFavicons = true;
+    QString m_gmailChromeProfile;
     bool m_performanceOverlay = false;
     AmbientSpeed m_ambientSpeed = AmbientSpeed::Normal;
     double m_backgroundIntensity = 1.0;

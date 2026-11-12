@@ -32,6 +32,9 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     , m_discovery(m_database, m_runner, m_langSearch, m_integrations)
     , m_health(m_paths, m_database, m_runner, m_integrations, m_gmail)
 {
+    m_gmail.setChromeProfile(m_settings.gmailChromeProfile());
+    connect(&m_settings, &AppSettings::gmailChromeProfileChanged, this,
+            [this]() { m_gmail.setChromeProfile(m_settings.gmailChromeProfile()); });
     connect(&m_database, &Database::ready, this, &AppContext::onDatabaseReady);
     connect(&m_runner, &JobRunner::notice, this, &AppContext::notice);
     connect(&m_gmail, &GmailService::notice, this, &AppContext::notice);

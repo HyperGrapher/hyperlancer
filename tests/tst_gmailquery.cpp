@@ -13,6 +13,8 @@ private slots:
     void freeMailIsNeverMatchedByDomain();
     void extractsAddresses();
     void parsesMetadata();
+    void readsPlainBody();
+    void fallsBackToHtmlBody();
 };
 
 void GmailQueryTest::buildsSearch()
@@ -69,4 +71,26 @@ void GmailQueryTest::parsesMetadata()
 }
 
 QTEST_GUILESS_MAIN(GmailQueryTest)
+void GmailQueryTest::readsPlainBody()
+{
+    // "Merhaba\nDünya" as base64url inside a nested multipart message.
+    const QByteArray plain = QByteArray("Merhaba\nD\xC3\xBCnya").toBase64(QByteArray::Base64UrlEncoding);
+    const QByteArray html = QByteArray("<p>Other</p>").toBase64(QByteArray::Base64UrlEncoding);
+    const QJsonObject message = QJsonDocument::fromJson(
+        QByteArray(R"({"payload":{"mimeType":"multipart/mixed","parts":[{"mimeType":"multipart/alternative","parts":[)"
+                   R"({"mimeType":"text/html","body":{"data":")") + html +
+        R"("}},{"mimeType":"text/plain","body":{"data":")" + plain + R"("}}]}]}})").object();
+    QCOMPARE(GmailQuery::bodyText(message), QString::fromUtf8("Merhaba\nD\xC3\xBCnya"));
+}
+
+void GmailQueryTest::fallsBackToHtmlBody()
+{
+    const QByteArray html =
+        QByteArray("<style>p{}</style><p>Hello &amp; welcome</p><p>Bye</p>").toBase64(QByteArray::Base64UrlEncoding);
+    const QJsonObject message = QJsonDocument::fromJson(
+        QByteArray(R"({"payload":{"mimeType":"text/html","body":{"data":")") + html + R"("}}})").object();
+    QCOMPARE(GmailQuery::bodyText(message), QStringLiteral("Hello & welcome\nBye"));
+    QVERIFY(GmailQuery::bodyText(QJsonObject()).isEmpty());
+}
+
 #include "tst_gmailquery.moc"

@@ -14,6 +14,7 @@
 #include <QSqlQuery>
 #include <QUrlQuery>
 
+#include "ChromeProfile.h"
 #include "Database.h"
 #include "DbTime.h"
 #include "GmailQuery.h"
@@ -497,8 +498,41 @@ void GmailService::emitStoredMessages(qint64 siteId, const QString &error)
         });
 }
 
+void GmailService::loadMessageBody(const QString &gmailId)
+{
+    withAccessToken([this, gmailId](const QString &token) {
+        if (token.isEmpty()) {
+            emit messageBodyLoaded(gmailId, {}, tr("Gmail is not connected."));
+            return;
+        }
+        QUrl url(kApiBase + QStringLiteral("messages/") + gmailId);
+        QUrlQuery params;
+        params.addQueryItem(QStringLiteral("format"), QStringLiteral("full"));
+        url.setQuery(params);
+        QNetworkReply *reply = m_network.get(apiRequest(url, token));
+        QPointer<GmailService> self(this);
+        connect(reply, &QNetworkReply::finished, this, [self, reply, gmailId]() {
+            reply->deleteLater();
+            if (!self) {
+                return;
+            }
+            const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            if (status != 200) {
+                emit self->messageBodyLoaded(gmailId, {},
+                                             tr("Could not load the message (HTTP %1).").arg(status));
+                return;
+            }
+            const QString body =
+                GmailQuery::bodyText(QJsonDocument::fromJson(reply->readAll()).object());
+            emit self->messageBodyLoaded(gmailId, body, body.isEmpty() ? tr("This message has no text.") : QString());
+        });
+    });
+}
+
 void GmailService::openThread(const QString &threadId) const
 {
-    QDesktopServices::openUrl(
-        QUrl(QStringLiteral("https://mail.google.com/mail/u/0/#all/") + threadId));
+    const QUrl url(QStringLiteral("https://mail.google.com/mail/u/0/#all/") + threadId);
+    if (!ChromeProfile::open(url, m_chromeProfile)) {
+        QDesktopServices::openUrl(url);
+    }
 }

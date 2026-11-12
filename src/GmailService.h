@@ -60,7 +60,12 @@ public:
     // Searches the mailbox for the site's domain, stores message metadata and emits
     // siteMessagesLoaded. Without a connection it only emits what is already stored.
     Q_INVOKABLE void syncSite(qint64 siteId);
+    // Fetches the readable body of one message. Bodies are never stored (PRD): each call
+    // asks Gmail and emits messageBodyLoaded.
+    Q_INVOKABLE void loadMessageBody(const QString &gmailId);
+    // Opens the thread in Gmail, in the configured Chrome profile when there is one.
     Q_INVOKABLE void openThread(const QString &threadId) const;
+    void setChromeProfile(const QString &profileName) { m_chromeProfile = profileName; }
 
     // A valid access token, refreshed when needed; empty string when not connected.
     void withAccessToken(std::function<void(QString)> use);
@@ -68,6 +73,7 @@ public:
 signals:
     void stateChanged();
     void siteMessagesLoaded(qint64 siteId, const QVariantList &messages, const QString &error);
+    void messageBodyLoaded(const QString &gmailId, const QString &body, const QString &error);
     void notice(const QString &message, bool isError);
 
 private:
@@ -92,4 +98,5 @@ private:
     qint64 m_accountId = 0;
     QString m_email;
     QString m_status;
+    QString m_chromeProfile;
 };

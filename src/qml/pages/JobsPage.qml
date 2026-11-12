@@ -262,7 +262,7 @@ PageBase {
             visible: page.app.jobs.count === 0
             glyph: Icons.queue
             title: qsTr("No jobs yet")
-            text: qsTr("Analyze a site from Dashboard or Sites, or add leads from Discover.")
+            text: qsTr("Analyze a site from Dashboard or Websites, or add leads from Discover.")
         }
     }
 }

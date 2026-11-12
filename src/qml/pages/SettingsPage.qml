@@ -208,6 +208,20 @@ PageBase {
                             }
                         }
                     }
+
+                    SettingRow {
+                        width: parent.width
+                        glyph: Icons.openExternal
+                        title: qsTr("Open Gmail in Chrome profile")
+                        description: qsTr("Profile name as shown in Chrome. Leave empty to use the default browser.")
+
+                        StyledTextField {
+                            width: 220
+                            placeholderText: qsTr("Default browser")
+                            text: page.settings.gmailChromeProfile
+                            onEditingFinished: page.settings.gmailChromeProfile = text
+                        }
+                    }
                 }
             }
 
@@ -555,6 +569,18 @@ PageBase {
                         ToggleSwitch {
                             checked: page.settings.glassHighlights
                             onToggled: page.settings.glassHighlights = checked
+                        }
+                    }
+
+                    SettingRow {
+                        width: parent.width
+                        glyph: Icons.globe
+                        title: qsTr("Website favicons")
+                        description: qsTr("Show each website's icon instead of its first letter.")
+
+                        ToggleSwitch {
+                            checked: page.settings.showFavicons
+                            onToggled: page.settings.showFavicons = checked
                         }
                     }
 

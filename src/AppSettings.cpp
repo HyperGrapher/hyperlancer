@@ -8,6 +8,8 @@ constexpr auto kReducedMotionKey = "motion/reduced";
 constexpr auto kAmbientEnabledKey = "motion/ambient";
 constexpr auto kAmbientSpeedKey = "motion/ambientSpeed";
 constexpr auto kGlassHighlightsKey = "appearance/glassHighlights";
+constexpr auto kGmailChromeProfileKey = "gmail/chromeProfile";
+constexpr auto kShowFaviconsKey = "appearance/showFavicons";
 constexpr auto kBackgroundIntensityKey = "appearance/backgroundIntensity";
 constexpr auto kPerformanceOverlayKey = "diagnostics/performanceOverlay";
 constexpr auto kLastSectionKey = "navigation/lastSection";
@@ -36,6 +38,8 @@ AppSettings::AppSettings(const QString &storagePath, QObject *parent)
     m_reducedMotion = m_storage.value(kReducedMotionKey, m_reducedMotion).toBool();
     m_ambientEnabled = m_storage.value(kAmbientEnabledKey, m_ambientEnabled).toBool();
     m_glassHighlights = m_storage.value(kGlassHighlightsKey, m_glassHighlights).toBool();
+    m_gmailChromeProfile = m_storage.value(kGmailChromeProfileKey).toString();
+    m_showFavicons = m_storage.value(kShowFaviconsKey, m_showFavicons).toBool();
     m_performanceOverlay = m_storage.value(kPerformanceOverlayKey, m_performanceOverlay).toBool();
     m_ambientSpeed =
         toAmbientSpeed(m_storage.value(kAmbientSpeedKey, static_cast<int>(m_ambientSpeed)).toInt());
@@ -66,6 +70,27 @@ void AppSettings::setAmbientEnabled(bool enabled)
     m_ambientEnabled = enabled;
     m_storage.setValue(kAmbientEnabledKey, enabled);
     emit ambientEnabledChanged();
+}
+
+void AppSettings::setGmailChromeProfile(const QString &profileName)
+{
+    const QString trimmed = profileName.trimmed();
+    if (m_gmailChromeProfile == trimmed) {
+        return;
+    }
+    m_gmailChromeProfile = trimmed;
+    m_storage.setValue(kGmailChromeProfileKey, trimmed);
+    emit gmailChromeProfileChanged();
+}
+
+void AppSettings::setShowFavicons(bool enabled)
+{
+    if (m_showFavicons == enabled) {
+        return;
+    }
+    m_showFavicons = enabled;
+    m_storage.setValue(kShowFaviconsKey, enabled);
+    emit showFaviconsChanged();
 }
 
 void AppSettings::setGlassHighlights(bool enabled)

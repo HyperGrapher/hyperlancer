@@ -65,9 +65,9 @@ PageBase {
             id: header
 
             width: parent.width
-            title: qsTr("Sites")
+            title: qsTr("Websites")
             subtitle: page.app.sites.total === 0 ? qsTr("Every website you track, with what its last analysis found.")
-                      : qsTr("%1 of %n site(s)", "", page.app.sites.total).arg(page.app.sites.count)
+                      : qsTr("%1 of %n website(s)", "", page.app.sites.total).arg(page.app.sites.count)
             opacity: page.reveal(0)
             transform: Translate { y: page.revealShift(0) }
 
@@ -183,7 +183,7 @@ PageBase {
                 width: list.width
                 visible: page.app.sites.loaded && page.app.sites.count === 0
                 glyph: page.app.sites.total === 0 ? Icons.globe : Icons.funnel
-                title: page.app.sites.total === 0 ? qsTr("No sites yet") : qsTr("Nothing matches")
+                title: page.app.sites.total === 0 ? qsTr("No websites yet") : qsTr("Nothing matches")
                 text: page.app.sites.total === 0
                       ? qsTr("Add a website above, or find businesses in Discover and import them here.")
                       : qsTr("Try another search or filter.")

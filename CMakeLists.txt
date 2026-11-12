@@ -39,6 +39,7 @@ set(HYPERLANCER_CORE_SOURCES
     src/ToolPaths.h src/ToolPaths.cpp
     src/LangSearchClient.h src/LangSearchClient.cpp
     src/GmailQuery.h src/GmailQuery.cpp
+    src/ChromeProfile.h src/ChromeProfile.cpp
     src/PageSpeedClient.h src/PageSpeedClient.cpp
 )
 

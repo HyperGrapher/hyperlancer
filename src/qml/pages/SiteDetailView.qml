@@ -40,7 +40,7 @@ Item {
 
             anchors.verticalCenter: parent.verticalCenter
             glyph: Icons.arrowLeft
-            hint: qsTr("Back to sites (Esc)")
+            hint: qsTr("Back to websites (Esc)")
             onClicked: view.backRequested()
         }
 
@@ -51,6 +51,7 @@ Item {
             anchors.leftMargin: Theme.spacingL
             anchors.verticalCenter: parent.verticalCenter
             siteKey: view.siteKey
+            faviconUrl: view.site.favicon_url || ""
             status: view.detail.analyzing ? "running" : view.outcome
             size: 48
         }
@@ -113,6 +114,8 @@ Item {
             spacing: Theme.spacingS
 
             IconButton {
+                implicitWidth: 40
+                implicitHeight: 40
                 glyph: Icons.trash
                 danger: true
                 hint: qsTr("Remove site (double-click)")
@@ -134,6 +137,7 @@ Item {
 
             PrimaryButton {
                 implicitWidth: 150
+                implicitHeight: 40
                 text: view.detail.analyzing ? qsTr("Analyzing…") : view.outcome ? qsTr("Analyze again") : qsTr("Analyze")
                 glyph: Icons.lightning
                 enabled: !view.detail.analyzing && view.site.url !== undefined

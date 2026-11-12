@@ -9,6 +9,7 @@ Item {
     required property int index
     required property var siteId
     required property string siteKey
+    required property string faviconUrl
     required property string url
     required property string title
     required property string cms
@@ -50,6 +51,7 @@ Item {
 
         SiteBadge {
             siteKey: row.siteKey
+            faviconUrl: row.faviconUrl
             status: row.working ? "running" : row.outcome
             size: 32
             Layout.alignment: Qt.AlignVCenter

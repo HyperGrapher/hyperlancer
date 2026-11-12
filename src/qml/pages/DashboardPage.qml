@@ -62,7 +62,7 @@ PageBase {
         title: page.greeting
         subtitle: page.app.jobRunner.runningCount > 0
                   ? qsTr("%n analysis(es) running in the background.", "", page.app.jobRunner.runningCount)
-                  : qsTr("%n site(s) tracked. Paste a website to see what it needs.", "", page.stats.sites || 0)
+                  : qsTr("%n website(s) tracked. Paste a website to see what it needs.", "", page.stats.sites || 0)
         opacity: page.reveal(0)
         transform: Translate { y: page.revealShift(0) }
     }
@@ -153,7 +153,7 @@ PageBase {
             Layout.fillWidth: true
             Layout.fillHeight: true
             glyph: Icons.globe
-            label: qsTr("Sites tracked")
+            label: qsTr("Websites tracked")
             value: page.stats.sites || 0
             note: qsTr("view all")
             opacity: page.reveal(2)
@@ -236,6 +236,7 @@ PageBase {
 
                     width: parent.width
                     siteKey: modelData.site_key
+                    faviconUrl: modelData.favicon_url || ""
                     detail: [modelData.cms, modelData.title].filter(v => !!v).join(" · ")
                     trailing: Format.relativeTime(modelData.last_fetched_at)
                     status: modelData.last_fetch_outcome || ""
@@ -334,6 +335,7 @@ PageBase {
         id: miniRow
 
         property string siteKey
+        property string faviconUrl
         property string detail
         property string trailing
         property color trailingColor: Theme.textMuted
@@ -359,6 +361,7 @@ PageBase {
 
             anchors.verticalCenter: parent.verticalCenter
             siteKey: miniRow.siteKey
+            faviconUrl: miniRow.faviconUrl
             status: miniRow.status
             size: 28
         }

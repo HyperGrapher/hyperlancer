@@ -38,6 +38,7 @@ struct SiteRow
     QString tlsValidUntil; // YYYY-MM-DD
     QString domainExpiresOn;
     QString source;
+    QString faviconUrl;
     QString activeJobStatus; // "queued" or "running" while a profile job is pending
 
     friend bool operator==(const SiteRow &, const SiteRow &) = default;

@@ -40,4 +40,8 @@ struct MessageMeta
 // accountEmail decides the direction: a message from the mailbox owner is "sent".
 [[nodiscard]] MessageMeta parseMetadata(const QJsonObject &message, const QString &accountEmail);
 
+// Readable text of a users.messages.get (format=full) response: the text/plain part, or the
+// text/html part with tags removed. Empty when the message has no text part.
+[[nodiscard]] QString bodyText(const QJsonObject &message);
+
 } // namespace GmailQuery

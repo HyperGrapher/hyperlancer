@@ -74,6 +74,7 @@ QtObject {
 
     // Pointer-driven light play on glass cards (Preferences > Glass highlights).
     property bool glassHighlights: true
+    property bool showFavicons: true
 
     // Current section mood. Controls bind to accent/accentSecondary, so the whole UI
     // re-tints together when the section changes.

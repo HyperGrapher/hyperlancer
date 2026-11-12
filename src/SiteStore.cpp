@@ -116,7 +116,7 @@ ListResult listSites(QSqlDatabase &db, const ListQuery &listQuery)
             "SELECT s.id, s.site_key, s.url, s.title, s.cms, s.hosting, s.email_provider, "
             "s.http_status, "
             "s.last_fetch_outcome, s.last_fetched_at, s.tls_valid_until, s.domain_expires_on, "
-            "s.source, "
+            "s.source, s.favicon_url, "
             "(SELECT j.status FROM jobs j WHERE j.site_id = s.id AND j.status IN "
             "('queued','running') "
             " ORDER BY j.id DESC LIMIT 1) AS active_job "
@@ -153,7 +153,8 @@ ListResult listSites(QSqlDatabase &db, const ListQuery &listQuery)
         row.tlsValidUntil = query.value(10).toString();
         row.domainExpiresOn = query.value(11).toString();
         row.source = query.value(12).toString();
-        row.activeJobStatus = query.value(13).toString();
+        row.faviconUrl = query.value(13).toString();
+        row.activeJobStatus = query.value(14).toString();
         result.rows.push_back(row);
     }
 
@@ -353,7 +354,7 @@ QVariantMap dashboard(QSqlDatabase &db)
     QSqlQuery recentQuery = SqlExec::run(
         db, QStringLiteral(
                 "SELECT id, site_key, title, cms, last_fetch_outcome, last_fetched_at, "
-                "mobile_score FROM sites WHERE last_fetched_at IS NOT NULL AND archived_at IS "
+                "mobile_score, favicon_url FROM sites WHERE last_fetched_at IS NOT NULL AND archived_at IS "
                 "NULL ORDER BY last_fetched_at DESC LIMIT 7"));
     while (recentQuery.next()) {
         recent.append(recordToMap(recentQuery, {QStringLiteral("last_fetched_at")}));

@@ -8,6 +8,7 @@ Item {
     property string siteKey: ""
     property string status: ""   // "", ok, partial, failed, running
     property real size: 32
+    property string faviconUrl: ""
 
     readonly property color tint: Qt.hsla(Format.hueOf(siteKey) / 360, 0.7, 0.74, 1)
 
@@ -21,8 +22,23 @@ Item {
         border.width: 1
         border.color: Theme.withAlpha(badge.tint, 0.45)
 
+        Image {
+            id: favicon
+
+            anchors.centerIn: parent
+            width: Math.round(badge.size * 0.56)
+            height: width
+            // Letter stays when the icon is off, missing or fails to load.
+            source: Theme.showFavicons ? badge.faviconUrl : ""
+            sourceSize: Qt.size(width * 2, height * 2)
+            asynchronous: true
+            fillMode: Image.PreserveAspectFit
+            visible: status === Image.Ready
+        }
+
         Text {
             anchors.centerIn: parent
+            visible: !favicon.visible
             text: Format.initialOf(badge.siteKey)
             color: badge.tint
             font.family: Theme.fontFamily

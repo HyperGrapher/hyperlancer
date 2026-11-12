@@ -28,7 +28,7 @@ Window {
 
     readonly property var sections: [
         { title: qsTr("Dashboard"), glyph: Icons.squaresFour },
-        { title: qsTr("Sites"), glyph: Icons.globe },
+        { title: qsTr("Websites"), glyph: Icons.globe },
         { title: qsTr("Discover"), glyph: Icons.binoculars },
         { title: qsTr("Jobs"), glyph: Icons.queue },
         { title: qsTr("Settings"), glyph: Icons.gearSix }
@@ -80,6 +80,12 @@ Window {
         target: Motion
         property: "reducedMotion"
         value: root.reducedMotionForced || root.appSettings.reducedMotion
+    }
+
+    Binding {
+        target: Theme
+        property: "showFavicons"
+        value: root.appSettings.showFavicons
     }
 
     Binding {
@@ -155,10 +161,6 @@ Window {
             height: parent.height - 2 * Theme.sidebarInset
             sections: root.sections
             currentIndex: Theme.section
-            runningJobs: root.app.jobRunner.runningCount
-            activeJobs: root.app.jobs.activeCount
-            databaseState: root.databaseState
-            jobsSection: root.sectionJobs
             focus: true
             onActivated: (index, origin) => root.navigate(index, origin)
         }

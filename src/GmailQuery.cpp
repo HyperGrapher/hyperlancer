@@ -112,4 +112,61 @@ MessageMeta parseMetadata(const QJsonObject &message, const QString &accountEmai
     return meta;
 }
 
+namespace {
+
+QString decodePart(const QJsonObject &part)
+{
+    const QByteArray data = part.value(QStringLiteral("body")).toObject().value(QStringLiteral("data")).toString().toLatin1();
+    return QString::fromUtf8(QByteArray::fromBase64(data, QByteArray::Base64UrlEncoding));
+}
+
+// First part with this MIME type, searching nested multipart containers depth first.
+QString findText(const QJsonObject &part, const QString &mimeType)
+{
+    if (part.value(QStringLiteral("mimeType")).toString() == mimeType) {
+        const QString text = decodePart(part);
+        if (!text.isEmpty()) {
+            return text;
+        }
+    }
+    for (const QJsonValue &child : part.value(QStringLiteral("parts")).toArray()) {
+        const QString text = findText(child.toObject(), mimeType);
+        if (!text.isEmpty()) {
+            return text;
+        }
+    }
+    return {};
+}
+
+QString htmlToText(QString html)
+{
+    html.remove(QRegularExpression(QStringLiteral("<(script|style)[^>]*>.*?</\\1>"),
+                                   QRegularExpression::DotMatchesEverythingOption |
+                                       QRegularExpression::CaseInsensitiveOption));
+    html.replace(QRegularExpression(QStringLiteral("<br\\s*/?>|</(p|div|tr|li|h[1-6])>"),
+                                    QRegularExpression::CaseInsensitiveOption),
+                 QStringLiteral("\n"));
+    html.remove(QRegularExpression(QStringLiteral("<[^>]*>")));
+    html.replace(QStringLiteral("&nbsp;"), QStringLiteral(" "))
+        .replace(QStringLiteral("&lt;"), QStringLiteral("<"))
+        .replace(QStringLiteral("&gt;"), QStringLiteral(">"))
+        .replace(QStringLiteral("&quot;"), QStringLiteral("\""))
+        .replace(QStringLiteral("&#39;"), QStringLiteral("'"))
+        .replace(QStringLiteral("&amp;"), QStringLiteral("&"));
+    html.replace(QRegularExpression(QStringLiteral("\n{3,}")), QStringLiteral("\n\n"));
+    return html.trimmed();
+}
+
+} // namespace
+
+QString bodyText(const QJsonObject &message)
+{
+    const QJsonObject payload = message.value(QStringLiteral("payload")).toObject();
+    const QString plain = findText(payload, QStringLiteral("text/plain"));
+    if (!plain.isEmpty()) {
+        return plain.trimmed();
+    }
+    return htmlToText(findText(payload, QStringLiteral("text/html")));
+}
+
 } // namespace GmailQuery

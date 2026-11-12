@@ -56,6 +56,13 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - Tour (`--tour`): all sections, rapid switching check prints `TOUR stress OK`.
 - `SecretStoreWin.cpp` compiles with MinGW (syntax check only; not run).
 
+### Polish round (after session 1)
+- Website favicons in badges (`sites.favicon_url`; Settings → Appearance → "Website favicons" turns them off; the letter is the fallback).
+- "Sites" renamed "Websites" in the sidebar and page title; the sidebar "Background jobs" card was removed (the Jobs section stays).
+- Site detail header buttons share one height (40 px).
+- Emails tab: click a row to read the body (fetched from Gmail on demand, never stored); icon button opens the thread in Gmail, in the Chrome profile named in Settings → Connections (`ChromeProfile`, reads Chrome's `Local State`; falls back to the default browser).
+- Not built here (Qt 6.11 missing in this environment): only `GmailQuery::bodyText` was compiled and tested.
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

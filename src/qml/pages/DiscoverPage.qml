@@ -29,7 +29,7 @@ PageBase {
 
         width: parent.width
         title: qsTr("Discover")
-        subtitle: qsTr("Search the web for businesses whose websites need work, then add them to Sites.")
+        subtitle: qsTr("Search the web for businesses whose websites need work, then add them to Websites.")
         opacity: page.reveal(0)
         transform: Translate { y: page.revealShift(0) }
     }
