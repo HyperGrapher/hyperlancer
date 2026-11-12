@@ -480,6 +480,38 @@ QVariantMap dashboard(QSqlDatabase &db)
         result.insert(QStringLiteral("expiring"), counts.value(3).toInt());
     }
 
+    // To-dos and website deadlines that are overdue or due within 30 days, soonest first.
+    QSqlQuery todoCounts = SqlExec::run(
+        db, QStringLiteral(
+                "SELECT COUNT(*), SUM(CASE WHEN td.due_on IS NOT NULL AND td.due_on < ? THEN 1 ELSE 0 END) "
+                "FROM todos td JOIN sites s ON s.id = td.site_id WHERE td.done_at IS NULL AND "
+                "s.archived_at IS NULL"),
+        {QDate::currentDate().toString(Qt::ISODate)});
+    if (todoCounts.next()) {
+        result.insert(QStringLiteral("openTodos"), todoCounts.value(0).toInt());
+        result.insert(QStringLiteral("overdueTodos"), todoCounts.value(1).toInt());
+    }
+    QVariantList comingUp;
+    QSqlQuery comingQuery = SqlExec::run(
+        db,
+        QStringLiteral(
+            "SELECT kind, title, site_id, site_key, due_on FROM ("
+            "SELECT 'todo' AS kind, td.title AS title, s.id AS site_id, s.site_key AS site_key, "
+            "td.due_on AS due_on FROM todos td JOIN sites s ON s.id = td.site_id WHERE "
+            "td.done_at IS NULL AND td.due_on IS NOT NULL AND td.due_on <= ? AND s.archived_at IS NULL "
+            "UNION ALL SELECT 'deadline', '', s.id, s.site_key, s.deadline_on FROM sites s WHERE "
+            "s.deadline_on IS NOT NULL AND s.deadline_on <= ? AND s.archived_at IS NULL) AS items "
+            "ORDER BY due_on, site_key LIMIT 8"),
+        {soon, soon});
+    while (comingQuery.next()) {
+        comingUp.append(QVariantMap{{QStringLiteral("kind"), comingQuery.value(0)},
+                                    {QStringLiteral("title"), comingQuery.value(1)},
+                                    {QStringLiteral("siteId"), comingQuery.value(2)},
+                                    {QStringLiteral("siteKey"), comingQuery.value(3)},
+                                    {QStringLiteral("dueOn"), comingQuery.value(4).toString()}});
+    }
+    result.insert(QStringLiteral("comingUp"), comingUp);
+
     QVariantList recent;
     QSqlQuery recentQuery = SqlExec::run(
         db, QStringLiteral(

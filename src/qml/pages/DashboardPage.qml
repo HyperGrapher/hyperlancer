@@ -12,6 +12,7 @@ PageBase {
 
     readonly property var stats: app.dashboard.stats
     readonly property var recent: stats.recent || []
+    readonly property var comingUp: stats.comingUp || []
     readonly property var expiringSites: stats.expiringSites || []
     readonly property var usage: stats.apiUsage || {}
 
@@ -42,6 +43,7 @@ PageBase {
         analyzedTile.replay();
         failedTile.replay();
         expiringTile.replay();
+        todosTile.replay();
     }
 
     Connections {
@@ -153,7 +155,7 @@ PageBase {
             Layout.fillWidth: true
             Layout.fillHeight: true
             glyph: Icons.globe
-            label: qsTr("Websites tracked")
+            label: qsTr("Websites")
             value: page.stats.sites || 0
             note: qsTr("view all")
             opacity: page.reveal(2)
@@ -194,10 +196,24 @@ PageBase {
             Layout.fillWidth: true
             Layout.fillHeight: true
             glyph: Icons.calendar
-            label: qsTr("Expiring ≤ 30 days")
+            label: qsTr("Expiring")
             value: page.stats.expiring || 0
-            note: qsTr("SSL or domain")
+            note: qsTr("≤ 30 days")
             noteColor: (page.stats.expiring || 0) > 0 ? Theme.warning : Theme.accent
+            opacity: page.reveal(5)
+            transform: Translate { y: page.revealShift(5) }
+        }
+
+        StatTile {
+            id: todosTile
+
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            glyph: Icons.checkSquare
+            label: qsTr("Open to-dos")
+            value: page.stats.openTodos || 0
+            note: (page.stats.overdueTodos || 0) > 0 ? qsTr("%n overdue", "", page.stats.overdueTodos) : qsTr("none overdue")
+            noteColor: (page.stats.overdueTodos || 0) > 0 ? Theme.danger : Theme.accent
             opacity: page.reveal(5)
             transform: Translate { y: page.revealShift(5) }
         }
@@ -220,7 +236,7 @@ PageBase {
 
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.preferredWidth: 3
+            Layout.preferredWidth: 2
             clip: true
             title: qsTr("Recently analyzed")
             glyph: Icons.history
@@ -254,10 +270,56 @@ PageBase {
             }
         }
 
-        ColumnLayout {
+        // To-dos and deadlines that are overdue or due within 30 days.
+        SectionPanel {
+            id: comingUpPanel
+
+            readonly property int capacity: Math.max(0, Math.floor((height - 64) / Theme.compactRowHeight))
+
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.preferredWidth: 2
+            clip: true
+            title: qsTr("Coming up")
+            glyph: Icons.checkSquare
+            opacity: page.reveal(7)
+            transform: Translate { y: page.revealShift(7) }
+
+            Repeater {
+                model: page.comingUp.slice(0, comingUpPanel.capacity)
+
+                delegate: SiteMiniRow {
+                    required property var modelData
+                    required property int index
+
+                    readonly property var days: Format.daysUntil(modelData.dueOn)
+
+                    width: parent.width
+                    siteKey: modelData.siteKey
+                    detail: modelData.kind === "deadline" ? qsTr("Deadline") : modelData.title
+                    trailing: Format.dueLabel(days)
+                    trailingColor: Format.dueColor(days)
+                    last: index === Math.min(page.comingUp.length, comingUpPanel.capacity) - 1
+                    onClicked: page.siteOpened(modelData.siteId)
+                }
+            }
+
+            Text {
+                width: parent.width
+                topPadding: Theme.spacingS
+                visible: page.comingUp.length === 0
+                text: qsTr("No deadlines or to-dos due in the next 30 days.")
+                color: Theme.textMuted
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontBody
+                wrapMode: Text.WordWrap
+            }
+        }
+
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.preferredWidth: 1.6
             spacing: Theme.spacingL
 
             SectionPanel {

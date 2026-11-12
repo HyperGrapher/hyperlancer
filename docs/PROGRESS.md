@@ -85,6 +85,10 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - Tests: `tst_langsearch` (screenshot parsing), `tst_siteorganizer` (storage, per-strategy scores). Tour step `09e`.
 - The full-page screenshot audit exists in the same response but was left out (large); a later Playwright `site_render` job (PRD M3) will give real 1440×900 and 390×844 captures.
 
+### Dashboard: coming up
+- New "Open to-dos" tile (with the overdue count) and a "Coming up" panel: open to-dos and website deadlines that are overdue or due within 30 days, soonest first (up to 8); a click opens the website. Query in `SiteStore::dashboard`, test `dashboardListsDueTodosAndDeadlines`.
+- Still open: a global to-do list page, websites per status on the dashboard.
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

@@ -1,3 +1,4 @@
+#include <QDate>
 #include <QDir>
 #include <QFile>
 #include <QSqlQuery>
@@ -25,6 +26,7 @@ private slots:
     void mailMovesStatusForwardOnly();
     void screenshotsKeepTheNewestPerKind();
     void speedChecksAreKeptPerStrategy();
+    void dashboardListsDueTodosAndDeadlines();
     void deletingSiteRemovesItsRecords();
 
 private:
@@ -272,6 +274,27 @@ void SiteOrganizerTest::speedChecksAreKeptPerStrategy()
     QCOMPARE(detail.value(QStringLiteral("speedDesktop")).toMap().value(QStringLiteral("score")).toInt(), 88);
     // Only the mobile score lands on the site row.
     QCOMPARE(detail.value(QStringLiteral("site")).toMap().value(QStringLiteral("mobile_score")).toInt(), 41);
+}
+
+void SiteOrganizerTest::dashboardListsDueTodosAndDeadlines()
+{
+    QSqlDatabase db = m_database->db();
+    const qint64 site = addSite(QStringLiteral("firma.com.tr"));
+    const QString yesterday = QDate::currentDate().addDays(-1).toString(Qt::ISODate);
+    const QString nextWeek = QDate::currentDate().addDays(7).toString(Qt::ISODate);
+    const QString farAway = QDate::currentDate().addDays(200).toString(Qt::ISODate);
+    QVERIFY(SiteOrganizer::addTodo(db, site, QStringLiteral("Overdue offer"), yesterday));
+    QVERIFY(SiteOrganizer::addTodo(db, site, QStringLiteral("Someday"), farAway));
+    QVERIFY(SiteOrganizer::addTodo(db, site, QStringLiteral("No date"), QString()));
+    QVERIFY(SiteOrganizer::setDeadline(db, site, nextWeek));
+
+    const QVariantMap stats = SiteStore::dashboard(db);
+    QCOMPARE(stats.value(QStringLiteral("openTodos")).toInt(), 3);
+    QCOMPARE(stats.value(QStringLiteral("overdueTodos")).toInt(), 1);
+    const QVariantList coming = stats.value(QStringLiteral("comingUp")).toList();
+    QCOMPARE(coming.size(), 2); // the far-away and undated to-dos stay out
+    QCOMPARE(coming.at(0).toMap().value(QStringLiteral("title")).toString(), QStringLiteral("Overdue offer"));
+    QCOMPARE(coming.at(1).toMap().value(QStringLiteral("kind")).toString(), QStringLiteral("deadline"));
 }
 
 void SiteOrganizerTest::deletingSiteRemovesItsRecords()

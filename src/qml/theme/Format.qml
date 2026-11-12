@@ -94,6 +94,21 @@ QtObject {
         return qsTr("%1 d").arg(days);
     }
 
+    // For to-dos and deadlines, where a past date means overdue rather than expired.
+    function dueLabel(days) {
+        if (days === null || days === undefined)
+            return "—";
+        if (days < 0)
+            return qsTr("%1 d overdue").arg(-days);
+        return days === 0 ? qsTr("today") : qsTr("%1 d").arg(days);
+    }
+
+    function dueColor(days) {
+        if (days === null || days === undefined)
+            return Theme.textMuted;
+        return days <= 0 ? Theme.danger : days <= 3 ? Theme.warning : Theme.textSecondary;
+    }
+
     function daysColor(days) {
         if (days === null || days === undefined)
             return Theme.textMuted;
