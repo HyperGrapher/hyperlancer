@@ -1,5 +1,5 @@
 import QtQuick
-import Lumina
+import Hyperlancer
 
 // Root window: wires the window shell, ambient background, sidebar and pages together.
 Window {
@@ -7,8 +7,7 @@ Window {
 
     required property WindowChrome chrome
     required property AppSettings appSettings
-    required property TaskSimulator taskSimulator
-    required property CollectionModel collectionModel
+    required property AppContext app
     required property bool reducedMotionForced
     required property string tourDirectory
 
@@ -18,13 +17,26 @@ Window {
     readonly property bool ambientActive: shown && appSettings.ambientEnabled && !Motion.reducedMotion
     readonly property real frameMargin: chrome.translucent && !maximized ? Theme.windowShadowMargin : 0
     readonly property real cornerRadius: chrome.translucent && !maximized ? Theme.radiusWindow : 0
+    readonly property string databaseState: app.database.state === Database.Ready ? "ready"
+                                            : app.database.state === Database.Failed ? "failed" : "connecting"
+
+    readonly property int sectionDashboard: 0
+    readonly property int sectionSites: 1
+    readonly property int sectionDiscover: 2
+    readonly property int sectionJobs: 3
+    readonly property int sectionSettings: 4
 
     readonly property var sections: [
-        { title: qsTr("Overview"), glyph: Icons.house },
-        { title: qsTr("Collections"), glyph: Icons.squaresFour },
-        { title: qsTr("Activity"), glyph: Icons.pulse },
-        { title: qsTr("Preferences"), glyph: Icons.gearSix }
+        { title: qsTr("Dashboard"), glyph: Icons.squaresFour },
+        { title: qsTr("Sites"), glyph: Icons.globe },
+        { title: qsTr("Discover"), glyph: Icons.binoculars },
+        { title: qsTr("Jobs"), glyph: Icons.queue },
+        { title: qsTr("Settings"), glyph: Icons.gearSix }
     ]
+
+    // Pages ask for another page's content through these.
+    signal siteRequested(var siteId)
+    signal settingsTabRequested(int tab)
 
     // Switches section: moves the sidebar pill, spreads the new mood from the clicked icon,
     // re-tints the accent and transitions the page. Safe to call at any rate.
@@ -38,14 +50,31 @@ Window {
         appSettings.lastSection = index;
     }
 
-    width: 1180
-    height: 760
-    minimumWidth: 940
-    minimumHeight: 620
+    function openSite(siteId) {
+        sidebar.select(sectionSites);
+        siteRequested(siteId);
+    }
+
+    function openSettings(tab) {
+        sidebar.select(sectionSettings);
+        settingsTabRequested(tab);
+    }
+
+    width: 1280
+    height: 800
+    minimumWidth: 1020
+    minimumHeight: 660
     visible: true
-    title: "Lumina"
+    title: "Hyperlancer"
     flags: Qt.Window | Qt.FramelessWindowHint | Qt.WindowMinMaxButtonsHint
     color: chrome.translucent ? "transparent" : Palettes.moods[Theme.section].base
+
+    onClosing: close => {
+        if (app.jobRunner.runningCount > 0 && !closeGuard.confirmed) {
+            close.accepted = false;
+            closeGuard.open();
+        }
+    }
 
     Binding {
         target: Motion
@@ -66,6 +95,14 @@ Window {
         pageHost.showImmediately(section);
         if (!Motion.reducedMotion)
             introAnimation.start();
+    }
+
+    Connections {
+        target: root.app
+
+        function onNotice(message, isError) {
+            toasts.show(message, isError);
+        }
     }
 
     AmbientClock {
@@ -118,48 +155,140 @@ Window {
             height: parent.height - 2 * Theme.sidebarInset
             sections: root.sections
             currentIndex: Theme.section
-            reducedMotion: Motion.reducedMotion
+            runningJobs: root.app.jobRunner.runningCount
+            activeJobs: root.app.jobs.activeCount
+            databaseState: root.databaseState
+            jobsSection: root.sectionJobs
             focus: true
             onActivated: (index, origin) => root.navigate(index, origin)
-            onReducedMotionToggled: enabled => root.appSettings.reducedMotion = enabled
         }
 
         PageHost {
             id: pageHost
 
             anchors.left: sidebar.right
-            anchors.leftMargin: 40
+            anchors.leftMargin: 36
             anchors.right: parent.right
-            anchors.rightMargin: 40
+            anchors.rightMargin: 36
             anchors.top: parent.top
-            anchors.topMargin: Theme.titleBarHeight + 14
+            anchors.topMargin: Theme.titleBarHeight + 10
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: 26
+            anchors.bottomMargin: 24
 
             pages: [
                 Component {
-                    OverviewPage {
+                    DashboardPage {
+                        app: root.app
                         ambientTime: ambientClock.time
-                        onRunDemoRequested: root.taskSimulator.start()
+                        onSiteOpened: siteId => root.openSite(siteId)
+                        onSectionRequested: index => sidebar.select(index)
                     }
                 },
                 Component {
-                    CollectionsPage {
-                        collection: root.collectionModel
-                    }
-                },
-                Component {
-                    ActivityPage {
-                        simulator: root.taskSimulator
+                    SitesPage {
+                        id: sitesPage
+
+                        app: root.app
                         ambientActive: root.ambientActive
+
+                        Connections {
+                            target: root
+
+                            function onSiteRequested(siteId) {
+                                sitesPage.openSite(siteId);
+                            }
+                        }
                     }
                 },
                 Component {
-                    PreferencesPage {
+                    DiscoverPage {
+                        app: root.app
+                        onSettingsRequested: root.openSettings(0)
+                    }
+                },
+                Component {
+                    JobsPage {
+                        app: root.app
+                        ambientActive: root.ambientActive
+                        onSiteOpened: siteId => root.openSite(siteId)
+                    }
+                },
+                Component {
+                    SettingsPage {
+                        id: settingsPage
+
+                        app: root.app
                         settings: root.appSettings
+
+                        Connections {
+                            target: root
+
+                            function onSettingsTabRequested(tab) {
+                                settingsPage.currentTab = tab;
+                            }
+                        }
                     }
                 }
             ]
+        }
+
+        // Shown on every page while the database is unreachable: nothing else can work.
+        Rectangle {
+            id: databaseBanner
+
+            anchors.horizontalCenter: pageHost.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 22
+            width: Math.min(pageHost.width, bannerRow.implicitWidth + 32)
+            height: 52
+            radius: Theme.radiusControl
+            color: Qt.rgba(0.08, 0.01, 0.03, 0.9)
+            border.width: 1
+            border.color: Theme.withAlpha(Theme.danger, 0.6)
+            visible: opacity > 0
+            opacity: root.databaseState === "failed" && Theme.section !== root.sectionSettings ? 1 : 0
+
+            Behavior on opacity { NumberAnimation { duration: Motion.normal } }
+
+            Row {
+                id: bannerRow
+
+                anchors.centerIn: parent
+                spacing: Theme.spacingM
+
+                Icon {
+                    anchors.verticalCenter: parent.verticalCenter
+                    glyph: Icons.database
+                    color: Theme.danger
+                    size: 18
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: Math.min(implicitWidth, pageHost.width - 220)
+                    text: qsTr("Database unavailable: %1").arg(root.app.database.error)
+                    color: Theme.textPrimary
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontBody
+                    elide: Text.ElideRight
+                }
+
+                SecondaryButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    implicitHeight: 32
+                    text: qsTr("Database settings")
+                    onClicked: root.openSettings(1)
+                }
+            }
+        }
+
+        Toast {
+            id: toasts
+
+            anchors.right: parent.right
+            anchors.rightMargin: 24
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 24
         }
 
         PerformanceOverlay {
@@ -170,6 +299,74 @@ Window {
             visible: root.appSettings.performanceOverlay
             window: root
             ambientActive: root.ambientActive
+        }
+
+        // Asks before closing while analyses run, as the PRD requires.
+        Rectangle {
+            id: closeGuard
+
+            property bool confirmed: false
+
+            function open() {
+                visible = true;
+            }
+
+            anchors.fill: parent
+            radius: root.cornerRadius
+            color: Qt.rgba(0, 0, 0.03, 0.55)
+            visible: false
+
+            TapHandler {}
+
+            GlassPanel {
+                anchors.centerIn: parent
+                width: 420
+                height: 190
+                tintStrength: 1
+
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: Theme.spacingXl
+                    spacing: Theme.spacingM
+
+                    Text {
+                        text: qsTr("Analyses are still running")
+                        color: Theme.textPrimary
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontHeading + 2
+                        font.weight: Font.DemiBold
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: qsTr("%n job(s) will be stopped. You can retry them from Jobs later.", "", root.app.jobRunner.runningCount)
+                        color: Theme.textSecondary
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontBody
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Row {
+                        spacing: Theme.spacingS
+                        topPadding: Theme.spacingS
+
+                        PrimaryButton {
+                            text: qsTr("Stop and quit")
+                            glyph: Icons.stop
+                            onClicked: {
+                                root.app.jobRunner.cancelAll();
+                                closeGuard.confirmed = true;
+                                root.close();
+                            }
+                        }
+
+                        SecondaryButton {
+                            text: qsTr("Keep working")
+                            onClicked: closeGuard.visible = false
+                        }
+                    }
+                }
+            }
         }
 
         ParallelAnimation {
@@ -187,21 +384,17 @@ Window {
         visible: !root.maximized
     }
 
-    Shortcut {
-        sequences: ["Ctrl+1"]
-        onActivated: sidebar.select(0)
-    }
-    Shortcut {
-        sequences: ["Ctrl+2"]
-        onActivated: sidebar.select(1)
-    }
-    Shortcut {
-        sequences: ["Ctrl+3"]
-        onActivated: sidebar.select(2)
-    }
-    Shortcut {
-        sequences: ["Ctrl+4"]
-        onActivated: sidebar.select(3)
+    Repeater {
+        model: root.sections.length
+
+        delegate: Item {
+            required property int index
+
+            Shortcut {
+                sequences: ["Ctrl+" + (index + 1)]
+                onActivated: sidebar.select(index)
+            }
+        }
     }
 
     Loader {
@@ -210,6 +403,7 @@ Window {
             window: root
             outputDirectory: root.tourDirectory
             host: pageHost
+            sectionCount: root.sections.length
             onNavigateRequested: index => sidebar.select(index)
         }
     }

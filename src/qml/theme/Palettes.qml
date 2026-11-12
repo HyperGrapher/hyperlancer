@@ -7,32 +7,39 @@ import QtQuick
 QtObject {
     readonly property var moods: [
         {
-            name: "Nebula",
+            name: "Nebula",       // Dashboard
             blobs: ["#6A3DF0", "#C13CFF", "#2D1B69", "#FF6FB5"],
             base: "#120A2A",
             accent: "#B58CFF",
             accentSecondary: "#FF7DC4"
         },
         {
-            name: "Lagoon",
+            name: "Lagoon",       // Sites
             blobs: ["#00B3A4", "#1FD1F9", "#0B3D5C", "#7CF5C8"],
             base: "#04161F",
             accent: "#4BE3D0",
             accentSecondary: "#5CC8FF"
         },
         {
-            name: "Ember",
+            name: "Ember",        // Discover
             blobs: ["#FF7A45", "#FF3D6E", "#FFC15E", "#5A1A3A"],
             base: "#1E0A12",
             accent: "#FF9A6B",
             accentSecondary: "#FF5C8A"
         },
         {
-            name: "Glacier",
+            name: "Glacier",      // Jobs
             blobs: ["#5B8CFF", "#8FB8FF", "#2A3A7A", "#B7A6FF"],
             base: "#0A1024",
             accent: "#8FB0FF",
             accentSecondary: "#C3B5FF"
+        },
+        {
+            name: "Moss",         // Settings
+            blobs: ["#2E9C72", "#8CCB5E", "#123A2E", "#4FC1B0"],
+            base: "#06140F",
+            accent: "#86E0A6",
+            accentSecondary: "#C8EC7A"
         }
     ]
 }

@@ -5,8 +5,10 @@
 #include <QString>
 #include <QtQml/qqmlregistration.h>
 
-// User preferences that survive restarts. Stored in an INI file so tests can point it at a
-// temporary location.
+#include "DatabaseConfig.h"
+
+// User preferences that survive restarts (appearance, tool paths, database connection). Stored in
+// an INI file so tests can point it at a temporary location.
 class AppSettings : public QObject
 {
     Q_OBJECT
@@ -26,6 +28,10 @@ class AppSettings : public QObject
     Q_PROPERTY(double backgroundIntensity READ backgroundIntensity WRITE setBackgroundIntensity
                    NOTIFY backgroundIntensityChanged)
     Q_PROPERTY(int lastSection READ lastSection WRITE setLastSection NOTIFY lastSectionChanged)
+    Q_PROPERTY(QString scriptsDirOverride READ scriptsDirOverride WRITE setScriptsDirOverride NOTIFY
+                   toolPathsChanged)
+    Q_PROPERTY(
+        QString pythonOverride READ pythonOverride WRITE setPythonOverride NOTIFY toolPathsChanged)
 
 public:
     enum class AmbientSpeed
@@ -36,7 +42,7 @@ public:
     };
     Q_ENUM(AmbientSpeed)
 
-    static constexpr int kSectionCount = 4;
+    static constexpr int kSectionCount = 5;
     static constexpr double kMinimumIntensity = 0.2;
 
     explicit AppSettings(const QString &storagePath, QObject *parent = nullptr);
@@ -62,6 +68,17 @@ public:
     [[nodiscard]] int lastSection() const { return m_lastSection; }
     void setLastSection(int section);
 
+    // Empty means "detect automatically" (see ToolPaths).
+    [[nodiscard]] QString scriptsDirOverride() const { return m_scriptsDirOverride; }
+    void setScriptsDirOverride(const QString &path);
+    [[nodiscard]] QString pythonOverride() const { return m_pythonOverride; }
+    void setPythonOverride(const QString &path);
+
+    // Database connection without the password (that lives in the SecretStore).
+    // sqlitePath is left empty; the caller fills in the data-folder default.
+    [[nodiscard]] DatabaseConfig databaseConfig() const;
+    void setDatabaseConfig(const DatabaseConfig &config);
+
     Q_INVOKABLE void resetToDefaults();
 
 signals:
@@ -72,6 +89,7 @@ signals:
     void ambientSpeedChanged();
     void backgroundIntensityChanged();
     void lastSectionChanged();
+    void toolPathsChanged();
 
 private:
     QSettings m_storage;
@@ -82,4 +100,6 @@ private:
     AmbientSpeed m_ambientSpeed = AmbientSpeed::Normal;
     double m_backgroundIntensity = 1.0;
     int m_lastSection = 0;
+    QString m_scriptsDirOverride;
+    QString m_pythonOverride;
 };

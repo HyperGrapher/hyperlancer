@@ -31,11 +31,11 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.8.3
+          version: 6.11.3
           host: ${{ matrix.platform == 'windows-x64' && 'windows' || 'linux' }}
           target: desktop
           arch: ${{ matrix.platform == 'windows-x64' && 'win64_mingw' || 'linux_gcc_64' }}
-          modules: qtshadertools
+          modules: qtshadertools qtwebsockets qtnetworkauth qttasktree
           tools: ${{ matrix.platform == 'windows-x64' && 'tools_mingw1310,qt.tools.win64_mingw1310' || '' }}
           cache: true
 
@@ -70,7 +70,8 @@ jobs:
         run: |
           mkdir -p tour
           xvfb-run -a -s "-screen 0 1400x900x24" \
-            ./build/Lumina --tour "$PWD/tour" --settings "$PWD/tour-settings.ini" 2>&1 | tee tour.log
+            ./build/Hyperlancer --tour "$PWD/tour" --settings "$PWD/tour-settings.ini" \
+              --data-dir "$PWD/tour-data" 2>&1 | tee tour.log
           grep -q "TOUR stress OK" tour.log
 
       - name: Upload screenshots
@@ -81,3 +82,19 @@ jobs:
           path: tour/*.png
           if-no-files-found: error
           retention-days: 14
+
+  python-tools:
+    name: Python tools (pytest)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Run tests
+        working-directory: web-dashboard/scripts
+        run: |
+          uv sync
+          uv run pytest -q

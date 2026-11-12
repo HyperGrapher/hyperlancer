@@ -11,9 +11,10 @@
 #include <QStandardPaths>
 #include <QUrl>
 
+#include "AppContext.h"
+#include "AppPaths.h"
 #include "AppSettings.h"
-#include "CollectionModel.h"
-#include "TaskSimulator.h"
+#include "LogFile.h"
 #include "WindowChrome.h"
 
 namespace {
@@ -24,12 +25,13 @@ struct LaunchOptions
     bool translucencyAllowed = true;
     QString tourDirectory;
     QString settingsPath;
+    QString dataDirectory;
 };
 
 LaunchOptions parseLaunchOptions(const QGuiApplication &app)
 {
     QCommandLineParser parser;
-    parser.setApplicationDescription(QStringLiteral("Lumina UI proof of concept"));
+    parser.setApplicationDescription(QStringLiteral("Hyperlancer: freelance lead generation"));
     parser.addHelpOption();
     parser.addVersionOption();
 
@@ -41,12 +43,15 @@ LaunchOptions parseLaunchOptions(const QGuiApplication &app)
         QStringLiteral("Use an opaque window with square corners (for X11 without compositor)."));
     const QCommandLineOption tour(
         QStringLiteral("tour"),
-        QStringLiteral("Run the automated demo tour, save screenshots to <dir>, then quit."),
+        QStringLiteral("Run the automated tour, save screenshots to <dir>, then quit."),
         QStringLiteral("dir"));
     const QCommandLineOption settings(QStringLiteral("settings"),
                                       QStringLiteral("Use <file> to store settings."),
                                       QStringLiteral("file"));
-    parser.addOptions({reducedMotion, noTranslucency, tour, settings});
+    const QCommandLineOption dataDir(QStringLiteral("data-dir"),
+                                     QStringLiteral("Use <dir> as the data folder."),
+                                     QStringLiteral("dir"));
+    parser.addOptions({reducedMotion, noTranslucency, tour, settings, dataDir});
     parser.process(app);
 
     LaunchOptions options;
@@ -54,10 +59,14 @@ LaunchOptions parseLaunchOptions(const QGuiApplication &app)
     options.translucencyAllowed = !parser.isSet(noTranslucency);
     options.tourDirectory = parser.value(tour);
     options.settingsPath = parser.value(settings);
+    options.dataDirectory = parser.value(dataDir);
     if (options.settingsPath.isEmpty()) {
         const QString configDir =
             QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
         options.settingsPath = QDir(configDir).filePath(QStringLiteral("settings.ini"));
+    }
+    if (options.dataDirectory.isEmpty()) {
+        options.dataDirectory = AppPaths::defaultDataDir();
     }
     return options;
 }
@@ -85,11 +94,15 @@ void loadBundledFonts()
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
-    QGuiApplication::setOrganizationName(QStringLiteral("Lumina"));
-    QGuiApplication::setApplicationName(QStringLiteral("Lumina"));
+    QGuiApplication::setOrganizationName(QStringLiteral("HyperGrapher"));
+    QGuiApplication::setApplicationName(QStringLiteral("Hyperlancer"));
     QGuiApplication::setApplicationVersion(QStringLiteral(PROJECT_VERSION_STRING));
 
     const LaunchOptions options = parseLaunchOptions(app);
+    const AppPaths paths = AppPaths::create(options.dataDirectory);
+    LogFile::install(paths.logsDir);
+    qInfo("Hyperlancer %s starting, data folder %s", PROJECT_VERSION_STRING,
+          qPrintable(QDir::toNativeSeparators(paths.dataDir)));
     loadBundledFonts();
 
     // Every control is custom-styled, so use the style designed for customization; native
@@ -98,19 +111,20 @@ int main(int argc, char *argv[])
 
     WindowChrome chrome(options.translucencyAllowed);
     AppSettings settings(options.settingsPath);
-    TaskSimulator taskSimulator;
-    CollectionModel collectionModel;
+    AppContext context(paths, settings);
+    // Queued on the database thread before QML loads, so every query the pages send while
+    // they build runs after the connection is open.
+    context.start();
 
     QQmlApplicationEngine engine;
     engine.setInitialProperties({
         {QStringLiteral("chrome"), QVariant::fromValue(&chrome)},
         {QStringLiteral("appSettings"), QVariant::fromValue(&settings)},
-        {QStringLiteral("taskSimulator"), QVariant::fromValue(&taskSimulator)},
-        {QStringLiteral("collectionModel"), QVariant::fromValue(&collectionModel)},
+        {QStringLiteral("app"), QVariant::fromValue(&context)},
         {QStringLiteral("reducedMotionForced"), options.reducedMotion},
         {QStringLiteral("tourDirectory"), options.tourDirectory},
     });
-    engine.load(QUrl(QStringLiteral("qrc:/qt/qml/Lumina/Main.qml")));
+    engine.load(QUrl(QStringLiteral("qrc:/qt/qml/Hyperlancer/Main.qml")));
     if (engine.rootObjects().isEmpty()) {
         return EXIT_FAILURE;
     }

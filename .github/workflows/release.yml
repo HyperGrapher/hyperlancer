@@ -31,23 +31,23 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.8.3
+          version: 6.11.3
           host: ${{ matrix.platform == 'windows-x64' && 'windows' || 'linux' }}
           target: desktop
           arch: ${{ matrix.platform == 'windows-x64' && 'win64_mingw' || 'linux_gcc_64' }}
-          modules: qtshadertools
+          modules: qtshadertools qtwebsockets qtnetworkauth qttasktree
           tools: ${{ matrix.platform == 'windows-x64' && 'tools_mingw1310,qt.tools.win64_mingw1310' || '' }}
           cache: true
 
       - name: Configure (Linux)
         if: runner.os == 'Linux'
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DLUMINA_BUILD_TESTS=OFF
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DHYPERLANCER_BUILD_TESTS=OFF
 
       - name: Configure (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DLUMINA_BUILD_TESTS=OFF \
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DHYPERLANCER_BUILD_TESTS=OFF \
             -DCMAKE_CXX_COMPILER="$IQTA_TOOLS/mingw1310_64/bin/g++.exe"
 
       - name: Build
@@ -57,11 +57,16 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $package = "${{ github.workspace }}\dist\qt-custom-ui-app-windows-x64"
+          $package = "${{ github.workspace }}\dist\hyperlancer-windows-x64"
           New-Item -ItemType Directory -Force $package | Out-Null
-          Copy-Item build\Lumina.exe $package
-          windeployqt --release --compiler-runtime --qmldir src\qml --dir $package "$package\Lumina.exe"
-          Compress-Archive -Path $package -DestinationPath dist\qt-custom-ui-app-windows-x64.zip
+          Copy-Item build\Hyperlancer.exe $package
+          windeployqt --release --compiler-runtime --qmldir src\qml --dir $package "$package\Hyperlancer.exe"
+          # The analysis tools: the app finds web-dashboard\scripts next to the executable.
+          # Run "uv sync --project web-dashboard\scripts" in the unpacked folder once.
+          $tools = "$package\web-dashboard\scripts"
+          New-Item -ItemType Directory -Force $tools | Out-Null
+          Copy-Item web-dashboard\scripts\* $tools -Recurse -Exclude .venv,__pycache__,.pytest_cache
+          Compress-Archive -Path $package -DestinationPath dist\hyperlancer-windows-x64.zip
 
       - name: Bundle Linux runtime
         if: runner.os == 'Linux'
@@ -69,7 +74,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p AppDir/usr/bin dist
-          cp build/Lumina AppDir/usr/bin/
+          cp build/Hyperlancer AppDir/usr/bin/
           curl -L --fail --retry 3 -o linuxdeploy.AppImage \
             https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           curl -L --fail --retry 3 -o linuxdeploy-plugin-qt-x86_64.AppImage \
@@ -77,24 +82,24 @@ jobs:
           chmod +x linuxdeploy.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
           export APPIMAGE_EXTRACT_AND_RUN=1
           export QML_SOURCES_PATHS="$GITHUB_WORKSPACE/src/qml"
-          ./linuxdeploy.AppImage --appdir AppDir --executable AppDir/usr/bin/Lumina --plugin qt
+          ./linuxdeploy.AppImage --appdir AppDir --executable AppDir/usr/bin/Hyperlancer --plugin qt
           cat > AppDir/AppRun <<'EOF'
           #!/bin/sh
           APP_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
           export LD_LIBRARY_PATH="$APP_DIR/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
           export QT_PLUGIN_PATH="$APP_DIR/usr/plugins"
           export QML2_IMPORT_PATH="$APP_DIR/usr/qml"
-          exec "$APP_DIR/usr/bin/Lumina" "$@"
+          exec "$APP_DIR/usr/bin/Hyperlancer" "$@"
           EOF
           chmod +x AppDir/AppRun
-          mv AppDir dist/qt-custom-ui-app-linux-x64
-          tar -czf dist/qt-custom-ui-app-linux-x64.tar.gz -C dist qt-custom-ui-app-linux-x64
+          mv AppDir dist/hyperlancer-linux-x64
+          tar -czf dist/hyperlancer-linux-x64.tar.gz -C dist hyperlancer-linux-x64
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform }}
-          path: dist/qt-custom-ui-app-${{ matrix.platform }}.*
+          path: dist/hyperlancer-${{ matrix.platform }}.*
           if-no-files-found: error
           retention-days: 7
 

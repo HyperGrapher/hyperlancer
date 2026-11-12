@@ -11,6 +11,14 @@ constexpr auto kGlassHighlightsKey = "appearance/glassHighlights";
 constexpr auto kBackgroundIntensityKey = "appearance/backgroundIntensity";
 constexpr auto kPerformanceOverlayKey = "diagnostics/performanceOverlay";
 constexpr auto kLastSectionKey = "navigation/lastSection";
+constexpr auto kScriptsDirKey = "tools/scriptsDir";
+constexpr auto kPythonKey = "tools/python";
+constexpr auto kDbBackendKey = "database/backend";
+constexpr auto kDbHostKey = "database/host";
+constexpr auto kDbPortKey = "database/port";
+constexpr auto kDbNameKey = "database/name";
+constexpr auto kDbUserKey = "database/user";
+constexpr auto kDbTlsKey = "database/requireTls";
 
 AppSettings::AmbientSpeed toAmbientSpeed(int value)
 {
@@ -36,6 +44,8 @@ AppSettings::AppSettings(const QString &storagePath, QObject *parent)
                    kMinimumIntensity, 1.0);
     m_lastSection =
         std::clamp(m_storage.value(kLastSectionKey, m_lastSection).toInt(), 0, kSectionCount - 1);
+    m_scriptsDirOverride = m_storage.value(kScriptsDirKey).toString();
+    m_pythonOverride = m_storage.value(kPythonKey).toString();
 }
 
 void AppSettings::setReducedMotion(bool enabled)
@@ -108,6 +118,54 @@ void AppSettings::setLastSection(int section)
     m_lastSection = clamped;
     m_storage.setValue(kLastSectionKey, clamped);
     emit lastSectionChanged();
+}
+
+void AppSettings::setScriptsDirOverride(const QString &path)
+{
+    const QString trimmed = path.trimmed();
+    if (m_scriptsDirOverride == trimmed) {
+        return;
+    }
+    m_scriptsDirOverride = trimmed;
+    m_storage.setValue(kScriptsDirKey, trimmed);
+    emit toolPathsChanged();
+}
+
+void AppSettings::setPythonOverride(const QString &path)
+{
+    const QString trimmed = path.trimmed();
+    if (m_pythonOverride == trimmed) {
+        return;
+    }
+    m_pythonOverride = trimmed;
+    m_storage.setValue(kPythonKey, trimmed);
+    emit toolPathsChanged();
+}
+
+DatabaseConfig AppSettings::databaseConfig() const
+{
+    DatabaseConfig config;
+    config.backend = m_storage.value(kDbBackendKey).toString() == QStringLiteral("mysql")
+                         ? DatabaseConfig::Backend::MySql
+                         : DatabaseConfig::Backend::Sqlite;
+    config.host = m_storage.value(kDbHostKey).toString();
+    config.port = m_storage.value(kDbPortKey, 3306).toInt();
+    config.databaseName = m_storage.value(kDbNameKey).toString();
+    config.user = m_storage.value(kDbUserKey).toString();
+    config.requireTls = m_storage.value(kDbTlsKey, true).toBool();
+    return config;
+}
+
+void AppSettings::setDatabaseConfig(const DatabaseConfig &config)
+{
+    m_storage.setValue(kDbBackendKey,
+                       config.isMySql() ? QStringLiteral("mysql") : QStringLiteral("sqlite"));
+    m_storage.setValue(kDbHostKey, config.host.trimmed());
+    m_storage.setValue(kDbPortKey, config.port);
+    m_storage.setValue(kDbNameKey, config.databaseName.trimmed());
+    m_storage.setValue(kDbUserKey, config.user.trimmed());
+    m_storage.setValue(kDbTlsKey, config.requireTls);
+    m_storage.sync();
 }
 
 void AppSettings::resetToDefaults()

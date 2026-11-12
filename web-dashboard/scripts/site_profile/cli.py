@@ -15,6 +15,7 @@ from site_tools.events import Emitter
 from site_tools.spec import SpecError, load_spec
 
 from .core import ProfileParams, collect
+from .summary import summarize
 
 STATUS_BY_EXIT = {exitcodes.OK: "ok", exitcodes.PARTIAL: "partial", exitcodes.FAILED: "failed", exitcodes.BLOCKED: "failed"}
 
@@ -82,6 +83,8 @@ def main(argv: list[str] | None = None) -> int:
         return exitcodes.CANCELLED
 
     if output is not None:
+        # The normalized summary travels inside the report, so the app reads one file.
+        report["summary"] = summarize(report)
         write_atomic(output, report)
         emit.result(path=str(output), status=report["status"], errors=len(report["errors"]), duration_ms=report["metadata"]["duration_ms"])
     elif not (job_mode or args.events):

@@ -56,6 +56,15 @@ QtObject {
     readonly property color danger: "#F0505A"
     readonly property color success: "#3DD68C"
     readonly property color warning: "#FFB547"
+    readonly property color info: "#6FB7FF"
+
+    // Tables and lists: one height for every data row, so lists line up across pages.
+    readonly property int rowHeight: 52
+    readonly property int compactRowHeight: 44
+    readonly property int tableHeaderHeight: 34
+    readonly property color rowHover: Qt.rgba(1, 1, 1, 0.055)
+    readonly property color rowDivider: Qt.rgba(1, 1, 1, 0.06)
+    readonly property int inputHeight: 40
 
     // Background
     // Ambient motion is slow enough to update at 30 Hz; it looks as smooth as 60 Hz and
@@ -88,6 +97,17 @@ QtObject {
 
     function withAlpha(color, alpha) {
         return Qt.rgba(color.r, color.g, color.b, alpha);
+    }
+
+    // Color for an outcome or job status word used across the app.
+    function statusColor(status) {
+        switch (status) {
+        case "ok": case "succeeded": case "connected": return success;
+        case "partial": case "warn": case "queued": return warning;
+        case "failed": case "error": case "canceled": return danger;
+        case "running": case "checking": return accent;
+        default: return textMuted;
+        }
     }
 
     function mix(first, second, amount) {

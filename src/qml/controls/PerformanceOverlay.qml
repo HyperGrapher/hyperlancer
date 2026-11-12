@@ -1,5 +1,5 @@
 import QtQuick
-import Lumina
+import Hyperlancer
 
 // Small diagnostics box: frame rate, frame times and a running frame counter. When the
 // counter stands still, the app is not rendering at all.

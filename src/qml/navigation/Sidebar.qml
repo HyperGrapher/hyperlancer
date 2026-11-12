@@ -1,17 +1,19 @@
 import QtQuick
 
 // Floating glass sidebar: brand, section navigation with the liquid selection pill, and a
-// quick reduced-motion switch at the bottom.
+// live background-jobs card at the bottom that leads to the Jobs section.
 FocusScope {
     id: sidebar
 
     property var sections: []
     property int currentIndex: 0
-    property bool reducedMotion: false
+    property int runningJobs: 0
+    property int activeJobs: 0
+    property string databaseState: "ready" // "connecting", "ready", "failed"
+    property int jobsSection: 3
 
     // origin: center of the clicked icon in sidebar coordinates (start of the mood spread)
     signal activated(int index, point origin)
-    signal reducedMotionToggled(bool enabled)
 
     readonly property int itemHeight: 46
     readonly property int itemSpacing: 6
@@ -63,16 +65,16 @@ FocusScope {
 
             Icon {
                 anchors.centerIn: parent
-                glyph: Icons.sparkle
+                glyph: Icons.target
                 filled: true
-                size: 16
+                size: 17
                 color: "#160B24"
             }
         }
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: "Lumina"
+            text: "Hyperlancer"
             color: Theme.textPrimary
             font.family: Theme.fontFamily
             font.pixelSize: 17
@@ -132,7 +134,10 @@ FocusScope {
     }
 
     Rectangle {
-        id: motionCard
+        id: jobsCard
+
+        readonly property bool busy: sidebar.activeJobs > 0
+        readonly property bool dbProblem: sidebar.databaseState === "failed"
 
         anchors.left: parent.left
         anchors.right: parent.right
@@ -140,48 +145,81 @@ FocusScope {
         anchors.margins: 12
         height: 64
         radius: 14
-        color: Theme.glassFill
+        color: jobsHover.hovered ? Theme.glassFillHover : Theme.glassFill
         border.width: 1
-        border.color: Theme.glassStroke
+        border.color: jobsCard.dbProblem ? Theme.withAlpha(Theme.danger, 0.55)
+                      : jobsCard.busy ? Theme.withAlpha(Theme.accent, 0.4) : Theme.glassStroke
 
-        Icon {
-            id: motionIcon
+        Behavior on color { ColorAnimation { duration: Motion.fast } }
+        Behavior on border.color { ColorAnimation { duration: Motion.normal } }
+
+        Item {
+            id: jobsIconSlot
 
             x: 14
+            width: 22
+            height: 22
             anchors.verticalCenter: parent.verticalCenter
-            glyph: Icons.moon
-            size: 18
-            color: Theme.accent
+
+            Icon {
+                id: jobsIcon
+
+                anchors.centerIn: parent
+                glyph: jobsCard.dbProblem ? Icons.warningCircle : jobsCard.busy ? Icons.spinner : Icons.queue
+                size: 18
+                color: jobsCard.dbProblem ? Theme.danger : Theme.accent
+
+                RotationAnimation on rotation {
+                    running: jobsCard.busy && !jobsCard.dbProblem && !Motion.reducedMotion && sidebar.visible
+                    from: 0
+                    to: 360
+                    duration: 1400
+                    loops: Animation.Infinite
+                    onRunningChanged: if (!running) jobsIcon.rotation = 0
+                }
+            }
         }
 
         Column {
-            anchors.left: motionIcon.right
+            anchors.left: jobsIconSlot.right
             anchors.leftMargin: 10
+            anchors.right: parent.right
+            anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             spacing: 1
 
             Text {
-                text: qsTr("Reduced motion")
+                width: parent.width
+                text: jobsCard.dbProblem ? qsTr("Database offline")
+                      : jobsCard.busy ? qsTr("%n running", "", sidebar.runningJobs)
+                      : qsTr("Background jobs")
                 color: Theme.textPrimary
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontBody
                 font.weight: Font.Medium
+                elide: Text.ElideRight
             }
 
             Text {
-                text: sidebar.reducedMotion ? qsTr("Calm and static") : qsTr("Full animation")
+                width: parent.width
+                text: jobsCard.dbProblem ? qsTr("Open Settings → Database")
+                      : jobsCard.busy ? qsTr("%n in the queue", "", Math.max(0, sidebar.activeJobs - sidebar.runningJobs))
+                      : sidebar.databaseState === "connecting" ? qsTr("Connecting…") : qsTr("All quiet")
                 color: Theme.textMuted
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontCaption
+                elide: Text.ElideRight
             }
         }
 
-        ToggleSwitch {
-            anchors.right: parent.right
-            anchors.rightMargin: 12
-            anchors.verticalCenter: parent.verticalCenter
-            checked: sidebar.reducedMotion
-            onToggled: sidebar.reducedMotionToggled(checked)
+        HoverHandler {
+            id: jobsHover
+
+            cursorShape: Qt.PointingHandCursor
+        }
+
+        TapHandler {
+            onTapped: sidebar.select(jobsCard.dbProblem ? sidebar.sections.length - 1 : sidebar.jobsSection)
         }
     }
 }

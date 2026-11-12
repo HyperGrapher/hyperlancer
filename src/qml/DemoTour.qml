@@ -9,25 +9,27 @@ Item {
     required property Window window
     required property string outputDirectory
     required property Item host
+    property int sectionCount: 5
 
     signal navigateRequested(int index)
 
     property int stepIndex: 0
     property int stressSwitches: 0
     readonly property int stressTotal: 40
-    readonly property var stressPattern: [1, 3, 0, 2, 3, 1, 2, 0]
+    readonly property var stressPattern: [1, 3, 0, 2, 4, 1, 2, 0]
 
     readonly property var steps: [
-        { wait: 1400, run: () => capture("01-overview") },
+        { wait: 0, run: () => navigateRequested(0) },
+        { wait: 1600, run: () => capture("01-dashboard") },
         { wait: 0, run: () => navigateRequested(1) },
-        { wait: 120, run: () => capture("02-transition-to-collections") },
-        { wait: 1300, run: () => capture("03-collections") },
+        { wait: 120, run: () => capture("02-transition-to-sites") },
+        { wait: 1300, run: () => capture("03-sites") },
         { wait: 0, run: () => navigateRequested(2) },
-        { wait: 1300, run: () => capture("04-activity") },
-        { wait: 0, run: () => window.taskSimulator.start() },
-        { wait: 4200, run: () => capture("05-activity-running") },
+        { wait: 1300, run: () => capture("04-discover") },
         { wait: 0, run: () => navigateRequested(3) },
-        { wait: 1300, run: () => capture("06-preferences") },
+        { wait: 1300, run: () => capture("05-jobs") },
+        { wait: 0, run: () => navigateRequested(4) },
+        { wait: 1300, run: () => capture("06-settings") },
         { wait: 0, run: () => startStress() }
     ]
 

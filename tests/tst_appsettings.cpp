@@ -1,3 +1,4 @@
+#include <QFile>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTest>
@@ -15,6 +16,7 @@ private slots:
     void clampsOutOfRangeValues();
     void emitsOnlyOnRealChanges();
     void resetRestoresDefaults();
+    void persistsDatabaseAndToolSettings();
 
 private:
     [[nodiscard]] QString storagePath() const { return m_directory->filePath("settings.ini"); }
@@ -92,4 +94,36 @@ void AppSettingsTest::resetRestoresDefaults()
 }
 
 QTEST_GUILESS_MAIN(AppSettingsTest)
+void AppSettingsTest::persistsDatabaseAndToolSettings()
+{
+    {
+        AppSettings settings(storagePath());
+        QCOMPARE(settings.databaseConfig().backend, DatabaseConfig::Backend::Sqlite);
+        DatabaseConfig config;
+        config.backend = DatabaseConfig::Backend::MySql;
+        config.host = QStringLiteral(" db.example.com ");
+        config.port = 3307;
+        config.databaseName = QStringLiteral("leads");
+        config.user = QStringLiteral("hl");
+        config.password = QStringLiteral("must-not-be-stored");
+        config.requireTls = false;
+        settings.setDatabaseConfig(config);
+        QSignalSpy spy(&settings, &AppSettings::toolPathsChanged);
+        settings.setScriptsDirOverride(QStringLiteral("C:/tools/scripts"));
+        QCOMPARE(spy.count(), 1);
+    }
+    AppSettings reloaded(storagePath());
+    const DatabaseConfig config = reloaded.databaseConfig();
+    QVERIFY(config.isMySql());
+    QCOMPARE(config.host, QStringLiteral("db.example.com"));
+    QCOMPARE(config.port, 3307);
+    QCOMPARE(config.databaseName, QStringLiteral("leads"));
+    QCOMPARE(config.requireTls, false);
+    QVERIFY(config.password.isEmpty());
+    QCOMPARE(reloaded.scriptsDirOverride(), QStringLiteral("C:/tools/scripts"));
+    QFile file(storagePath());
+    QVERIFY(file.open(QIODevice::ReadOnly));
+    QVERIFY(!file.readAll().contains("must-not-be-stored"));
+}
+
 #include "tst_appsettings.moc"
