@@ -97,8 +97,9 @@ void loadBundledFonts()
 QString senderName(const QString &fromHeader)
 {
     const int angle = fromHeader.indexOf(QLatin1Char('<'));
-    const QString name = (angle > 0 ? fromHeader.left(angle) : fromHeader).trimmed();
-    return name.remove(QLatin1Char('"'));
+    QString name = (angle > 0 ? fromHeader.left(angle) : fromHeader).trimmed();
+    name.remove(QLatin1Char('"'));
+    return name;
 }
 
 void notifyNewMail(TrayIcon &tray, const QVariantList &messages)
