@@ -63,6 +63,7 @@ void SiteDetail::setSiteId(qint64 siteId)
     m_snapshots.clear();
     m_activity.clear();
     m_speed.clear();
+    closeComparison();
     m_speedDesktop.clear();
     m_screenshots.clear();
     m_organizer.clear();
@@ -291,6 +292,31 @@ void SiteDetail::setTodoDone(qint64 todoId, bool done)
 void SiteDetail::deleteTodo(qint64 todoId)
 {
     saveOrganizer([todoId](QSqlDatabase &db) { return SiteOrganizer::deleteTodo(db, todoId); });
+}
+
+void SiteDetail::compareSnapshot(qint64 snapshotId)
+{
+    m_diffLoading = true;
+    m_snapshotDiff.clear();
+    emit snapshotDiffChanged();
+    const qint64 siteId = m_siteId;
+    m_database.run(
+        this, [snapshotId](QSqlDatabase &db) { return SiteStore::diffWithPrevious(db, snapshotId); },
+        [this, siteId](const QVariantMap &diff) {
+            if (siteId != m_siteId) {
+                return; // another website was opened meanwhile
+            }
+            m_diffLoading = false;
+            m_snapshotDiff = diff;
+            emit snapshotDiffChanged();
+        });
+}
+
+void SiteDetail::closeComparison()
+{
+    m_diffLoading = false;
+    m_snapshotDiff.clear();
+    emit snapshotDiffChanged();
 }
 
 void SiteDetail::showSnapshot(qint64 snapshotId)

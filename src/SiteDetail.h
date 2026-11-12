@@ -30,6 +30,9 @@ class SiteDetail : public QObject
     Q_PROPERTY(QVariantMap snapshot READ snapshot NOTIFY loadedChanged)
     Q_PROPERTY(QVariantList snapshots READ snapshots NOTIFY loadedChanged)
     Q_PROPERTY(QVariantList activity READ activity NOTIFY loadedChanged)
+    // Result of compareSnapshot: SnapshotDiff groups, or { error }. Empty while closed.
+    Q_PROPERTY(QVariantMap snapshotDiff READ snapshotDiff NOTIFY snapshotDiffChanged)
+    Q_PROPERTY(bool diffLoading READ isDiffLoading NOTIFY snapshotDiffChanged)
     Q_PROPERTY(QVariantMap speed READ speed NOTIFY loadedChanged)
     Q_PROPERTY(QVariantMap speedDesktop READ speedDesktop NOTIFY loadedChanged)
     // "mobile" and "desktop": { url (file URL), createdAt } of the newest screenshot.
@@ -58,6 +61,8 @@ public:
     [[nodiscard]] QVariantMap snapshot() const { return m_snapshot; }
     [[nodiscard]] QVariantList snapshots() const { return m_snapshots; }
     [[nodiscard]] QVariantList activity() const { return m_activity; }
+    [[nodiscard]] QVariantMap snapshotDiff() const { return m_snapshotDiff; }
+    [[nodiscard]] bool isDiffLoading() const { return m_diffLoading; }
     [[nodiscard]] QVariantMap speed() const { return m_speed; }
     [[nodiscard]] QVariantMap speedDesktop() const { return m_speedDesktop; }
     [[nodiscard]] QVariantMap screenshots() const { return m_screenshots; }
@@ -89,6 +94,9 @@ public:
     Q_INVOKABLE void addTodo(const QString &title, const QString &dueOn);
     Q_INVOKABLE void setTodoDone(qint64 todoId, bool done);
     Q_INVOKABLE void deleteTodo(qint64 todoId);
+    // What changed in this analysis compared with the one before it.
+    Q_INVOKABLE void compareSnapshot(qint64 snapshotId);
+    Q_INVOKABLE void closeComparison();
     // Shows an older snapshot instead of the latest.
     Q_INVOKABLE void showSnapshot(qint64 snapshotId);
 
@@ -97,6 +105,7 @@ signals:
     void loadedChanged();
     void progressChanged();
     void speedRunningChanged();
+    void snapshotDiffChanged();
     // Both PageSpeed calls answered; ok is false when either failed.
     void speedCheckFinished(bool ok);
     void emailsChanged();
@@ -122,6 +131,8 @@ private:
     QVariantList m_snapshots;
     QVariantList m_activity;
     QVariantMap m_speed;
+    QVariantMap m_snapshotDiff;
+    bool m_diffLoading = false;
     QVariantMap m_speedDesktop;
     QVariantMap m_screenshots;
     QString m_dataDir;

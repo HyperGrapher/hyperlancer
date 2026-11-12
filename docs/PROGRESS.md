@@ -102,6 +102,11 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - New dependency: **Qt Multimedia** (README, `ci.yml`, `release.yml` and the Windows install cache key updated). MP3 decoding works with Qt's bundled FFmpeg (checked on Linux); no sound device in the test container, so playback itself was not heard. `contract`, `project`, `conflict` and `click` are available to assign but unused by default.
 - Website detail tabs reset their scroll position (and the opened note) when the site changes or the detail view closes.
 
+### Snapshot diff
+- History tab: **Changes** on each successful analysis compares it with the newest earlier analysis that did not fail. `SnapshotDiff` (C++ port of `SnapshotDiff.php`, same sections and labels) works on the normalized summaries; `SiteStore::diffWithPrevious` finds the pair; `SiteDetail::compareSnapshot` / `snapshotDiff` expose it; `SnapshotChanges.qml` shows added / removed / changed rows per section and lists the unchanged sections.
+- Tests: `tst_snapshotdiff` (4) and `diffComparesWithTheEarlierSuccessfulAnalysis` in `tst_siteorganizer`. Checked visually with two seeded analyses.
+- Still open from §5: saved views, bulk actions, global to-do list, content crawl, M2 checks.
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

@@ -94,6 +94,10 @@ struct ListResult
 // "error" is set when the site does not exist.
 [[nodiscard]] QVariantMap loadDetail(QSqlDatabase &db, qint64 siteId);
 [[nodiscard]] QVariantMap loadSnapshot(QSqlDatabase &db, qint64 snapshotId);
+// What changed in this analysis compared with the one before it (the newest earlier one that
+// did not fail). Adds "beforeAt" and "afterAt" to the SnapshotDiff result; "error" says why
+// there is nothing to compare.
+[[nodiscard]] QVariantMap diffWithPrevious(QSqlDatabase &db, qint64 snapshotId);
 // Registrable domains (and site keys) that are already tracked, out of the given ones.
 [[nodiscard]] QSet<QString> knownDomains(QSqlDatabase &db, const QStringList &domains);
 // Registrable domains of a site, for mail matching.

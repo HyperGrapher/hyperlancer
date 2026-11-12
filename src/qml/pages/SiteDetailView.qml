@@ -542,6 +542,8 @@ Item {
             historyRows.positionViewAtBeginning();
         }
 
+        readonly property bool comparing: view.detail.diffLoading || Object.keys(view.detail.snapshotDiff).length > 0
+
         radius: Theme.radiusCard
         clip: true
 
@@ -549,12 +551,14 @@ Item {
             id: historyHeader
 
             width: parent.width
+            visible: !parent.comparing
 
             TableHeader.Caption { text: qsTr("Analyzed"); Layout.fillWidth: true }
             TableHeader.Caption { text: qsTr("Result"); Layout.preferredWidth: 96 }
             TableHeader.Caption { text: qsTr("HTTP"); Layout.preferredWidth: 56 }
             TableHeader.Caption { text: qsTr("Took"); Layout.preferredWidth: 70 }
-            TableHeader.Caption { text: qsTr("Problem"); Layout.preferredWidth: 300 }
+            TableHeader.Caption { text: qsTr("Problem"); Layout.preferredWidth: 220 }
+            Item { Layout.preferredWidth: 96 }
         }
 
         ListView {
@@ -567,6 +571,7 @@ Item {
             anchors.margins: 6
             clip: true
             boundsBehavior: Flickable.StopAtBounds
+            visible: !parent.comparing
             model: view.detail.snapshots
 
             delegate: Item {
@@ -625,12 +630,23 @@ Item {
                     }
 
                     Text {
-                        Layout.preferredWidth: 300
+                        Layout.preferredWidth: 220
                         text: snapshotRow.modelData.error_summary || ""
                         color: Theme.textMuted
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontCaption + 1
                         elide: Text.ElideRight
+                    }
+
+                    // Compares this analysis with the one before it.
+                    SecondaryButton {
+                        id: changesButton
+
+                        Layout.preferredWidth: 96
+                        implicitHeight: 28
+                        text: qsTr("Changes")
+                        enabled: snapshotRow.modelData.outcome !== "failed"
+                        onClicked: view.detail.compareSnapshot(snapshotRow.modelData.id)
                     }
                 }
 
@@ -641,7 +657,10 @@ Item {
                 }
 
                 TapHandler {
-                    onTapped: {
+                    // The Changes button handles its own taps.
+                    onTapped: eventPoint => {
+                        if (changesButton.contains(changesButton.mapFromItem(snapshotRow, eventPoint.position)))
+                            return;
                         view.detail.showSnapshot(snapshotRow.modelData.id);
                         view.currentTab = 0;
                     }
@@ -649,9 +668,17 @@ Item {
             }
         }
 
+        SnapshotChanges {
+            anchors.fill: parent
+            visible: parent.comparing
+            diff: view.detail.snapshotDiff
+            loading: view.detail.diffLoading
+            onBackRequested: view.detail.closeComparison()
+        }
+
         EmptyState {
             anchors.centerIn: parent
-            visible: view.detail.snapshots.length === 0
+            visible: view.detail.snapshots.length === 0 && !parent.comparing
             glyph: Icons.history
             title: qsTr("No snapshots yet")
             text: qsTr("Every analysis is stored here, including failed ones.")

@@ -27,6 +27,7 @@ private slots:
     void screenshotsKeepTheNewestPerKind();
     void speedChecksAreKeptPerStrategy();
     void dashboardListsDueTodosAndDeadlines();
+    void diffComparesWithTheEarlierSuccessfulAnalysis();
     void deletingSiteRemovesItsRecords();
 
 private:
@@ -295,6 +296,32 @@ void SiteOrganizerTest::dashboardListsDueTodosAndDeadlines()
     QCOMPARE(coming.size(), 2); // the far-away and undated to-dos stay out
     QCOMPARE(coming.at(0).toMap().value(QStringLiteral("title")).toString(), QStringLiteral("Overdue offer"));
     QCOMPARE(coming.at(1).toMap().value(QStringLiteral("kind")).toString(), QStringLiteral("deadline"));
+}
+
+void SiteOrganizerTest::diffComparesWithTheEarlierSuccessfulAnalysis()
+{
+    QSqlDatabase db = m_database->db();
+    const qint64 site = addSite(QStringLiteral("firma.com.tr"));
+    const auto addSnapshot = [&db, site](const QString &at, const QString &outcome, const QString &summaryJson) {
+        QSqlQuery insert(db);
+        insert.prepare(QStringLiteral("INSERT INTO profile_snapshots (site_id, fetched_at, outcome, schema_version, "
+                                      "requested_url, summary_json, raw_json, created_at) VALUES (?, ?, ?, 2, 'x', ?, '{}', ?)"));
+        insert.addBindValue(site);
+        insert.addBindValue(at);
+        insert.addBindValue(outcome);
+        insert.addBindValue(summaryJson);
+        insert.addBindValue(at);
+        return insert.exec() ? insert.lastInsertId().toLongLong() : qint64(0);
+    };
+    const qint64 first = addSnapshot(QStringLiteral("2030-01-01 10:00:00.000"), QStringLiteral("ok"), QStringLiteral(R"({"cms":{"name":"Joomla"}})"));
+    addSnapshot(QStringLiteral("2030-01-02 10:00:00.000"), QStringLiteral("failed"), QStringLiteral("{}"));
+    const qint64 third = addSnapshot(QStringLiteral("2030-01-03 10:00:00.000"), QStringLiteral("ok"), QStringLiteral(R"({"cms":{"name":"WordPress"}})"));
+
+    QVERIFY(SiteStore::diffWithPrevious(db, first).contains(QStringLiteral("error"))); // nothing earlier
+    const QVariantMap result = SiteStore::diffWithPrevious(db, third); // skips the failed one in between
+    QVERIFY(!result.contains(QStringLiteral("error")));
+    QCOMPARE(result.value(QStringLiteral("count")).toInt(), 1);
+    QVERIFY(result.value(QStringLiteral("beforeAt")).toString().startsWith(QStringLiteral("2030-01-01")));
 }
 
 void SiteOrganizerTest::deletingSiteRemovesItsRecords()

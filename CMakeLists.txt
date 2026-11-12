@@ -40,6 +40,7 @@ set(HYPERLANCER_CORE_SOURCES
     src/LangSearchClient.h src/LangSearchClient.cpp
     src/GmailQuery.h src/GmailQuery.cpp
     src/ChromeProfile.h src/ChromeProfile.cpp
+    src/SnapshotDiff.h src/SnapshotDiff.cpp
     src/MailStore.h src/MailStore.cpp
     src/SiteOrganizer.h src/SiteOrganizer.cpp
     src/PageSpeedClient.h src/PageSpeedClient.cpp
@@ -141,6 +142,7 @@ set(HYPERLANCER_QML_FILES
     src/qml/pages/EmailsPage.qml
     src/qml/pages/SiteWorkspace.qml
     src/qml/pages/SiteScreenshots.qml
+    src/qml/pages/SnapshotChanges.qml
     src/qml/pages/DiscoverPage.qml
     src/qml/pages/JobsPage.qml
     src/qml/pages/SettingsPage.qml

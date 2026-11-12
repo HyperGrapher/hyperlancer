@@ -11,6 +11,7 @@
 
 #include "DbTime.h"
 #include "SiteOrganizer.h"
+#include "SnapshotDiff.h"
 #include "SqlExec.h"
 
 namespace SiteStore {
@@ -334,6 +335,37 @@ QVariantMap loadSnapshot(QSqlDatabase &db, qint64 snapshotId)
     snapshot.insert(QStringLiteral("toolVersion"), query.value(6));
     snapshot.insert(QStringLiteral("summary"), parseJsonObject(query.value(7)));
     return snapshot;
+}
+
+QVariantMap diffWithPrevious(QSqlDatabase &db, qint64 snapshotId)
+{
+    const QVariantMap after = loadSnapshot(db, snapshotId);
+    if (after.isEmpty()) {
+        return {{QStringLiteral("error"), QObject::tr("This analysis no longer exists.")}};
+    }
+    if (after.value(QStringLiteral("outcome")).toString() == QStringLiteral("failed")) {
+        return {{QStringLiteral("error"), QObject::tr("This analysis failed, so there is nothing to compare.")}};
+    }
+    QSqlQuery site = SqlExec::run(db, QStringLiteral("SELECT site_id, fetched_at FROM profile_snapshots WHERE id = ?"),
+                                  {snapshotId});
+    if (!site.next()) {
+        return {{QStringLiteral("error"), QObject::tr("This analysis no longer exists.")}};
+    }
+    QSqlQuery previous = SqlExec::run(
+        db,
+        QStringLiteral("SELECT id FROM profile_snapshots WHERE site_id = ? AND outcome <> 'failed' AND "
+                       "(fetched_at < ? OR (fetched_at = ? AND id < ?)) ORDER BY fetched_at DESC, id DESC "
+                       "LIMIT 1"),
+        {site.value(0), site.value(1), site.value(1), snapshotId});
+    if (!previous.next()) {
+        return {{QStringLiteral("error"), QObject::tr("There is no earlier analysis to compare with.")}};
+    }
+    const QVariantMap before = loadSnapshot(db, previous.value(0).toLongLong());
+    QVariantMap result = SnapshotDiff::diff(before.value(QStringLiteral("summary")).toMap(),
+                                            after.value(QStringLiteral("summary")).toMap());
+    result.insert(QStringLiteral("beforeAt"), before.value(QStringLiteral("fetchedAt")));
+    result.insert(QStringLiteral("afterAt"), after.value(QStringLiteral("fetchedAt")));
+    return result;
 }
 
 QSet<QString> knownDomains(QSqlDatabase &db, const QStringList &domains)
