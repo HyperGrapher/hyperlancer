@@ -12,7 +12,7 @@ PageBase {
     property bool ambientActive: true
     property bool detailOpen: false
 
-    readonly property bool wide: width > 940
+    readonly property bool wide: width > 900
     readonly property var statusFilterOptions: [{ value: "", label: qsTr("Any status") }].concat(Format.leadStatusOptions)
     readonly property var categoryFilterOptions: [{ value: "", label: qsTr("Any category") }]
         .concat(app.sites.categories.map(name => ({ value: name, label: name })))
@@ -161,25 +161,58 @@ PageBase {
 
                     Layout.fillWidth: true
                     Layout.minimumWidth: 180
-                    Layout.preferredWidth: 340
+                    Layout.preferredWidth: page.wide ? 260 : 180
                     Layout.maximumWidth: 380
                     glyph: Icons.search
                     clearable: true
                     placeholderText: qsTr("Search domain, title, tag or category")
                     onTextChanged: page.app.sites.search = text
+
+                    // A saved view can change the search text from outside.
+                    Connections {
+                        target: page.app.sites
+
+                        function onSearchChanged() {
+                            if (searchField.text !== page.app.sites.search)
+                                searchField.text = page.app.sites.search;
+                        }
+                    }
                 }
 
                 Item { Layout.fillWidth: true }
 
+                // Saved views: pick one to apply it; type a name to save the current search,
+                // filters and sort under it.
                 Dropdown {
-                    Layout.preferredWidth: 150
+                    Layout.preferredWidth: page.wide ? 140 : 110
+                    placeholder: qsTr("Saved views")
+                    options: [{ value: 0, label: qsTr("Default view") }]
+                        .concat(page.app.sites.savedViews.map(view => ({ value: view.id, label: view.name })))
+                    currentValue: page.app.sites.activeViewId > 0 ? page.app.sites.activeViewId : -1
+                    searchable: true
+                    allowCreate: true
+                    createLabel: qsTr("Save current view as “%1”")
+                    onActivated: value => page.app.sites.applyView(value)
+                    onCreated: text => page.app.sites.saveView(text)
+                }
+
+                IconButton {
+                    visible: page.app.sites.activeViewId > 0
+                    glyph: Icons.trash
+                    danger: true
+                    hint: qsTr("Delete this view (double-click)")
+                    onDoubleClicked: page.app.sites.deleteView(page.app.sites.activeViewId)
+                }
+
+                Dropdown {
+                    Layout.preferredWidth: page.wide ? 130 : 110
                     options: page.statusFilterOptions
                     currentValue: page.app.sites.statusFilter
                     onActivated: value => page.app.sites.statusFilter = value
                 }
 
                 Dropdown {
-                    Layout.preferredWidth: 160
+                    Layout.preferredWidth: page.wide ? 140 : 110
                     options: page.categoryFilterOptions
                     currentValue: page.app.sites.categoryFilter
                     searchable: true
@@ -187,7 +220,7 @@ PageBase {
                 }
 
                 Dropdown {
-                    Layout.preferredWidth: 150
+                    Layout.preferredWidth: page.wide ? 130 : 110
                     options: page.healthFilterOptions
                     currentValue: page.app.sites.filter
                     onActivated: value => page.app.sites.filter = value

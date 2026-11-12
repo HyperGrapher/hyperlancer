@@ -120,6 +120,12 @@ bool saveScreenshot(QSqlDatabase &db, const QString &dataDir, qint64 siteId, con
 // API usage this month.
 [[nodiscard]] QVariantMap dashboard(QSqlDatabase &db);
 
+// Saved Websites-list views: a name and the list settings as a JSON object.
+[[nodiscard]] QVariantList listSavedViews(QSqlDatabase &db); // { id, name, config }
+// Creates the view or, when the name exists, replaces its settings. Returns the id, 0 on failure.
+qint64 saveView(QSqlDatabase &db, const QString &name, const QVariantMap &config);
+bool deleteSavedView(QSqlDatabase &db, qint64 viewId);
+
 // Adds units to this month's counter for a paid or quota-limited service.
 void addApiUsage(QSqlDatabase &db, const QString &service, int units);
 

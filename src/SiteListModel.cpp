@@ -175,6 +175,88 @@ QVariantList SiteListModel::selectedIds() const
     return ids;
 }
 
+QVariantMap SiteListModel::currentConfig() const
+{
+    return {{QStringLiteral("search"), m_search},
+            {QStringLiteral("filter"), static_cast<int>(m_filter)},
+            {QStringLiteral("status"), m_statusFilter},
+            {QStringLiteral("category"), m_categoryFilter},
+            {QStringLiteral("sortKey"), static_cast<int>(m_sortKey)},
+            {QStringLiteral("sortDescending"), m_sortDescending}};
+}
+
+void SiteListModel::loadSavedViews()
+{
+    m_database.run(
+        this, [](QSqlDatabase &db) { return SiteStore::listSavedViews(db); },
+        [this](const QVariantList &views) {
+            m_savedViews = views;
+            emit savedViewsChanged();
+        });
+}
+
+void SiteListModel::saveView(const QString &name)
+{
+    const QVariantMap config = currentConfig();
+    m_database.run(
+        this, [name, config](QSqlDatabase &db) { return SiteStore::saveView(db, name, config); },
+        [this, config](qint64 id) {
+            if (id == 0) {
+                return;
+            }
+            m_activeViewId = id;
+            m_activeViewConfig = config;
+            emit activeViewChanged();
+            loadSavedViews();
+        });
+}
+
+void SiteListModel::applyView(qint64 viewId)
+{
+    if (viewId == 0) {
+        // "All websites": the default list.
+        m_activeViewId = 0;
+        setSearch(QString());
+        setFilter(0);
+        setStatusFilter(QString());
+        setCategoryFilter(QString());
+        setSortKey(0);
+        setSortDescending(true);
+        emit activeViewChanged();
+        return;
+    }
+    for (const QVariant &entry : std::as_const(m_savedViews)) {
+        const QVariantMap view = entry.toMap();
+        if (view.value(QStringLiteral("id")).toLongLong() != viewId) {
+            continue;
+        }
+        const QVariantMap config = view.value(QStringLiteral("config")).toMap();
+        setSearch(config.value(QStringLiteral("search")).toString());
+        setFilter(config.value(QStringLiteral("filter")).toInt());
+        setStatusFilter(config.value(QStringLiteral("status")).toString());
+        setCategoryFilter(config.value(QStringLiteral("category")).toString());
+        setSortKey(config.value(QStringLiteral("sortKey")).toInt());
+        setSortDescending(config.value(QStringLiteral("sortDescending"), true).toBool());
+        m_activeViewId = viewId;
+        m_activeViewConfig = currentConfig(); // what the setters actually produced
+        emit activeViewChanged();
+        return;
+    }
+}
+
+void SiteListModel::deleteView(qint64 viewId)
+{
+    m_database.run(
+        this, [viewId](QSqlDatabase &db) { return SiteStore::deleteSavedView(db, viewId); },
+        [this, viewId](bool) {
+            if (m_activeViewId == viewId) {
+                m_activeViewId = 0;
+                emit activeViewChanged();
+            }
+            loadSavedViews();
+        });
+}
+
 void SiteListModel::toggleSelected(qint64 siteId)
 {
     const int row = rowOf(siteId);
@@ -283,6 +365,10 @@ void SiteListModel::setSortDescending(bool descending)
 
 void SiteListModel::refresh()
 {
+    if (m_activeViewId != 0 && currentConfig() != m_activeViewConfig) {
+        m_activeViewId = 0;
+        emit activeViewChanged();
+    }
     m_refreshDelay.stop();
     const int generation = ++m_generation;
     SiteStore::ListQuery query;

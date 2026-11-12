@@ -113,6 +113,11 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - Discovery/search is parked on purpose (results are mostly noise); the Discover page still exists.
 - Still open: saved views, global to-do list, content crawl, M2 checks.
 
+### Saved views and the To-dos page (migration 0005)
+- **Saved views** (Websites toolbar): a dropdown of named views. Pick one to apply its search, status, category, health filter and sort; type a name and Enter to save the current ones (an existing name is replaced); the trash button (double-click) deletes the active view. The view stays "active" until search, filters or sort change. Table `saved_views`; code in `SiteListModel` (`saveView`, `applyView`, `deleteView`) and `SiteStore`.
+- **To-dos page** (new sidebar section between Emails and Jobs; Jobs and Settings moved to 5 and 6): all open to-dos of all websites grouped Overdue / Today / Next 7 days / Later / No date, or the completed ones; tick off, delete, click the website to open it. Code: `TodoList`, `TodosPage.qml`.
+- The Websites toolbar columns were re-sized so the saved-views dropdown fits.
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

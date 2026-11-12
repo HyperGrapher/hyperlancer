@@ -11,6 +11,7 @@
 #include "Discovery.h"
 #include "GmailInbox.h"
 #include "SoundPlayer.h"
+#include "TodoList.h"
 #include "GmailService.h"
 #include "HealthModel.h"
 #include "Integrations.h"
@@ -52,6 +53,7 @@ class AppContext : public QObject
     Q_PROPERTY(Integrations *integrations READ integrations CONSTANT)
     Q_PROPERTY(GmailService *gmail READ gmail CONSTANT)
     Q_PROPERTY(SoundPlayer *sounds READ sounds CONSTANT)
+    Q_PROPERTY(TodoList *todos READ todos CONSTANT)
     Q_PROPERTY(GmailInbox *inbox READ inbox CONSTANT)
     Q_PROPERTY(HealthModel *health READ health CONSTANT)
     Q_PROPERTY(QString version READ version CONSTANT)
@@ -73,6 +75,7 @@ public:
     [[nodiscard]] Integrations *integrations() { return &m_integrations; }
     [[nodiscard]] GmailService *gmail() { return &m_gmail; }
     [[nodiscard]] SoundPlayer *sounds() { return &m_sounds; }
+    [[nodiscard]] TodoList *todos() { return &m_todos; }
     [[nodiscard]] GmailInbox *inbox() { return &m_inbox; }
     [[nodiscard]] HealthModel *health() { return &m_health; }
     [[nodiscard]] QString version() const;
@@ -119,6 +122,7 @@ private:
     GmailService m_gmail;
     GmailInbox m_inbox;
     SiteListModel m_sites;
+    TodoList m_todos;
     JobListModel m_jobs;
     SiteDetail m_siteDetail;
     Dashboard m_dashboard;

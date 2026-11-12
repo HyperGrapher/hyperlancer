@@ -34,6 +34,7 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     , m_gmail(m_secrets, m_database, m_network)
     , m_inbox(m_gmail, m_database, m_network)
     , m_sites(m_database, m_runner)
+    , m_todos(m_database)
     , m_jobs(m_database, m_runner)
     , m_siteDetail(m_database, m_runner, m_pageSpeed, m_integrations, m_gmail, paths.dataDir)
     , m_dashboard(m_database, m_runner)
@@ -72,6 +73,7 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     connect(&m_inbox, &GmailInbox::siteMailChanged, &m_sites, &SiteListModel::refreshSoon);
     connect(&m_siteDetail, &SiteDetail::notice, this, &AppContext::notice);
     connect(&m_siteDetail, &SiteDetail::organizerChanged, &m_sites, &SiteListModel::refreshSoon);
+    connect(&m_siteDetail, &SiteDetail::organizerChanged, &m_todos, &TodoList::refresh);
     connect(&m_discovery, &Discovery::notice, this, &AppContext::notice);
     connect(&m_integrations, &Integrations::restartRequested, this, &AppContext::restart);
 }
@@ -99,6 +101,8 @@ void AppContext::onDatabaseReady()
     m_runner.start();
     m_gmail.start();
     m_sites.refresh();
+    m_sites.loadSavedViews();
+    m_todos.refresh();
     m_jobs.refresh();
     m_dashboard.refresh();
     m_discovery.loadRecentRuns();

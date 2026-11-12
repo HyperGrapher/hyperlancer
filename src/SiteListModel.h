@@ -33,6 +33,10 @@ class SiteListModel : public QAbstractListModel
     Q_PROPERTY(QStringList tags READ tags NOTIFY countChanged)
     Q_PROPERTY(int sortKey READ sortKey WRITE setSortKey NOTIFY sortChanged)
     Q_PROPERTY(bool sortDescending READ sortDescending WRITE setSortDescending NOTIFY sortChanged)
+    // Saved views: { id, name, config }. activeViewId is the one last applied or saved; it is
+    // cleared as soon as search, filters or sort differ from it.
+    Q_PROPERTY(QVariantList savedViews READ savedViews NOTIFY savedViewsChanged)
+    Q_PROPERTY(qint64 activeViewId READ activeViewId NOTIFY activeViewChanged)
     Q_PROPERTY(int selectedCount READ selectedCount NOTIFY selectionChanged)
     Q_PROPERTY(QVariantList selectedIds READ selectedIds NOTIFY selectionChanged)
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
@@ -96,6 +100,12 @@ public:
     // a filter or search that hides a row also drops it from the selection.
     [[nodiscard]] int selectedCount() const { return static_cast<int>(m_selected.size()); }
     [[nodiscard]] QVariantList selectedIds() const;
+    [[nodiscard]] QVariantList savedViews() const { return m_savedViews; }
+    [[nodiscard]] qint64 activeViewId() const { return m_activeViewId; }
+    Q_INVOKABLE void loadSavedViews();
+    Q_INVOKABLE void saveView(const QString &name);
+    Q_INVOKABLE void applyView(qint64 viewId);
+    Q_INVOKABLE void deleteView(qint64 viewId);
     Q_INVOKABLE void toggleSelected(qint64 siteId);
     Q_INVOKABLE void selectAll();
     Q_INVOKABLE void clearSelection();
@@ -114,6 +124,8 @@ signals:
     void statusFilterChanged();
     void categoryFilterChanged();
     void selectionChanged();
+    void savedViewsChanged();
+    void activeViewChanged();
     void sortChanged();
     void countChanged();
 
@@ -127,11 +139,15 @@ private:
     void apply(SiteStore::ListResult result);
     [[nodiscard]] int rowOf(qint64 siteId) const;
 
+    [[nodiscard]] QVariantMap currentConfig() const;
     void runOnSelected(std::function<bool(QSqlDatabase &, qint64)> operation);
 
     Database &m_database;
     JobRunner &m_runner;
     QSet<qint64> m_selected;
+    QVariantList m_savedViews;
+    qint64 m_activeViewId = 0;
+    QVariantMap m_activeViewConfig;
     std::vector<SiteStore::SiteRow> m_rows;
     QHash<qint64, Progress> m_progress; // live progress of running analyses, by site
     QString m_search;

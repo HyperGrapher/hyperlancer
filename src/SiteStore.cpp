@@ -589,6 +589,45 @@ QVariantMap dashboard(QSqlDatabase &db)
     return result;
 }
 
+QVariantList listSavedViews(QSqlDatabase &db)
+{
+    QVariantList views;
+    QSqlQuery query = SqlExec::run(db, QStringLiteral("SELECT id, name, config_json FROM saved_views ORDER BY name"));
+    while (query.next()) {
+        views.append(QVariantMap{{QStringLiteral("id"), query.value(0)},
+                                 {QStringLiteral("name"), query.value(1)},
+                                 {QStringLiteral("config"), parseJsonObject(query.value(2))}});
+    }
+    return views;
+}
+
+qint64 saveView(QSqlDatabase &db, const QString &name, const QVariantMap &config)
+{
+    const QString trimmed = name.trimmed().left(120);
+    if (trimmed.isEmpty()) {
+        return 0;
+    }
+    const QString json = QString::fromUtf8(QJsonDocument(QJsonObject::fromVariantMap(config)).toJson(QJsonDocument::Compact));
+    QSqlQuery existing = SqlExec::run(db, QStringLiteral("SELECT id FROM saved_views WHERE name = ?"), {trimmed});
+    if (existing.next()) {
+        const qint64 id = existing.value(0).toLongLong();
+        SqlExec::run(db, QStringLiteral("UPDATE saved_views SET config_json = ? WHERE id = ?"), {json, id});
+        return id;
+    }
+    QString error;
+    QSqlQuery insert = SqlExec::run(
+        db, QStringLiteral("INSERT INTO saved_views (name, config_json, created_at) VALUES (?, ?, ?)"),
+        {trimmed, json, DbTime::now()}, &error);
+    return error.isEmpty() ? insert.lastInsertId().toLongLong() : 0;
+}
+
+bool deleteSavedView(QSqlDatabase &db, qint64 viewId)
+{
+    QString error;
+    SqlExec::run(db, QStringLiteral("DELETE FROM saved_views WHERE id = ?"), {viewId}, &error);
+    return error.isEmpty();
+}
+
 void addApiUsage(QSqlDatabase &db, const QString &service, int units)
 {
     // Single writer per database, so update-then-insert is safe and portable.
