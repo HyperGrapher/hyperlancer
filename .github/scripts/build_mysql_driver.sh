@@ -33,7 +33,8 @@ library="$(cygpath -m "$msys/mingw64/lib/libmariadb.dll.a")"
 series="${qt_version%.*}"
 curl -sSL --retry 4 -o "$work/qtbase.tar.xz" \
     "https://download.qt.io/official_releases/qt/$series/$qt_version/submodules/qtbase-everywhere-src-$qt_version.tar.xz"
-tar -xf "$work/qtbase.tar.xz" -C "$work" "qtbase-everywhere-src-$qt_version/src/plugins/sqldrivers"
+# --force-local: GNU tar would read "D:/..." as a remote host:path.
+tar --force-local -xf "$work/qtbase.tar.xz" -C "$work" "qtbase-everywhere-src-$qt_version/src/plugins/sqldrivers"
 
 cmake -G Ninja \
     -S "$work/qtbase-everywhere-src-$qt_version/src/plugins/sqldrivers" \
