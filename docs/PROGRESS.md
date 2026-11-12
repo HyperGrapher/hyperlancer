@@ -4,7 +4,7 @@ Read this first when you continue in a new session. It says where the Qt app sta
 decided and why, and what to do next. The specification is
 [PRD-Freelance-lead-generation-desktop-app.md](PRD-Freelance-lead-generation-desktop-app.md).
 
-- **Branch:** `dev`
+- **Branches:** work on `dev`; `master` is fast-forwarded to `dev` for releases
 - **Last updated:** 2026-11-12 (session 1)
 
 ## 1. Decisions confirmed by the user
@@ -60,7 +60,9 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.
 - The Windows release zip also contains `web-dashboard/scripts` (run `uv sync` in it once).
-- Releases: push a `v*.*.*` tag (`.github/workflows/release.yml`).
+- Releases: push a `v*.*.*` tag, or run "Build portable releases" manually with a version input; the manual run creates the tag together with the GitHub Release. (Cloud agent sessions may not be allowed to push tags; they use the manual run through the GitHub API.)
+- The Linux AppImage keeps only the SQLite and MySQL drivers; the other Qt SQL plugins need client libraries that are not installed.
+- `v0.2.0` was released from `master` at the end of session 1.
 
 **Not verified here:** anything on Windows; Gmail sign-in (no client file in this environment); a successful PageSpeed call (anonymous quota was exhausted, the 429 was handled and shown); real SSL dates (this environment's proxy re-signs TLS, so every SSL shows ~30 days and issuer "Anthropic").
 
