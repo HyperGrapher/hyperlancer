@@ -2,6 +2,7 @@
 
 #include <QNetworkAccessManager>
 #include <QObject>
+#include <QVariantList>
 #include <QtQml/qqmlregistration.h>
 
 #include "AppPaths.h"
@@ -79,6 +80,10 @@ public:
     // Adds the site typed by the user and, when analyze is set, queues its analysis.
     // Emits siteAdded on success and notice on failure.
     Q_INVOKABLE void addSite(const QString &text, bool analyze);
+    // Adds every address in the text (separated by spaces, commas, semicolons or new lines).
+    // Emits sitesAdded with the counts and the entries that are not valid addresses.
+    Q_INVOKABLE void addSites(const QString &text, bool analyze);
+    Q_INVOKABLE void removeSites(const QVariantList &siteIds);
     Q_INVOKABLE void analyzeSite(qint64 siteId, const QString &url);
     Q_INVOKABLE void removeSite(qint64 siteId);
     Q_INVOKABLE void openExternal(const QString &url) const;
@@ -93,6 +98,7 @@ public:
 signals:
     void notice(const QString &message, bool isError);
     void siteAdded(qint64 siteId, bool created);
+    void sitesAdded(int added, int existing, const QStringList &invalid);
     void siteRemoved(qint64 siteId);
     void openEmailsRequested();
 

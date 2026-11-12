@@ -239,6 +239,10 @@ ListResult listSites(QSqlDatabase &db, const ListQuery &listQuery)
     while (categories.next()) {
         result.categories.append(categories.value(0).toString());
     }
+    QSqlQuery tags = SqlExec::run(db, QStringLiteral("SELECT name FROM tags ORDER BY name"));
+    while (tags.next()) {
+        result.tags.append(tags.value(0).toString());
+    }
     return result;
 }
 

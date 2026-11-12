@@ -83,6 +83,7 @@ struct ListResult
     std::vector<SiteRow> rows;
     int total = 0;
     QStringList categories; // every category name, for the filter
+    QStringList tags;       // every tag name, for the bulk tag picker
     QString error;
 };
 

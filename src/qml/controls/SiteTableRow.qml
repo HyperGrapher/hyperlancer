@@ -10,6 +10,7 @@ Item {
     required property var siteId
     required property string siteKey
     required property string faviconUrl
+    required property bool selected
     required property string status
     required property string category
     required property string tags
@@ -31,6 +32,7 @@ Item {
     signal analyzeRequested(var siteId, string url)
     signal externalRequested(string url)
     signal statusRequested(var siteId, string status)
+    signal selectionToggled(var siteId)
 
     height: Theme.rowHeight
 
@@ -38,7 +40,7 @@ Item {
         anchors.fill: parent
         anchors.margins: 1
         radius: Theme.radiusSmall
-        color: hover.hovered ? Theme.rowHover : "transparent"
+        color: row.selected ? Theme.withAlpha(Theme.accent, 0.1) : hover.hovered ? Theme.rowHover : "transparent"
 
         Behavior on color { ColorAnimation { duration: Motion.fast } }
     }
@@ -48,6 +50,28 @@ Item {
         anchors.leftMargin: Theme.spacingL - 4
         anchors.rightMargin: Theme.spacingL - 4
         spacing: Theme.spacingM
+
+        // Selection box for bulk actions.
+        Rectangle {
+            id: checkbox
+
+            Layout.preferredWidth: 22
+            Layout.preferredHeight: 22
+            Layout.alignment: Qt.AlignVCenter
+            radius: 6
+            color: row.selected ? Theme.withAlpha(Theme.accent, 0.35) : "transparent"
+            border.width: 1.5
+            border.color: row.selected ? Theme.accent : Theme.textMuted
+            opacity: row.selected || hover.hovered ? 1 : 0.55
+
+            Icon {
+                anchors.centerIn: parent
+                glyph: Icons.check
+                size: 13
+                color: Theme.accent
+                visible: row.selected
+            }
+        }
 
         SiteBadge {
             siteKey: row.siteKey
@@ -193,7 +217,7 @@ Item {
     Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.leftMargin: Theme.spacingL + 40
+        anchors.leftMargin: Theme.spacingL + 74
         anchors.rightMargin: Theme.spacingL - 4
         anchors.bottom: parent.bottom
         height: 1
@@ -209,7 +233,9 @@ Item {
     TapHandler {
         // The status dropdown handles its own taps.
         onTapped: eventPoint => {
-            if (!statusDropdown.contains(statusDropdown.mapFromItem(row, eventPoint.position)))
+            if (checkbox.contains(checkbox.mapFromItem(row, eventPoint.position)))
+                row.selectionToggled(row.siteId);
+            else if (!statusDropdown.contains(statusDropdown.mapFromItem(row, eventPoint.position)))
                 row.opened(row.siteId);
         }
     }

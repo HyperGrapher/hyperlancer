@@ -107,6 +107,12 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - Tests: `tst_snapshotdiff` (4) and `diffComparesWithTheEarlierSuccessfulAnalysis` in `tst_siteorganizer`. Checked visually with two seeded analyses.
 - Still open from §5: saved views, bulk actions, global to-do list, content crawl, M2 checks.
 
+### Bulk add and bulk actions
+- **Add many websites** (button next to Analyze on the Websites page): paste or type addresses separated by new lines, spaces, commas or semicolons; duplicates inside the text are merged; "Analyze them after adding" queues the new ones (three at a time). The result line says how many were added, were already tracked, or were not valid addresses; only the invalid entries stay in the box. Code: `AppContext::addSites` (one transaction).
+- **Selection and bulk actions:** a checkbox on each row and a select-all box in the header. While rows are selected a bar replaces the filters: set status, set category (search or create), add tag (search or create), analyze, remove (with confirmation), clear. Code: `SiteListModel` selection (`toggleSelected`, `selectAll`, `setStatusForSelected`, ...) and `AppContext::removeSites`. A filter that hides a row also drops it from the selection.
+- Discovery/search is parked on purpose (results are mostly noise); the Discover page still exists.
+- Still open: saved views, global to-do list, content crawl, M2 checks.
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

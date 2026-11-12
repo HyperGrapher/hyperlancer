@@ -5,10 +5,12 @@
 #include "Database.h"
 #include "JobRunner.h"
 #include "SiteOrganizer.h"
+#include "SqlExec.h"
 
 SiteListModel::SiteListModel(Database &database, JobRunner &runner, QObject *parent)
     : QAbstractListModel(parent)
     , m_database(database)
+    , m_runner(runner)
 {
     m_refreshDelay.setSingleShot(true);
     m_refreshDelay.setInterval(200);
@@ -70,6 +72,8 @@ QVariant SiteListModel::data(const QModelIndex &index, int role) const
         return row.domainExpiresOn;
     case FaviconUrlRole:
         return row.faviconUrl;
+    case SelectedRole:
+        return m_selected.contains(row.id);
     case DeadlineOnRole:
         return row.deadlineOn;
     case StatusRole:
@@ -110,6 +114,7 @@ QHash<int, QByteArray> SiteListModel::roleNames() const
             {SourceRole, "source"},
             {FaviconUrlRole, "faviconUrl"},
             {StatusRole, "status"},
+            {SelectedRole, "selected"},
             {DeadlineOnRole, "deadlineOn"},
             {CategoryRole, "category"},
             {TagsRole, "tags"},
@@ -159,6 +164,92 @@ void SiteListModel::setCategoryFilter(const QString &category)
     m_categoryFilter = category;
     emit categoryFilterChanged();
     refresh();
+}
+
+QVariantList SiteListModel::selectedIds() const
+{
+    QVariantList ids;
+    for (const qint64 id : m_selected) {
+        ids.append(id);
+    }
+    return ids;
+}
+
+void SiteListModel::toggleSelected(qint64 siteId)
+{
+    const int row = rowOf(siteId);
+    if (row < 0) {
+        return;
+    }
+    if (!m_selected.remove(siteId)) {
+        m_selected.insert(siteId);
+    }
+    const QModelIndex changed = index(row);
+    emit dataChanged(changed, changed, {SelectedRole});
+    emit selectionChanged();
+}
+
+void SiteListModel::selectAll()
+{
+    for (const SiteStore::SiteRow &row : m_rows) {
+        m_selected.insert(row.id);
+    }
+    if (!m_rows.empty()) {
+        emit dataChanged(index(0), index(static_cast<int>(m_rows.size()) - 1), {SelectedRole});
+    }
+    emit selectionChanged();
+}
+
+void SiteListModel::clearSelection()
+{
+    if (m_selected.isEmpty()) {
+        return;
+    }
+    m_selected.clear();
+    if (!m_rows.empty()) {
+        emit dataChanged(index(0), index(static_cast<int>(m_rows.size()) - 1), {SelectedRole});
+    }
+    emit selectionChanged();
+}
+
+// Runs the change for every selected website in one transaction, then refreshes the list.
+void SiteListModel::runOnSelected(std::function<bool(QSqlDatabase &, qint64)> operation)
+{
+    const QList<qint64> ids = m_selected.values();
+    m_database.run(
+        this,
+        [ids, operation = std::move(operation)](QSqlDatabase &db) {
+            SqlExec::Transaction transaction(db);
+            for (const qint64 id : ids) {
+                operation(db, id);
+            }
+            return transaction.commit();
+        },
+        [this](bool) { refresh(); });
+}
+
+void SiteListModel::setStatusForSelected(const QString &status)
+{
+    runOnSelected([status](QSqlDatabase &db, qint64 id) { return SiteOrganizer::setStatus(db, id, status); });
+}
+
+void SiteListModel::setCategoryForSelected(const QString &name)
+{
+    runOnSelected([name](QSqlDatabase &db, qint64 id) { return SiteOrganizer::setCategory(db, id, name); });
+}
+
+void SiteListModel::addTagToSelected(const QString &name)
+{
+    runOnSelected([name](QSqlDatabase &db, qint64 id) { return SiteOrganizer::addTag(db, id, name); });
+}
+
+void SiteListModel::analyzeSelected()
+{
+    for (const SiteStore::SiteRow &row : m_rows) {
+        if (m_selected.contains(row.id) && row.activeJobStatus.isEmpty()) {
+            m_runner.enqueueProfile(row.id, row.url);
+        }
+    }
 }
 
 void SiteListModel::setSiteStatus(qint64 siteId, const QString &status)
@@ -237,8 +328,16 @@ void SiteListModel::apply(SiteStore::ListResult result)
         m_rows = std::move(next);
         endResetModel();
     }
+    const qsizetype selectedBefore = m_selected.size();
+    for (auto it = m_selected.begin(); it != m_selected.end();) {
+        it = rowOf(*it) < 0 ? m_selected.erase(it) : std::next(it);
+    }
+    if (m_selected.size() != selectedBefore) {
+        emit selectionChanged();
+    }
     m_total = result.total;
     m_categories = result.categories;
+    m_tags = result.tags;
     m_loaded = true;
     emit countChanged();
 }

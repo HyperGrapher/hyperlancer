@@ -1,5 +1,8 @@
 #include "AppContext.h"
 
+#include <utility>
+#include <vector>
+
 #include <QClipboard>
 #include <QCoreApplication>
 #include <QDesktopServices>
@@ -7,11 +10,14 @@
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QProcess>
+#include <QRegularExpression>
+#include <QSet>
 #include <QUrl>
 
 #include "AppSettings.h"
 #include "PublicSuffixList.h"
 #include "SiteStore.h"
+#include "SqlExec.h"
 #include "UrlNormalizer.h"
 
 AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *parent)
@@ -128,6 +134,72 @@ void AppContext::addSite(const QString &text, bool analyze)
                 emit notice(tr("%1 is already in your sites.").arg(url.siteKey), false);
             }
         });
+}
+
+void AppContext::addSites(const QString &text, bool analyze)
+{
+    struct Outcome
+    {
+        int added = 0;
+        int existing = 0;
+        std::vector<std::pair<qint64, QString>> created; // site id and URL, to analyze
+    };
+
+    QStringList invalid;
+    std::vector<NormalizedUrl> urls;
+    QSet<QString> seen;
+    static const QRegularExpression separators(QStringLiteral("[\\s,;]+"));
+    for (const QString &token : text.split(separators, Qt::SkipEmptyParts)) {
+        const UrlNormalizeResult normalized = normalizeUrl(token, PublicSuffixList::bundled());
+        if (!normalized.ok()) {
+            invalid.append(token);
+        } else if (!seen.contains(normalized.value.siteKey)) {
+            seen.insert(normalized.value.siteKey);
+            urls.push_back(normalized.value);
+        }
+    }
+    if (urls.empty()) {
+        emit sitesAdded(0, 0, invalid);
+        return;
+    }
+    m_database.run(
+        this,
+        [urls](QSqlDatabase &db) {
+            Outcome outcome;
+            SqlExec::Transaction transaction(db);
+            for (const NormalizedUrl &url : urls) {
+                const SiteStore::AddResult result =
+                    SiteStore::addSite(db, url, QStringLiteral("manual"));
+                if (!result.error.isEmpty()) {
+                    continue;
+                }
+                if (result.created) {
+                    ++outcome.added;
+                    outcome.created.emplace_back(result.siteId, url.url);
+                } else {
+                    ++outcome.existing;
+                }
+            }
+            transaction.commit();
+            return outcome;
+        },
+        [this, analyze, invalid](const Outcome &outcome) {
+            if (analyze) {
+                for (const auto &[siteId, url] : outcome.created) {
+                    m_runner.enqueueProfile(siteId, url);
+                }
+            }
+            m_sites.refresh();
+            m_dashboard.refresh();
+            emit sitesAdded(outcome.added, outcome.existing, invalid);
+        });
+}
+
+void AppContext::removeSites(const QVariantList &siteIds)
+{
+    for (const QVariant &id : siteIds) {
+        removeSite(id.toLongLong());
+    }
 }
 
 void AppContext::analyzeSite(qint64 siteId, const QString &url)
