@@ -16,19 +16,21 @@ Item {
     required property int openTodos
     required property string url
     required property string title
-    required property string cms
-    required property int httpStatus
+    required property string deadlineOn
     required property string outcome
     required property string lastFetchedAt
     required property string jobStatus
     required property real progress
     required property string progressLabel
 
+    property bool wide: true
+
     readonly property bool working: jobStatus === "running" || jobStatus === "queued"
 
     signal opened(var siteId)
     signal analyzeRequested(var siteId, string url)
     signal externalRequested(string url)
+    signal statusRequested(var siteId, string status)
 
     height: Theme.rowHeight
 
@@ -73,9 +75,7 @@ Item {
 
             Text {
                 width: parent.width
-                text: [row.category, row.tags, row.openTodos > 0 ? qsTr("%n to-do(s)", "", row.openTodos) : "",
-                       row.title.length > 0 ? row.title : row.url]
-                      .filter(part => part.length > 0).join("  ·  ")
+                text: row.title.length > 0 ? row.title : row.url
                 color: Theme.textMuted
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontCaption + 1
@@ -84,30 +84,50 @@ Item {
         }
 
         Item {
-            Layout.preferredWidth: 84
+            id: statusCell
+
+            Layout.preferredWidth: 124
             Layout.fillHeight: true
 
-            Badge {
+            Dropdown {
+                id: statusDropdown
+
                 anchors.verticalCenter: parent.verticalCenter
-                text: Format.leadStatusLabel(row.status)
-                tint: Format.leadStatusColor(row.status)
+                width: parent.width
+                compact: true
+                options: Format.leadStatusOptions
+                currentValue: row.status
+                onActivated: value => row.statusRequested(row.siteId, value)
             }
         }
 
         Cell {
-            Layout.preferredWidth: 110
-            text: Format.orDash(row.cms)
+            Layout.preferredWidth: 104
+            text: Format.orDash(row.category)
+        }
+
+        Cell {
+            Layout.preferredWidth: 120
+            visible: row.wide
+            text: Format.orDash(row.tags)
+            color: Theme.textMuted
+        }
+
+        Cell {
+            Layout.preferredWidth: 84
+            text: row.deadlineOn.length > 0 ? Format.shortDate(row.deadlineOn) : "—"
+            color: row.deadlineOn.length > 0 ? Format.daysColor(Format.daysUntil(row.deadlineOn)) : Theme.textMuted
         }
 
         Cell {
             Layout.preferredWidth: 46
-            text: row.httpStatus > 0 ? String(row.httpStatus) : "—"
-            color: row.httpStatus >= 400 ? Theme.danger : row.httpStatus >= 300 ? Theme.warning : Theme.textSecondary
+            text: row.openTodos > 0 ? String(row.openTodos) : "—"
+            color: row.openTodos > 0 ? Theme.textPrimary : Theme.textMuted
             font.features: { "tnum": 1 }
         }
 
         Item {
-            Layout.preferredWidth: 128
+            Layout.preferredWidth: 104
             Layout.fillHeight: true
 
             Text {
@@ -187,7 +207,11 @@ Item {
     }
 
     TapHandler {
-        onTapped: row.opened(row.siteId)
+        // The status dropdown handles its own taps.
+        onTapped: eventPoint => {
+            if (!statusDropdown.contains(statusDropdown.mapFromItem(row, eventPoint.position)))
+                row.opened(row.siteId);
+        }
     }
 
     component Cell: Text {

@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QString>
 #include <QStringList>
+#include <QVariantMap>
 
 // Pure helpers for the Gmail integration: building search queries for a site and turning a
 // users.messages.get (format=metadata) response into a stored row. No network here.
@@ -34,11 +35,16 @@ struct MessageMeta
     bool hasAttachments = false;
     bool isBounce = false;
     bool isAutoReply = false;
+    bool unread = false;
+    bool inInbox = false;
     QString error;
 };
 
 // accountEmail decides the direction: a message from the mailbox owner is "sent".
 [[nodiscard]] MessageMeta parseMetadata(const QJsonObject &message, const QString &accountEmail);
+
+// The message as the QML side sees it: ids, headers, snippet, ISO date, flags.
+[[nodiscard]] QVariantMap toVariantMap(const MessageMeta &meta);
 
 // Readable text of a users.messages.get (format=full) response: the text/plain part, or the
 // text/html part with tags removed. Empty when the message has no text part.

@@ -211,6 +211,18 @@ PageBase {
 
                     SettingRow {
                         width: parent.width
+                        glyph: Icons.envelope
+                        title: qsTr("Notify about new mail")
+                        description: qsTr("A desktop notification when a new message reaches your inbox. Checked every minute.")
+
+                        ToggleSwitch {
+                            checked: page.settings.notifyNewMail
+                            onToggled: page.settings.notifyNewMail = checked
+                        }
+                    }
+
+                    SettingRow {
+                        width: parent.width
                         glyph: Icons.openExternal
                         title: qsTr("Open Gmail in Chrome profile")
                         description: qsTr("Profile name as shown in Chrome. Leave empty to use the default browser.")

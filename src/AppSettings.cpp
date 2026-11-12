@@ -9,6 +9,7 @@ constexpr auto kAmbientEnabledKey = "motion/ambient";
 constexpr auto kAmbientSpeedKey = "motion/ambientSpeed";
 constexpr auto kGlassHighlightsKey = "appearance/glassHighlights";
 constexpr auto kGmailChromeProfileKey = "gmail/chromeProfile";
+constexpr auto kNotifyNewMailKey = "gmail/notifyNewMail";
 constexpr auto kShowFaviconsKey = "appearance/showFavicons";
 constexpr auto kBackgroundIntensityKey = "appearance/backgroundIntensity";
 constexpr auto kPerformanceOverlayKey = "diagnostics/performanceOverlay";
@@ -39,6 +40,7 @@ AppSettings::AppSettings(const QString &storagePath, QObject *parent)
     m_ambientEnabled = m_storage.value(kAmbientEnabledKey, m_ambientEnabled).toBool();
     m_glassHighlights = m_storage.value(kGlassHighlightsKey, m_glassHighlights).toBool();
     m_gmailChromeProfile = m_storage.value(kGmailChromeProfileKey).toString();
+    m_notifyNewMail = m_storage.value(kNotifyNewMailKey, m_notifyNewMail).toBool();
     m_showFavicons = m_storage.value(kShowFaviconsKey, m_showFavicons).toBool();
     m_performanceOverlay = m_storage.value(kPerformanceOverlayKey, m_performanceOverlay).toBool();
     m_ambientSpeed =
@@ -81,6 +83,16 @@ void AppSettings::setGmailChromeProfile(const QString &profileName)
     m_gmailChromeProfile = trimmed;
     m_storage.setValue(kGmailChromeProfileKey, trimmed);
     emit gmailChromeProfileChanged();
+}
+
+void AppSettings::setNotifyNewMail(bool enabled)
+{
+    if (m_notifyNewMail == enabled) {
+        return;
+    }
+    m_notifyNewMail = enabled;
+    m_storage.setValue(kNotifyNewMailKey, enabled);
+    emit notifyNewMailChanged();
 }
 
 void AppSettings::setShowFavicons(bool enabled)

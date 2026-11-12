@@ -5,6 +5,7 @@
 
 #include <QList>
 #include <QOAuth2AuthorizationCodeFlow>
+#include <QNetworkRequest>
 #include <QObject>
 #include <QVariantList>
 #include <QtQml/qqmlregistration.h>
@@ -32,6 +33,8 @@ class GmailService : public QObject
     Q_PROPERTY(QString status READ status NOTIFY stateChanged)
 
 public:
+    static inline const QString kApiBase =
+        QStringLiteral("https://gmail.googleapis.com/gmail/v1/users/me/");
     static inline const QByteArray kScope =
         QByteArrayLiteral("https://www.googleapis.com/auth/gmail.readonly");
 
@@ -45,6 +48,10 @@ public:
     [[nodiscard]] bool isBusy() const { return m_busy; }
     [[nodiscard]] QString email() const { return m_email; }
     [[nodiscard]] QString status() const { return m_status; }
+    [[nodiscard]] qint64 accountId() const { return m_accountId; }
+
+    // A Gmail API request carrying the bearer token.
+    [[nodiscard]] static QNetworkRequest apiRequest(const QUrl &url, const QString &token);
 
     // Call when the database is ready: restores the session from the stored refresh token.
     void start();
@@ -74,6 +81,10 @@ signals:
     void stateChanged();
     void siteMessagesLoaded(qint64 siteId, const QVariantList &messages, const QString &error);
     void messageBodyLoaded(const QString &gmailId, const QString &body, const QString &error);
+    // The mailbox row exists: its id and the stored history position for polling.
+    void accountReady(qint64 accountId, const QString &historyId);
+    // Mail changed a site's status or stored messages; lists should refresh.
+    void siteMailChanged();
     void notice(const QString &message, bool isError);
 
 private:

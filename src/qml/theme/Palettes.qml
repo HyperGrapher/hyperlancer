@@ -28,6 +28,13 @@ QtObject {
             accentSecondary: "#FF5C8A"
         },
         {
+            name: "Citrine",      // Emails
+            blobs: ["#E5C100", "#FFE45E", "#5C4A00", "#FFA24A"],
+            base: "#1A1403",
+            accent: "#FFD84D",
+            accentSecondary: "#FFA24A"
+        },
+        {
             name: "Glacier",      // Jobs
             blobs: ["#5B8CFF", "#8FB8FF", "#2A3A7A", "#B7A6FF"],
             base: "#0A1024",

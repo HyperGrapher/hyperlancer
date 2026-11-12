@@ -39,6 +39,7 @@ struct SiteRow
     QString domainExpiresOn;
     QString source;
     QString faviconUrl;
+    QString deadlineOn; // YYYY-MM-DD
     QString status;   // lead status, see SiteOrganizer::statuses()
     QString category;
     QString tags;     // comma separated names
@@ -51,7 +52,6 @@ struct SiteRow
 enum class Filter
 {
     All,
-    NeverAnalyzed,
     Failed,
     Expiring
 };
@@ -61,15 +61,17 @@ enum class SortKey
     Analyzed,
     Site,
     Status,
-    Cms,
-    Http
+    Category,
+    Deadline,
+    Todos
 };
 
 struct ListQuery
 {
     QString search;
     Filter filter = Filter::All;
-    QString status; // empty: every status
+    QString status;   // empty: every status
+    QString category; // empty: every category
     SortKey sortKey = SortKey::Analyzed;
     bool descending = true;
     int limit = 5000;
@@ -79,6 +81,7 @@ struct ListResult
 {
     std::vector<SiteRow> rows;
     int total = 0;
+    QStringList categories; // every category name, for the filter
     QString error;
 };
 

@@ -42,6 +42,7 @@ SiteDetail::SiteDetail(Database &database, JobRunner &runner, PageSpeedClient &p
                 m_emailsError = error;
                 m_emailsLoading = false;
                 emit emailsChanged();
+                reload(); // mail can move the status to contacted or replied
             });
 }
 
@@ -213,10 +214,17 @@ void SiteDetail::removeTag(qint64 tagId)
     });
 }
 
-void SiteDetail::addNote(const QString &body)
+void SiteDetail::setDeadline(const QString &dueOn)
 {
-    saveOrganizer([siteId = m_siteId, body](QSqlDatabase &db) {
-        return SiteOrganizer::addNote(db, siteId, body);
+    saveOrganizer([siteId = m_siteId, dueOn](QSqlDatabase &db) {
+        return SiteOrganizer::setDeadline(db, siteId, dueOn);
+    });
+}
+
+void SiteDetail::addNote(const QString &title, const QString &body)
+{
+    saveOrganizer([siteId = m_siteId, title, body](QSqlDatabase &db) {
+        return SiteOrganizer::addNote(db, siteId, title, body);
     });
 }
 

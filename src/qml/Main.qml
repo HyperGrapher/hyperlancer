@@ -9,6 +9,7 @@ Window {
     required property AppSettings appSettings
     required property AppContext app
     required property bool reducedMotionForced
+    required property bool hasTray
     required property string tourDirectory
 
     readonly property bool maximized: visibility === Window.Maximized || visibility === Window.FullScreen
@@ -23,13 +24,17 @@ Window {
     readonly property int sectionDashboard: 0
     readonly property int sectionSites: 1
     readonly property int sectionDiscover: 2
-    readonly property int sectionJobs: 3
-    readonly property int sectionSettings: 4
+    readonly property int sectionEmails: 3
+    readonly property int sectionJobs: 4
+    readonly property int sectionSettings: 5
+    // Set once the user chose Quit: the window may then close for real.
+    property bool quitting: false
 
     readonly property var sections: [
         { title: qsTr("Dashboard"), glyph: Icons.squaresFour },
         { title: qsTr("Websites"), glyph: Icons.globe },
         { title: qsTr("Discover"), glyph: Icons.binoculars },
+        { title: qsTr("Emails"), glyph: Icons.envelope },
         { title: qsTr("Jobs"), glyph: Icons.queue },
         { title: qsTr("Settings"), glyph: Icons.gearSix }
     ]
@@ -55,6 +60,29 @@ Window {
         siteRequested(siteId);
     }
 
+    // From the tray icon: bring the window back.
+    function showFromTray() {
+        show();
+        raise();
+        requestActivate();
+    }
+
+    function openEmails() {
+        showFromTray();
+        sidebar.select(sectionEmails);
+    }
+
+    // From the tray menu. Running analyses still need the user's confirmation.
+    function requestQuit() {
+        quitting = true;
+        if (app.jobRunner.runningCount > 0) {
+            showFromTray();
+            closeGuard.open();
+            return;
+        }
+        Qt.quit();
+    }
+
     function openSettings(tab) {
         sidebar.select(sectionSettings);
         settingsTabRequested(tab);
@@ -70,6 +98,12 @@ Window {
     color: chrome.translucent ? "transparent" : Palettes.moods[Theme.section].base
 
     onClosing: close => {
+        // With a tray icon the app keeps running (checking mail, finishing analyses).
+        if (hasTray && !quitting) {
+            close.accepted = false;
+            hide();
+            return;
+        }
         if (app.jobRunner.runningCount > 0 && !closeGuard.confirmed) {
             close.accepted = false;
             closeGuard.open();
@@ -206,6 +240,11 @@ Window {
                     DiscoverPage {
                         app: root.app
                         onSettingsRequested: root.openSettings(0)
+                    }
+                },
+                Component {
+                    EmailsPage {
+                        app: root.app
                     }
                 },
                 Component {
@@ -358,13 +397,16 @@ Window {
                             onClicked: {
                                 root.app.jobRunner.cancelAll();
                                 closeGuard.confirmed = true;
-                                root.close();
+                                Qt.quit();
                             }
                         }
 
                         SecondaryButton {
                             text: qsTr("Keep working")
-                            onClicked: closeGuard.visible = false
+                            onClicked: {
+                                closeGuard.visible = false;
+                                root.quitting = false;
+                            }
                         }
                     }
                 }

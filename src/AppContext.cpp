@@ -25,6 +25,7 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     , m_integrations(m_secrets, m_settings, m_database, m_runner, m_langSearch, m_pageSpeed,
                      m_paths.dataDir)
     , m_gmail(m_secrets, m_database, m_network)
+    , m_inbox(m_gmail, m_database, m_network)
     , m_sites(m_database, m_runner)
     , m_jobs(m_database, m_runner)
     , m_siteDetail(m_database, m_runner, m_pageSpeed, m_integrations, m_gmail)
@@ -38,6 +39,8 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     connect(&m_database, &Database::ready, this, &AppContext::onDatabaseReady);
     connect(&m_runner, &JobRunner::notice, this, &AppContext::notice);
     connect(&m_gmail, &GmailService::notice, this, &AppContext::notice);
+    connect(&m_gmail, &GmailService::siteMailChanged, &m_sites, &SiteListModel::refreshSoon);
+    connect(&m_inbox, &GmailInbox::siteMailChanged, &m_sites, &SiteListModel::refreshSoon);
     connect(&m_siteDetail, &SiteDetail::notice, this, &AppContext::notice);
     connect(&m_siteDetail, &SiteDetail::organizerChanged, &m_sites, &SiteListModel::refreshSoon);
     connect(&m_discovery, &Discovery::notice, this, &AppContext::notice);

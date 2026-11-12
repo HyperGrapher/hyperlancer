@@ -16,6 +16,7 @@ Flickable {
     readonly property var tagNames: tags.map(tag => tag.name)
     readonly property var todos: organizer.todos || []
     readonly property var notes: organizer.notes || []
+    property int expandedNote: -1
     readonly property string todayIso: Qt.formatDate(new Date(), "yyyy-MM-dd")
 
     contentWidth: width
@@ -31,46 +32,44 @@ Flickable {
         width: workspace.width
         spacing: Theme.spacingM
 
-        // ---- status, category, tags ----
+        // ---- status, category, deadline ----
         Section {
-            title: qsTr("Status")
+            title: qsTr("Details")
 
-            SegmentedControl {
-                options: workspace.detail.statuses.map(status => Format.leadStatusLabel(status))
-                currentIndex: Math.max(0, workspace.detail.statuses.indexOf(workspace.organizer.status))
-                onActivated: index => workspace.detail.setStatus(workspace.detail.statuses[index])
-            }
-        }
-
-        Section {
-            title: qsTr("Category")
-
-            Flow {
+            GridLayout {
                 width: parent.width
-                spacing: Theme.spacingS
+                columns: 2
+                columnSpacing: Theme.spacingL
+                rowSpacing: Theme.spacingS
 
-                Repeater {
-                    model: workspace.organizer.categories || []
-
-                    delegate: Chip {
-                        required property string modelData
-
-                        text: modelData
-                        selected: modelData === workspace.organizer.category
-                        onClicked: workspace.detail.setCategory(selected ? "" : modelData)
-                    }
+                FieldLabel { text: qsTr("Status") }
+                Dropdown {
+                    Layout.preferredWidth: 240
+                    options: Format.leadStatusOptions
+                    currentValue: workspace.organizer.status || "none"
+                    onActivated: value => workspace.detail.setStatus(value)
                 }
 
-                StyledTextField {
-                    id: categoryField
+                FieldLabel { text: qsTr("Category") }
+                Dropdown {
+                    Layout.preferredWidth: 240
+                    options: [{ value: "", label: qsTr("No category") }]
+                        .concat((workspace.organizer.categories || []).map(name => ({ value: name, label: name })))
+                    currentValue: workspace.organizer.category || ""
+                    placeholder: qsTr("No category")
+                    searchable: true
+                    allowCreate: true
+                    createLabel: qsTr("New category “%1”")
+                    onActivated: value => workspace.detail.setCategory(value)
+                    onCreated: text => workspace.detail.setCategory(text)
+                }
 
-                    implicitWidth: 200
-                    implicitHeight: 30
-                    placeholderText: qsTr("New category…")
-                    onAccepted: {
-                        workspace.detail.setCategory(text);
-                        clear();
-                    }
+                FieldLabel { text: qsTr("Deadline") }
+                DateField {
+                    Layout.preferredWidth: 240
+                    value: workspace.organizer.deadlineOn || ""
+                    placeholder: qsTr("No deadline")
+                    onPicked: value => workspace.detail.setDeadline(value)
                 }
             }
         }
@@ -95,34 +94,20 @@ Flickable {
                     }
                 }
 
-                StyledTextField {
-                    implicitWidth: 200
+                // Click to see the tags used elsewhere; typing narrows the list or makes a new tag.
+                Dropdown {
+                    width: 170
                     implicitHeight: 30
-                    placeholderText: qsTr("Add a tag…")
-                    onAccepted: {
-                        workspace.detail.addTag(text);
-                        clear();
-                    }
-                }
-            }
-
-            // Tags used on other sites, one click to reuse.
-            Flow {
-                width: parent.width
-                spacing: Theme.spacingS
-                visible: suggestions.count > 0
-
-                Repeater {
-                    id: suggestions
-
-                    model: (workspace.organizer.allTags || []).filter(name => workspace.tagNames.indexOf(name) < 0)
-
-                    delegate: Chip {
-                        required property string modelData
-
-                        text: "+ " + modelData
-                        onClicked: workspace.detail.addTag(modelData)
-                    }
+                    compact: true
+                    placeholder: qsTr("Add a tag…")
+                    options: (workspace.organizer.allTags || [])
+                        .filter(name => workspace.tagNames.indexOf(name) < 0)
+                        .map(name => ({ value: name, label: name }))
+                    searchable: true
+                    allowCreate: true
+                    createLabel: qsTr("New tag “%1”")
+                    onActivated: value => workspace.detail.addTag(value)
+                    onCreated: text => workspace.detail.addTag(text)
                 }
             }
         }
@@ -144,14 +129,13 @@ Flickable {
                     onAccepted: workspace.addTodo()
                 }
 
-                StyledTextField {
+                DateField {
                     id: dueField
 
-                    implicitWidth: 130
+                    implicitWidth: 150
                     implicitHeight: 34
-                    placeholderText: qsTr("YYYY-MM-DD")
-                    validator: RegularExpressionValidator { regularExpression: /^(\d{4}-\d{2}-\d{2})?$/ }
-                    onAccepted: workspace.addTodo()
+                    placeholder: qsTr("Due date")
+                    onPicked: value => dueField.value = value
                 }
 
                 SecondaryButton {
@@ -221,7 +205,7 @@ Flickable {
                         anchors.right: removeTodo.left
                         anchors.rightMargin: Theme.spacingS
                         anchors.verticalCenter: parent.verticalCenter
-                        text: todoRow.modelData.dueOn
+                        text: todoRow.modelData.dueOn.length > 0 ? Format.shortDate(todoRow.modelData.dueOn) : ""
                         color: todoRow.overdue ? Theme.danger : Theme.textSecondary
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontCaption + 1
@@ -254,9 +238,17 @@ Flickable {
         Section {
             title: qsTr("Notes")
 
+            StyledTextField {
+                id: noteTitle
+
+                width: parent.width
+                implicitHeight: 34
+                placeholderText: qsTr("Title")
+            }
+
             Rectangle {
                 width: parent.width
-                height: 84
+                height: 96
                 radius: Theme.radiusControl
                 color: Theme.glassTint
                 border.width: 1
@@ -266,7 +258,7 @@ Flickable {
                     id: noteField
 
                     anchors.fill: parent
-                    placeholderText: qsTr("Write a note… (Ctrl+Enter to save)")
+                    placeholderText: qsTr("Write in Markdown… (Ctrl+Enter to save)")
                     placeholderTextColor: Theme.textMuted
                     color: Theme.textPrimary
                     font.family: Theme.fontFamily
@@ -291,6 +283,7 @@ Flickable {
                 onClicked: workspace.addNote()
             }
 
+            // One accordion row per note: the title, and the Markdown body when opened.
             Repeater {
                 model: workspace.notes
 
@@ -298,48 +291,102 @@ Flickable {
                     id: noteCard
 
                     required property var modelData
+                    readonly property bool expanded: workspace.expandedNote === modelData.id
 
                     width: parent.width
-                    height: noteBody.implicitHeight + noteDate.implicitHeight + Theme.spacingM * 2 + 4
+                    height: noteHeader.height + (expanded ? noteBody.implicitHeight + Theme.spacingM * 2 : 0)
                     radius: Theme.radiusSmall
                     color: Theme.glassFill
+                    clip: true
 
-                    Text {
-                        id: noteDate
+                    Behavior on height { NumberAnimation { duration: Motion.normal; easing.type: Easing.OutCubic } }
 
-                        x: Theme.spacingM
-                        y: Theme.spacingM
-                        text: Format.dateTime(noteCard.modelData.createdAt)
-                        color: Theme.textMuted
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontCaption
+                    Item {
+                        id: noteHeader
+
+                        width: parent.width
+                        height: 44
+
+                        Icon {
+                            id: chevron
+
+                            x: Theme.spacingM
+                            anchors.verticalCenter: parent.verticalCenter
+                            glyph: noteCard.expanded ? Icons.caretDown : Icons.caretRight
+                            size: 14
+                            color: Theme.textMuted
+                        }
+
+                        Text {
+                            anchors.left: chevron.right
+                            anchors.leftMargin: Theme.spacingS
+                            anchors.right: noteDate.left
+                            anchors.rightMargin: Theme.spacingM
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: noteCard.modelData.title.length > 0 ? noteCard.modelData.title : qsTr("Untitled note")
+                            color: Theme.textPrimary
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontBody + 1
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideRight
+                            textFormat: Text.PlainText
+                        }
+
+                        Text {
+                            id: noteDate
+
+                            anchors.right: removeNote.left
+                            anchors.rightMargin: Theme.spacingS
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: Format.shortDate(noteCard.modelData.createdAt)
+                            color: Theme.textMuted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontCaption + 1
+                        }
+
+                        IconButton {
+                            id: removeNote
+
+                            anchors.right: parent.right
+                            anchors.rightMargin: 4
+                            anchors.verticalCenter: parent.verticalCenter
+                            glyph: Icons.trash
+                            flat: true
+                            danger: true
+                            hint: qsTr("Delete note")
+                            onClicked: workspace.detail.deleteNote(noteCard.modelData.id)
+                        }
+
+                        HoverHandler {
+                            cursorShape: Qt.PointingHandCursor
+                        }
+
+                        TapHandler {
+                            // The delete button handles its own taps.
+                            onTapped: eventPoint => {
+                                if (!removeNote.contains(removeNote.mapFromItem(noteHeader, eventPoint.position)))
+                                    workspace.expandedNote = noteCard.expanded ? -1 : noteCard.modelData.id;
+                            }
+                        }
                     }
 
                     Text {
                         id: noteBody
 
                         x: Theme.spacingM
-                        anchors.top: noteDate.bottom
-                        anchors.topMargin: 4
-                        width: parent.width - Theme.spacingM * 2 - 34
+                        anchors.top: noteHeader.bottom
+                        width: parent.width - Theme.spacingM * 2
                         text: noteCard.modelData.body
+                        textFormat: Text.MarkdownText
                         color: Theme.textPrimary
+                        linkColor: Theme.accent
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontBody + 1
                         wrapMode: Text.Wrap
-                        textFormat: Text.PlainText
-                    }
+                        opacity: noteCard.expanded ? 1 : 0
+                        onLinkActivated: link => workspace.app.openExternal(link)
 
-                    IconButton {
-                        anchors.right: parent.right
-                        anchors.rightMargin: 4
-                        anchors.top: parent.top
-                        anchors.topMargin: 4
-                        glyph: Icons.trash
-                        flat: true
-                        danger: true
-                        hint: qsTr("Delete note")
-                        onClicked: workspace.detail.deleteNote(noteCard.modelData.id)
+                        Behavior on opacity { NumberAnimation { duration: Motion.normal } }
                     }
                 }
             }
@@ -349,16 +396,24 @@ Flickable {
     function addTodo() {
         if (todoField.text.trim().length === 0)
             return;
-        detail.addTodo(todoField.text, dueField.text);
+        detail.addTodo(todoField.text, dueField.value);
         todoField.clear();
-        dueField.clear();
+        dueField.value = "";
     }
 
     function addNote() {
         if (noteField.text.trim().length === 0)
             return;
-        detail.addNote(noteField.text);
+        detail.addNote(noteTitle.text, noteField.text);
+        noteTitle.clear();
         noteField.clear();
+    }
+
+    component FieldLabel: Text {
+        Layout.preferredWidth: 90
+        color: Theme.textSecondary
+        font.family: Theme.fontFamily
+        font.pixelSize: Theme.fontBody + 1
     }
 
     // A titled glass block; children stack inside.

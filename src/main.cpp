@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QFont>
 #include <QFontDatabase>
+#include <QApplication>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
@@ -15,6 +16,7 @@
 #include "AppPaths.h"
 #include "AppSettings.h"
 #include "LogFile.h"
+#include "TrayIcon.h"
 #include "WindowChrome.h"
 
 namespace {
@@ -91,9 +93,29 @@ void loadBundledFonts()
 
 } // namespace
 
+// "Ayşe Demir <ayse@firma.com>" becomes "Ayşe Demir"; a bare address stays as it is.
+QString senderName(const QString &fromHeader)
+{
+    const int angle = fromHeader.indexOf(QLatin1Char('<'));
+    const QString name = (angle > 0 ? fromHeader.left(angle) : fromHeader).trimmed();
+    return name.remove(QLatin1Char('"'));
+}
+
+void notifyNewMail(TrayIcon &tray, const QVariantList &messages)
+{
+    const QVariantMap newest = messages.constFirst().toMap();
+    if (messages.size() == 1) {
+        tray.notify(QObject::tr("New email from %1").arg(senderName(newest.value(QStringLiteral("from")).toString())),
+                    newest.value(QStringLiteral("subject")).toString());
+        return;
+    }
+    tray.notify(QObject::tr("%1 new emails").arg(messages.size()),
+                QObject::tr("Latest: %1").arg(newest.value(QStringLiteral("subject")).toString()));
+}
+
 int main(int argc, char *argv[])
 {
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
     QGuiApplication::setOrganizationName(QStringLiteral("HyperGrapher"));
     QGuiApplication::setApplicationName(QStringLiteral("Hyperlancer"));
     QGuiApplication::setApplicationVersion(QStringLiteral(PROJECT_VERSION_STRING));
@@ -109,6 +131,11 @@ int main(int argc, char *argv[])
     // styles would ignore or fight the custom backgrounds.
     QQuickStyle::setStyle(QStringLiteral("Basic"));
 
+    // The app keeps running in the tray when its window is closed. Without a tray (some Linux
+    // desktops) closing the window quits, as usual.
+    TrayIcon tray;
+    QApplication::setQuitOnLastWindowClosed(!tray.isAvailable());
+
     WindowChrome chrome(options.translucencyAllowed);
     AppSettings settings(options.settingsPath);
     AppContext context(paths, settings);
@@ -122,6 +149,7 @@ int main(int argc, char *argv[])
         {QStringLiteral("appSettings"), QVariant::fromValue(&settings)},
         {QStringLiteral("app"), QVariant::fromValue(&context)},
         {QStringLiteral("reducedMotionForced"), options.reducedMotion},
+        {QStringLiteral("hasTray"), tray.isAvailable()},
         {QStringLiteral("tourDirectory"), options.tourDirectory},
     });
     engine.load(QUrl(QStringLiteral("qrc:/qt/qml/Hyperlancer/Main.qml")));
@@ -129,9 +157,22 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (auto *window = qobject_cast<QQuickWindow *>(engine.rootObjects().constFirst())) {
+    QObject *root = engine.rootObjects().constFirst();
+    if (auto *window = qobject_cast<QQuickWindow *>(root)) {
         chrome.attach(*window);
     }
+    QObject::connect(&tray, &TrayIcon::showRequested, root,
+                     [root]() { QMetaObject::invokeMethod(root, "showFromTray"); });
+    QObject::connect(&tray, &TrayIcon::quitRequested, root,
+                     [root]() { QMetaObject::invokeMethod(root, "requestQuit"); });
+    QObject::connect(&tray, &TrayIcon::notificationClicked, root,
+                     [root]() { QMetaObject::invokeMethod(root, "openEmails"); });
+    QObject::connect(context.inbox(), &GmailInbox::newMessages, &tray,
+                     [&tray, &settings](const QVariantList &messages) {
+                         if (settings.notifyNewMail() && !messages.isEmpty()) {
+                             notifyNewMail(tray, messages);
+                         }
+                     });
 
-    return QGuiApplication::exec();
+    return QApplication::exec();
 }

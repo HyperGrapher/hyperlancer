@@ -4,6 +4,7 @@
 
 #include <QAbstractListModel>
 #include <QHash>
+#include <QStringList>
 #include <QTimer>
 #include <QtQml/qqmlregistration.h>
 
@@ -23,6 +24,9 @@ class SiteListModel : public QAbstractListModel
     Q_PROPERTY(QString search READ search WRITE setSearch NOTIFY searchChanged)
     Q_PROPERTY(int filter READ filter WRITE setFilter NOTIFY filterChanged)
     Q_PROPERTY(QString statusFilter READ statusFilter WRITE setStatusFilter NOTIFY statusFilterChanged)
+    Q_PROPERTY(QString categoryFilter READ categoryFilter WRITE setCategoryFilter NOTIFY
+                   categoryFilterChanged)
+    Q_PROPERTY(QStringList categories READ categories NOTIFY countChanged)
     Q_PROPERTY(int sortKey READ sortKey WRITE setSortKey NOTIFY sortChanged)
     Q_PROPERTY(bool sortDescending READ sortDescending WRITE setSortDescending NOTIFY sortChanged)
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
@@ -47,6 +51,7 @@ public:
         SourceRole,
         FaviconUrlRole,
         StatusRole,
+        DeadlineOnRole,
         CategoryRole,
         TagsRole,
         OpenTodosRole,
@@ -67,6 +72,9 @@ public:
     void setFilter(int filter);
     [[nodiscard]] QString statusFilter() const { return m_statusFilter; }
     void setStatusFilter(const QString &status);
+    [[nodiscard]] QString categoryFilter() const { return m_categoryFilter; }
+    void setCategoryFilter(const QString &category);
+    [[nodiscard]] QStringList categories() const { return m_categories; }
     [[nodiscard]] int sortKey() const { return static_cast<int>(m_sortKey); }
     void setSortKey(int key);
     [[nodiscard]] bool sortDescending() const { return m_sortDescending; }
@@ -74,6 +82,8 @@ public:
     [[nodiscard]] int total() const { return m_total; }
     [[nodiscard]] bool isLoaded() const { return m_loaded; }
 
+    // Changes one site's lead status from the list, then refreshes.
+    Q_INVOKABLE void setSiteStatus(qint64 siteId, const QString &status);
     Q_INVOKABLE void refresh();
     // Debounced refresh, for bursts of changes.
     Q_INVOKABLE void refreshSoon();
@@ -82,6 +92,7 @@ signals:
     void searchChanged();
     void filterChanged();
     void statusFilterChanged();
+    void categoryFilterChanged();
     void sortChanged();
     void countChanged();
 
@@ -101,6 +112,8 @@ private:
     QString m_search;
     SiteStore::Filter m_filter = SiteStore::Filter::All;
     QString m_statusFilter;
+    QString m_categoryFilter;
+    QStringList m_categories;
     SiteStore::SortKey m_sortKey = SiteStore::SortKey::Analyzed;
     bool m_sortDescending = true;
     int m_total = 0;

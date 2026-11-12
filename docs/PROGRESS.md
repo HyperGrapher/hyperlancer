@@ -69,6 +69,16 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - Tested on SQLite with Qt 6.4 (`tst_siteorganizer`: 7 pass). Not run: MySQL migration 0002, the QML (Qt 6.11 missing here).
 - Still open from §5: saved views, snapshot diff, bulk actions, a global to-do list.
 
+### Workflow round (migration 0003)
+- **Statuses** are now none, consider, design, contacted, replied, client, completed, canceled (the old "new" became "none"). Edited in the Websites list through a dropdown and in the Workspace tab.
+- **Websites list:** columns Site, Status, Category, Tags, Deadline, To-dos, Analyzed (sortable). Filters are dropdowns: status, category, health (all / unreachable / expiring). "Not analyzed", HTTP, SSL, Domain, Hosting and CMS are gone from the list.
+- **Workspace tab:** status, one category (dropdown with search and "create"), deadline (calendar picker), tags (dropdown with search and "create"), to-dos with a calendar date, notes with a title (accordion, Markdown rendered by Qt's own `Text.MarkdownText`, so no library was added).
+- **Emails:** new section with the inbox (messages in INBOX, not archived). Clicking a message opens `MailView` (plain text; the body is fetched on open and never stored). The site's Emails tab uses the same view.
+- **Mail automation:** a sent message to a site's domain moves the status to contacted, a real reply (not an auto-reply or bounce) to replied. Mail never moves a status backwards and never touches client, completed or canceled (`SiteOrganizer::applyMailStatus`).
+- **Background mail check:** `GmailInbox` polls `users.history.list` from the stored `historyId` every 60 s (falls back to the current position when Gmail answers 404). New inbox mail shows a desktop notification (Settings → Connections → "Notify about new mail"); mail from a tracked domain is also stored and can move the status.
+- **Tray:** `TrayIcon` (Qt Widgets; the app now runs on `QApplication`). Closing the window hides it; the tray menu has Show and Quit (Quit asks first when analyses run). Without a system tray the window closes normally. There is no icon file yet: the icon is drawn in code.
+- Not verified here (Qt 6.11 missing): the app build, all QML, tray and notifications, MySQL migration 0003. `tst_siteorganizer` (10 tests) passes on SQLite with Qt 6.4.
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

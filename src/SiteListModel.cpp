@@ -4,6 +4,7 @@
 
 #include "Database.h"
 #include "JobRunner.h"
+#include "SiteOrganizer.h"
 
 SiteListModel::SiteListModel(Database &database, JobRunner &runner, QObject *parent)
     : QAbstractListModel(parent)
@@ -69,6 +70,8 @@ QVariant SiteListModel::data(const QModelIndex &index, int role) const
         return row.domainExpiresOn;
     case FaviconUrlRole:
         return row.faviconUrl;
+    case DeadlineOnRole:
+        return row.deadlineOn;
     case StatusRole:
         return row.status;
     case CategoryRole:
@@ -107,6 +110,7 @@ QHash<int, QByteArray> SiteListModel::roleNames() const
             {SourceRole, "source"},
             {FaviconUrlRole, "faviconUrl"},
             {StatusRole, "status"},
+            {DeadlineOnRole, "deadlineOn"},
             {CategoryRole, "category"},
             {TagsRole, "tags"},
             {OpenTodosRole, "openTodos"},
@@ -147,10 +151,27 @@ void SiteListModel::setStatusFilter(const QString &status)
     refresh();
 }
 
+void SiteListModel::setCategoryFilter(const QString &category)
+{
+    if (m_categoryFilter == category) {
+        return;
+    }
+    m_categoryFilter = category;
+    emit categoryFilterChanged();
+    refresh();
+}
+
+void SiteListModel::setSiteStatus(qint64 siteId, const QString &status)
+{
+    m_database.run(
+        this, [siteId, status](QSqlDatabase &db) { return SiteOrganizer::setStatus(db, siteId, status); },
+        [this](bool) { refresh(); });
+}
+
 void SiteListModel::setSortKey(int key)
 {
     const auto value = static_cast<SiteStore::SortKey>(
-        std::clamp(key, 0, static_cast<int>(SiteStore::SortKey::Http)));
+        std::clamp(key, 0, static_cast<int>(SiteStore::SortKey::Todos)));
     if (m_sortKey == value) {
         return;
     }
@@ -177,6 +198,7 @@ void SiteListModel::refresh()
     query.search = m_search;
     query.filter = m_filter;
     query.status = m_statusFilter;
+    query.category = m_categoryFilter;
     query.sortKey = m_sortKey;
     query.descending = m_sortDescending;
     m_database.run(
@@ -216,6 +238,7 @@ void SiteListModel::apply(SiteStore::ListResult result)
         endResetModel();
     }
     m_total = result.total;
+    m_categories = result.categories;
     m_loaded = true;
     emit countChanged();
 }

@@ -46,11 +46,12 @@ QStringList names(QSqlDatabase &db, const QString &sql)
 
 QStringList statuses()
 {
-    return {QStringLiteral("new"), QStringLiteral("contacted"), QStringLiteral("replied"),
-            QStringLiteral("client"), QStringLiteral("rejected")};
+    return {QStringLiteral("none"),      QStringLiteral("consider"),  QStringLiteral("design"),
+            QStringLiteral("contacted"), QStringLiteral("replied"),   QStringLiteral("client"),
+            QStringLiteral("completed"), QStringLiteral("canceled")};
 }
 
-bool setStatus(QSqlDatabase &db, qint64 siteId, const QString &status)
+bool setStatus(QSqlDatabase &db, qint64 siteId, const QString &status, const QString &activityText)
 {
     if (!statuses().contains(status)) {
         return false;
@@ -60,9 +61,43 @@ bool setStatus(QSqlDatabase &db, qint64 siteId, const QString &status)
         {status, DbTime::now(), siteId});
     if (saved) {
         SiteStore::logActivity(db, siteId, QStringLiteral("site.status"),
-                               QObject::tr("Status set to %1").arg(status));
+                               activityText.arg(status));
     }
     return saved;
+}
+
+bool setDeadline(QSqlDatabase &db, qint64 siteId, const QString &dueOn)
+{
+    return succeeded(db, QStringLiteral("UPDATE sites SET deadline_on = ?, updated_at = ? WHERE id = ?"),
+                     {SqlExec::textOrNull(dueOn), DbTime::now(), siteId});
+}
+
+bool applyMailStatus(QSqlDatabase &db, qint64 siteId)
+{
+    QSqlQuery current = SqlExec::run(db, QStringLiteral("SELECT status FROM sites WHERE id = ?"), {siteId});
+    if (!current.next()) {
+        return false;
+    }
+    // Real replies only: bounces and auto-replies do not count (PRD).
+    QSqlQuery mail = SqlExec::run(
+        db,
+        QStringLiteral(
+            "SELECT COALESCE(MAX(CASE WHEN direction = 'sent' THEN 1 ELSE 0 END), 0), "
+            "COALESCE(MAX(CASE WHEN direction = 'received' AND is_bounce = 0 AND is_auto_reply = 0 "
+            "THEN 1 ELSE 0 END), 0) FROM mail_messages WHERE site_id = ?"),
+        {siteId});
+    if (!mail.next()) {
+        return false;
+    }
+    const QString target = mail.value(1).toInt() != 0   ? QStringLiteral("replied")
+                           : mail.value(0).toInt() != 0 ? QStringLiteral("contacted")
+                                                         : QString();
+    const QStringList order = statuses();
+    // Mail only moves a site forward; client, completed and canceled are never touched.
+    if (target.isEmpty() || order.indexOf(current.value(0).toString()) >= order.indexOf(target)) {
+        return false;
+    }
+    return setStatus(db, siteId, target, QObject::tr("Status set to %1 (from email)"));
 }
 
 bool setCategory(QSqlDatabase &db, qint64 siteId, const QString &name)
@@ -102,7 +137,7 @@ bool removeTag(QSqlDatabase &db, qint64 siteId, qint64 tagId)
                      {siteId, tagId});
 }
 
-bool addNote(QSqlDatabase &db, qint64 siteId, const QString &body)
+bool addNote(QSqlDatabase &db, qint64 siteId, const QString &title, const QString &body)
 {
     const QString trimmed = body.trimmed();
     if (trimmed.isEmpty()) {
@@ -110,9 +145,9 @@ bool addNote(QSqlDatabase &db, qint64 siteId, const QString &body)
     }
     const QString now = DbTime::now();
     return succeeded(db,
-                     QStringLiteral("INSERT INTO notes (site_id, body, created_at, updated_at) "
-                                    "VALUES (?, ?, ?, ?)"),
-                     {siteId, trimmed, now, now});
+                     QStringLiteral("INSERT INTO notes (site_id, title, body, created_at, updated_at) "
+                                    "VALUES (?, ?, ?, ?, ?)"),
+                     {siteId, title.trimmed().left(200) + QStringLiteral(""), trimmed, now, now}); // never NULL
 }
 
 bool deleteNote(QSqlDatabase &db, qint64 noteId)
@@ -151,12 +186,13 @@ QVariantMap load(QSqlDatabase &db, qint64 siteId)
 
     QSqlQuery site = SqlExec::run(
         db,
-        QStringLiteral("SELECT s.status, c.name FROM sites s LEFT JOIN categories c ON "
+        QStringLiteral("SELECT s.status, c.name, s.deadline_on FROM sites s LEFT JOIN categories c ON "
                        "c.id = s.category_id WHERE s.id = ?"),
         {siteId});
     if (site.next()) {
         result.insert(QStringLiteral("status"), site.value(0).toString());
         result.insert(QStringLiteral("category"), site.value(1).toString());
+        result.insert(QStringLiteral("deadlineOn"), site.value(2).toString());
     }
 
     QVariantList tags;
@@ -174,12 +210,13 @@ QVariantMap load(QSqlDatabase &db, qint64 siteId)
     QVariantList notes;
     QSqlQuery noteQuery = SqlExec::run(
         db,
-        QStringLiteral("SELECT id, body, created_at FROM notes WHERE site_id = ? ORDER BY id DESC"),
+        QStringLiteral("SELECT id, title, body, created_at FROM notes WHERE site_id = ? ORDER BY id DESC"),
         {siteId});
     while (noteQuery.next()) {
         notes.append(QVariantMap{{QStringLiteral("id"), noteQuery.value(0)},
-                                 {QStringLiteral("body"), noteQuery.value(1)},
-                                 {QStringLiteral("createdAt"), DbTime::toIso(noteQuery.value(2))}});
+                                 {QStringLiteral("title"), noteQuery.value(1)},
+                                 {QStringLiteral("body"), noteQuery.value(2)},
+                                 {QStringLiteral("createdAt"), DbTime::toIso(noteQuery.value(3))}});
     }
     result.insert(QStringLiteral("notes"), notes);
 

@@ -122,15 +122,19 @@ Item {
                 onDoubleClicked: view.app.removeSite(view.detail.siteId)
             }
 
-            SecondaryButton {
-                text: qsTr("Open site")
+            IconButton {
+                implicitWidth: 40
+                implicitHeight: 40
                 glyph: Icons.openExternal
+                hint: qsTr("Open website")
                 onClicked: view.app.openExternal(view.site.final_url || view.site.url)
             }
 
-            SecondaryButton {
-                text: view.detail.speedRunning ? qsTr("Measuring…") : qsTr("Mobile speed")
+            IconButton {
+                implicitWidth: 40
+                implicitHeight: 40
                 glyph: Icons.deviceMobile
+                hint: view.detail.speedRunning ? qsTr("Measuring…") : qsTr("Check mobile speed")
                 enabled: !view.detail.speedRunning
                 onClicked: view.detail.checkSpeed()
             }

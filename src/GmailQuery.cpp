@@ -100,6 +100,10 @@ MessageMeta parseMetadata(const QJsonObject &message, const QString &accountEmai
             autoSubmitted = content.trimmed().toLower();
         }
     }
+    for (const QJsonValue &label : message.value(QStringLiteral("labelIds")).toArray()) {
+        meta.unread = meta.unread || label.toString() == QStringLiteral("UNREAD");
+        meta.inInbox = meta.inInbox || label.toString() == QStringLiteral("INBOX");
+    }
     const QString fromAddress = addressOf(meta.from);
     meta.sent = !accountEmail.isEmpty() && fromAddress == accountEmail.trimmed().toLower();
     meta.isBounce = fromAddress.startsWith(QStringLiteral("mailer-daemon@")) ||
@@ -110,6 +114,22 @@ MessageMeta parseMetadata(const QJsonObject &message, const QString &accountEmai
     meta.hasAttachments =
         payload.value(QStringLiteral("mimeType")).toString() == QStringLiteral("multipart/mixed");
     return meta;
+}
+
+QVariantMap toVariantMap(const MessageMeta &meta)
+{
+    return {{QStringLiteral("gmailId"), meta.gmailId},
+            {QStringLiteral("threadId"), meta.threadId},
+            {QStringLiteral("direction"), meta.sent ? QStringLiteral("sent") : QStringLiteral("received")},
+            {QStringLiteral("from"), meta.from},
+            {QStringLiteral("to"), meta.to},
+            {QStringLiteral("subject"), meta.subject},
+            {QStringLiteral("snippet"), meta.snippet},
+            {QStringLiteral("sentAt"), meta.sentAt.isValid() ? meta.sentAt.toString(Qt::ISODate) : QString()},
+            {QStringLiteral("hasAttachments"), meta.hasAttachments},
+            {QStringLiteral("isBounce"), meta.isBounce},
+            {QStringLiteral("isAutoReply"), meta.isAutoReply},
+            {QStringLiteral("unread"), meta.unread}};
 }
 
 namespace {

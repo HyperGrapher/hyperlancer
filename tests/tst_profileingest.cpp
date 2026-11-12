@@ -215,8 +215,8 @@ void ProfileIngestTest::listFiltersAndSearches()
 
     SiteStore::ListQuery query;
     QCOMPARE(SiteStore::listSites(db, query).rows.size(), size_t(2));
-    query.filter = SiteStore::Filter::NeverAnalyzed;
-    QCOMPARE(SiteStore::listSites(db, query).rows.size(), size_t(1));
+    query.filter = SiteStore::Filter::Failed;
+    QCOMPARE(SiteStore::listSites(db, query).rows.size(), size_t(0));
     query.filter = SiteStore::Filter::All;
     query.search = QStringLiteral("WORDPRESS");
     const SiteStore::ListResult found = SiteStore::listSites(db, query);

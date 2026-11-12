@@ -11,10 +11,13 @@ PageBase {
     property bool ambientActive: true
     property bool detailOpen: false
 
-    readonly property bool wide: width > 1020
-    readonly property var filterNames: [qsTr("All"), qsTr("Not analyzed"), qsTr("Unreachable"), qsTr("Expiring")]
-    readonly property var statusValues: ["", "new", "contacted", "replied", "client", "rejected"]
-    readonly property var statusNames: [qsTr("Any status"), qsTr("New"), qsTr("Contacted"), qsTr("Replied"), qsTr("Client"), qsTr("Rejected")]
+    readonly property bool wide: width > 940
+    readonly property var statusFilterOptions: [{ value: "", label: qsTr("Any status") }].concat(Format.leadStatusOptions)
+    readonly property var categoryFilterOptions: [{ value: "", label: qsTr("Any category") }]
+        .concat(app.sites.categories.map(name => ({ value: name, label: name })))
+    readonly property var healthFilterOptions: [{ value: 0, label: qsTr("All websites") },
+                                                { value: 1, label: qsTr("Unreachable") },
+                                                { value: 2, label: qsTr("Expiring") }]
 
     // Clicking the active column flips the direction; a new column starts ascending, except
     // "Analyzed", where newest first is the useful order.
@@ -110,36 +113,50 @@ PageBase {
             anchors.top: header.bottom
             anchors.topMargin: Theme.spacingL + 2
             width: parent.width
-            height: Theme.inputHeight * 2 + Theme.spacingS
+            height: Theme.inputHeight
             opacity: page.reveal(1)
             transform: Translate { y: page.revealShift(1) }
 
-            StyledTextField {
-                id: searchField
+            RowLayout {
+                anchors.fill: parent
+                spacing: Theme.spacingM
 
-                width: Math.min(340, parent.width * 0.36)
-                glyph: Icons.search
-                clearable: true
-                placeholderText: qsTr("Search domain, title, CMS, tag or category")
-                onTextChanged: page.app.sites.search = text
-            }
+                StyledTextField {
+                    id: searchField
 
-            SegmentedControl {
-                anchors.left: searchField.right
-                anchors.leftMargin: Theme.spacingM
-                anchors.verticalCenter: parent.verticalCenter
-                implicitHeight: Theme.inputHeight
-                options: page.filterNames
-                currentIndex: page.app.sites.filter
-                onActivated: index => page.app.sites.filter = index
-            }
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 180
+                    Layout.preferredWidth: 340
+                    Layout.maximumWidth: 380
+                    glyph: Icons.search
+                    clearable: true
+                    placeholderText: qsTr("Search domain, title, tag or category")
+                    onTextChanged: page.app.sites.search = text
+                }
 
-            SegmentedControl {
-                y: Theme.inputHeight + Theme.spacingS
-                implicitHeight: Theme.inputHeight
-                options: page.statusNames
-                currentIndex: Math.max(0, page.statusValues.indexOf(page.app.sites.statusFilter))
-                onActivated: index => page.app.sites.statusFilter = page.statusValues[index]
+                Item { Layout.fillWidth: true }
+
+                Dropdown {
+                    Layout.preferredWidth: 150
+                    options: page.statusFilterOptions
+                    currentValue: page.app.sites.statusFilter
+                    onActivated: value => page.app.sites.statusFilter = value
+                }
+
+                Dropdown {
+                    Layout.preferredWidth: 160
+                    options: page.categoryFilterOptions
+                    currentValue: page.app.sites.categoryFilter
+                    searchable: true
+                    onActivated: value => page.app.sites.categoryFilter = value
+                }
+
+                Dropdown {
+                    Layout.preferredWidth: 150
+                    options: page.healthFilterOptions
+                    currentValue: page.app.sites.filter
+                    onActivated: value => page.app.sites.filter = value
+                }
             }
         }
 
@@ -162,11 +179,13 @@ PageBase {
                 width: parent.width
                 horizontalPadding: Theme.spacingL + 2
 
-                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Site"); sortKey: 1; Layout.fillWidth: true; Layout.minimumWidth: 200; Layout.leftMargin: 44 }
-                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Status"); sortKey: 2; Layout.preferredWidth: 84 }
-                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("CMS"); sortKey: 3; Layout.preferredWidth: 110 }
-                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("HTTP"); sortKey: 4; Layout.preferredWidth: 46 }
-                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Analyzed"); sortKey: 0; Layout.preferredWidth: 128 }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Site"); sortKey: 1; Layout.fillWidth: true; Layout.minimumWidth: 160; Layout.leftMargin: 44 }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Status"); sortKey: 2; Layout.preferredWidth: 124 }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Category"); sortKey: 3; Layout.preferredWidth: 104 }
+                TableHeader.Caption { text: qsTr("Tags"); Layout.preferredWidth: 120; visible: page.wide }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Deadline"); sortKey: 4; Layout.preferredWidth: 84 }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("To-dos"); sortKey: 5; Layout.preferredWidth: 46 }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Analyzed"); sortKey: 0; Layout.preferredWidth: 104 }
                 Item { Layout.preferredWidth: 72 }
             }
 
@@ -191,6 +210,8 @@ PageBase {
 
                 delegate: SiteTableRow {
                     width: list.width
+                    wide: page.wide
+                    onStatusRequested: (siteId, status) => page.app.sites.setSiteStatus(siteId, status)
                     onOpened: siteId => page.openSite(siteId)
                     onAnalyzeRequested: (siteId, url) => page.app.analyzeSite(siteId, url)
                     onExternalRequested: url => page.app.openExternal(url)

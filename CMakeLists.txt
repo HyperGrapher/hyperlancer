@@ -11,7 +11,7 @@ option(HYPERLANCER_BUILD_TESTS "Build the unit tests" ON)
 # 6.9 or newer for refreshTokens() and scope tokens; WebSockets is reserved for an upcoming
 # feature and linked now so deployment already carries it.
 find_package(Qt6 6.11 REQUIRED COMPONENTS
-    Concurrent Gui Network NetworkAuth Qml Quick QuickControls2 ShaderTools Sql WebSockets)
+    Concurrent Gui Network NetworkAuth Qml Quick QuickControls2 ShaderTools Sql WebSockets Widgets)
 
 qt_standard_project_setup(REQUIRES 6.11)
 
@@ -40,6 +40,7 @@ set(HYPERLANCER_CORE_SOURCES
     src/LangSearchClient.h src/LangSearchClient.cpp
     src/GmailQuery.h src/GmailQuery.cpp
     src/ChromeProfile.h src/ChromeProfile.cpp
+    src/MailStore.h src/MailStore.cpp
     src/SiteOrganizer.h src/SiteOrganizer.cpp
     src/PageSpeedClient.h src/PageSpeedClient.cpp
 )
@@ -65,8 +66,10 @@ qt_add_resources(HyperlancerCore "hyperlancer_data"
         resources/data/public_suffix_list.dat
         resources/migrations/sqlite/0001_init.sql
         resources/migrations/sqlite/0002_organize.sql
+        resources/migrations/sqlite/0003_deadline_notes.sql
         resources/migrations/mysql/0001_init.sql
         resources/migrations/mysql/0002_organize.sql
+        resources/migrations/mysql/0003_deadline_notes.sql
 )
 
 set(HYPERLANCER_APP_SOURCES
@@ -76,6 +79,7 @@ set(HYPERLANCER_APP_SOURCES
     src/WindowChrome.h src/WindowChrome.cpp
     src/PlatformWindow.h
     src/AppContext.h src/AppContext.cpp
+    src/TrayIcon.h src/TrayIcon.cpp
     src/JobRunner.h src/JobRunner.cpp
     src/JobListModel.h src/JobListModel.cpp
     src/SiteListModel.h src/SiteListModel.cpp
@@ -84,6 +88,7 @@ set(HYPERLANCER_APP_SOURCES
     src/Discovery.h src/Discovery.cpp
     src/Integrations.h src/Integrations.cpp
     src/GmailService.h src/GmailService.cpp
+    src/GmailInbox.h src/GmailInbox.cpp
     src/HealthModel.h src/HealthModel.cpp
 )
 
@@ -118,12 +123,17 @@ set(HYPERLANCER_QML_FILES
     src/qml/pages/SiteDetailView.qml
     src/qml/pages/ProfileSections.qml
     src/qml/pages/SiteEmails.qml
+    src/qml/pages/MailView.qml
+    src/qml/pages/EmailsPage.qml
     src/qml/pages/SiteWorkspace.qml
     src/qml/pages/DiscoverPage.qml
     src/qml/pages/JobsPage.qml
     src/qml/pages/SettingsPage.qml
     src/qml/controls/AnimatedNumber.qml
     src/qml/controls/Badge.qml
+    src/qml/controls/DateField.qml
+    src/qml/controls/Dropdown.qml
+    src/qml/controls/MailRow.qml
     src/qml/controls/EmptyState.qml
     src/qml/controls/FactRow.qml
     src/qml/controls/GlassCard.qml
@@ -210,6 +220,7 @@ target_link_libraries(Hyperlancer
         Qt6::Quick
         Qt6::QuickControls2
         Qt6::WebSockets
+        Qt6::Widgets
 )
 
 if(WIN32)

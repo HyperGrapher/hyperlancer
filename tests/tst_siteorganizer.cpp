@@ -18,6 +18,9 @@ private slots:
     void notesAndTodos();
     void listShowsOrganizerFieldsAndFilters();
     void listSorts();
+    void deadlineAndNoteTitle();
+    void categoryFilter();
+    void mailMovesStatusForwardOnly();
     void deletingSiteRemovesItsRecords();
 
 private:
@@ -49,7 +52,7 @@ void SiteOrganizerTest::statusCategoryAndTags()
     QSqlDatabase db = m_database->db();
     const qint64 site = addSite(QStringLiteral("firma.com.tr"));
     QCOMPARE(SiteOrganizer::load(db, site).value(QStringLiteral("status")).toString(),
-             QStringLiteral("new"));
+             QStringLiteral("none"));
 
     QVERIFY(SiteOrganizer::setStatus(db, site, QStringLiteral("contacted")));
     QVERIFY(!SiteOrganizer::setStatus(db, site, QStringLiteral("bogus")));
@@ -79,8 +82,8 @@ void SiteOrganizerTest::notesAndTodos()
 {
     QSqlDatabase db = m_database->db();
     const qint64 site = addSite(QStringLiteral("firma.com.tr"));
-    QVERIFY(SiteOrganizer::addNote(db, site, QStringLiteral("Called, owner is away")));
-    QVERIFY(!SiteOrganizer::addNote(db, site, QStringLiteral("   ")));
+    QVERIFY(SiteOrganizer::addNote(db, site, QStringLiteral("Call"), QStringLiteral("Called, owner is away")));
+    QVERIFY(!SiteOrganizer::addNote(db, site, QStringLiteral("t"), QStringLiteral("   ")));
     QVERIFY(SiteOrganizer::addTodo(db, site, QStringLiteral("Late task"), QStringLiteral("2030-05-01")));
     QVERIFY(SiteOrganizer::addTodo(db, site, QStringLiteral("Early task"), QStringLiteral("2030-01-01")));
     QVERIFY(SiteOrganizer::addTodo(db, site, QStringLiteral("Undated task"), QString()));
@@ -145,7 +148,7 @@ void SiteOrganizerTest::listSorts()
     const qint64 alpha = addSite(QStringLiteral("alpha.com"));
     addSite(QStringLiteral("zulu.com"));
     const qint64 middle = addSite(QStringLiteral("mid.com"));
-    QVERIFY(SiteOrganizer::setStatus(db, alpha, QStringLiteral("rejected")));
+    QVERIFY(SiteOrganizer::setStatus(db, alpha, QStringLiteral("canceled")));
     QVERIFY(SiteOrganizer::setStatus(db, middle, QStringLiteral("contacted")));
 
     SiteStore::ListQuery query;
@@ -157,19 +160,83 @@ void SiteOrganizerTest::listSorts()
     query.descending = true;
     QCOMPARE(SiteStore::listSites(db, query).rows.front().siteKey, QStringLiteral("zulu.com"));
 
-    query.sortKey = SiteStore::SortKey::Status; // pipeline order: new, contacted, ..., rejected
+    query.sortKey = SiteStore::SortKey::Status; // pipeline order: none, contacted, ..., canceled
     query.descending = false;
     result = SiteStore::listSites(db, query);
-    QCOMPARE(result.rows.at(0).status, QStringLiteral("new"));
+    QCOMPARE(result.rows.at(0).status, QStringLiteral("none"));
     QCOMPARE(result.rows.at(1).status, QStringLiteral("contacted"));
-    QCOMPARE(result.rows.at(2).status, QStringLiteral("rejected"));
+    QCOMPARE(result.rows.at(2).status, QStringLiteral("canceled"));
 
     // Every key must at least produce valid SQL.
-    for (int key = 0; key <= static_cast<int>(SiteStore::SortKey::Http); ++key) {
+    for (int key = 0; key <= static_cast<int>(SiteStore::SortKey::Todos); ++key) {
         query.sortKey = static_cast<SiteStore::SortKey>(key);
         QVERIFY(SiteStore::listSites(db, query).error.isEmpty());
         QCOMPARE(SiteStore::listSites(db, query).rows.size(), size_t(3));
     }
+}
+
+void SiteOrganizerTest::deadlineAndNoteTitle()
+{
+    QSqlDatabase db = m_database->db();
+    const qint64 site = addSite(QStringLiteral("firma.com.tr"));
+    QVERIFY(SiteOrganizer::setDeadline(db, site, QStringLiteral("2031-02-03")));
+    QVERIFY(SiteOrganizer::addNote(db, site, QStringLiteral("Offer"), QStringLiteral("**bold** text")));
+    const QVariantMap loaded = SiteOrganizer::load(db, site);
+    QCOMPARE(loaded.value(QStringLiteral("deadlineOn")).toString(), QStringLiteral("2031-02-03"));
+    const QVariantMap note = loaded.value(QStringLiteral("notes")).toList().front().toMap();
+    QCOMPARE(note.value(QStringLiteral("title")).toString(), QStringLiteral("Offer"));
+
+    SiteStore::ListQuery query;
+    QCOMPARE(SiteStore::listSites(db, query).rows.front().deadlineOn, QStringLiteral("2031-02-03"));
+    query.sortKey = SiteStore::SortKey::Deadline;
+    QVERIFY(SiteStore::listSites(db, query).error.isEmpty());
+    QVERIFY(SiteOrganizer::setDeadline(db, site, QString()));
+    QVERIFY(SiteOrganizer::load(db, site).value(QStringLiteral("deadlineOn")).toString().isEmpty());
+}
+
+void SiteOrganizerTest::categoryFilter()
+{
+    QSqlDatabase db = m_database->db();
+    const qint64 first = addSite(QStringLiteral("firma.com.tr"));
+    addSite(QStringLiteral("baska.com"));
+    QVERIFY(SiteOrganizer::setCategory(db, first, QStringLiteral("Dental")));
+    SiteStore::ListQuery query;
+    query.category = QStringLiteral("Dental");
+    const SiteStore::ListResult result = SiteStore::listSites(db, query);
+    QCOMPARE(result.rows.size(), size_t(1));
+    QCOMPARE(result.categories, QStringList{QStringLiteral("Dental")});
+}
+
+void SiteOrganizerTest::mailMovesStatusForwardOnly()
+{
+    QSqlDatabase db = m_database->db();
+    const qint64 site = addSite(QStringLiteral("firma.com.tr"));
+    QSqlQuery(db).exec(QStringLiteral("INSERT INTO mail_accounts (email, status, created_at) VALUES ('me@x.com', 'connected', '2030-01-01 00:00:00.000')"));
+    const auto addMail = [&db, site](const QString &id, const QString &direction, int bounce, int autoReply) {
+        QSqlQuery insert(db);
+        insert.prepare(QStringLiteral("INSERT INTO mail_messages (account_id, gmail_id, thread_id, site_id, direction, is_bounce, is_auto_reply) VALUES (1, ?, ?, ?, ?, ?, ?)"));
+        insert.addBindValue(id);
+        insert.addBindValue(id);
+        insert.addBindValue(site);
+        insert.addBindValue(direction);
+        insert.addBindValue(bounce);
+        insert.addBindValue(autoReply);
+        QVERIFY(insert.exec());
+    };
+    const auto status = [&db, site]() { return SiteOrganizer::load(db, site).value(QStringLiteral("status")).toString(); };
+
+    QVERIFY(!SiteOrganizer::applyMailStatus(db, site)); // no mail: nothing happens
+    addMail(QStringLiteral("m1"), QStringLiteral("sent"), 0, 0);
+    QVERIFY(SiteOrganizer::applyMailStatus(db, site));
+    QCOMPARE(status(), QStringLiteral("contacted"));
+    addMail(QStringLiteral("m2"), QStringLiteral("received"), 0, 1); // auto-reply: no change
+    QVERIFY(!SiteOrganizer::applyMailStatus(db, site));
+    addMail(QStringLiteral("m3"), QStringLiteral("received"), 0, 0);
+    QVERIFY(SiteOrganizer::applyMailStatus(db, site));
+    QCOMPARE(status(), QStringLiteral("replied"));
+    QVERIFY(SiteOrganizer::setStatus(db, site, QStringLiteral("client")));
+    QVERIFY(!SiteOrganizer::applyMailStatus(db, site)); // never moves back from client
+    QCOMPARE(status(), QStringLiteral("client"));
 }
 
 void SiteOrganizerTest::deletingSiteRemovesItsRecords()
@@ -177,7 +244,7 @@ void SiteOrganizerTest::deletingSiteRemovesItsRecords()
     QSqlDatabase db = m_database->db();
     const qint64 site = addSite(QStringLiteral("firma.com.tr"));
     QVERIFY(SiteOrganizer::addTag(db, site, QStringLiteral("vip")));
-    QVERIFY(SiteOrganizer::addNote(db, site, QStringLiteral("note")));
+    QVERIFY(SiteOrganizer::addNote(db, site, QString(), QStringLiteral("note")));
     QVERIFY(SiteOrganizer::addTodo(db, site, QStringLiteral("todo"), QString()));
     QVERIFY(SiteStore::deleteSite(db, site));
     for (const QString &table : {QStringLiteral("site_tags"), QStringLiteral("notes"), QStringLiteral("todos")}) {

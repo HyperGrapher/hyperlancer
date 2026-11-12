@@ -6,6 +6,7 @@
 #include <QSqlRecord>
 
 #include "DbTime.h"
+#include "SiteOrganizer.h"
 #include "SqlExec.h"
 
 namespace SiteStore {
@@ -58,14 +59,23 @@ QString orderBy(const ListQuery &query)
     switch (query.sortKey) {
     case SortKey::Site:
         return QStringLiteral("s.site_key %1").arg(direction);
-    case SortKey::Status:
-        return QStringLiteral("(CASE s.status WHEN 'new' THEN 0 WHEN 'contacted' THEN 1 WHEN "
-                              "'replied' THEN 2 WHEN 'client' THEN 3 ELSE 4 END) %1")
+    case SortKey::Status: {
+        // Pipeline order, not alphabetical.
+        QString cases;
+        const QStringList order = SiteOrganizer::statuses();
+        for (int i = 0; i < order.size(); ++i) {
+            cases += QStringLiteral(" WHEN '%1' THEN %2").arg(order.at(i)).arg(i);
+        }
+        return QStringLiteral("(CASE s.status%1 ELSE 0 END) %2").arg(cases, direction);
+    }
+    case SortKey::Category:
+        return nullsLast(QStringLiteral("(SELECT c.name FROM categories c WHERE c.id = s.category_id)"));
+    case SortKey::Deadline:
+        return nullsLast(QStringLiteral("s.deadline_on"));
+    case SortKey::Todos:
+        return QStringLiteral("(SELECT COUNT(*) FROM todos td WHERE td.site_id = s.id AND "
+                              "td.done_at IS NULL) %1")
             .arg(direction);
-    case SortKey::Cms:
-        return nullsLast(QStringLiteral("s.cms"));
-    case SortKey::Http:
-        return nullsLast(QStringLiteral("s.http_status"));
     case SortKey::Analyzed:
         break;
     }
@@ -100,8 +110,8 @@ AddResult addSite(QSqlDatabase &db, const NormalizedUrl &url, const QString &sou
     QSqlQuery insert = SqlExec::run(
         db,
         QStringLiteral(
-            "INSERT INTO sites (site_key, registrable_domain, url, name, source, created_at, "
-            "updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"),
+            "INSERT INTO sites (site_key, registrable_domain, url, name, source, status, "
+            "created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'none', ?, ?)"),
         {url.siteKey, SqlExec::textOrNull(url.registrableDomain), url.url,
          SqlExec::textOrNull(name.left(255)), source, now, now},
         &result.error);
@@ -132,15 +142,17 @@ ListResult listSites(QSqlDatabase &db, const ListQuery &listQuery)
         const QString pattern = likePattern(listQuery.search);
         binds << pattern << pattern << pattern << pattern << pattern << pattern;
     }
+    if (!listQuery.category.isEmpty()) {
+        where += QStringLiteral(
+            " AND s.category_id = (SELECT c.id FROM categories c WHERE c.name = ?)");
+        binds << listQuery.category;
+    }
     if (!listQuery.status.isEmpty()) {
         where += QStringLiteral(" AND s.status = ?");
         binds << listQuery.status;
     }
     switch (listQuery.filter) {
     case Filter::All:
-        break;
-    case Filter::NeverAnalyzed:
-        where += QStringLiteral(" AND s.last_fetched_at IS NULL");
         break;
     case Filter::Failed:
         where += QStringLiteral(" AND s.last_fetch_outcome = 'failed'");
@@ -161,7 +173,7 @@ ListResult listSites(QSqlDatabase &db, const ListQuery &listQuery)
             "SELECT s.id, s.site_key, s.url, s.title, s.cms, s.hosting, s.email_provider, "
             "s.http_status, "
             "s.last_fetch_outcome, s.last_fetched_at, s.tls_valid_until, s.domain_expires_on, "
-            "s.source, s.favicon_url, s.status, "
+            "s.source, s.favicon_url, s.status, s.deadline_on, "
             "(SELECT c.name FROM categories c WHERE c.id = s.category_id), "
             "%3, "
             "(SELECT COUNT(*) FROM todos td WHERE td.site_id = s.id AND td.done_at IS NULL), "
@@ -205,10 +217,11 @@ ListResult listSites(QSqlDatabase &db, const ListQuery &listQuery)
         row.source = query.value(12).toString();
         row.faviconUrl = query.value(13).toString();
         row.status = query.value(14).toString();
-        row.category = query.value(15).toString();
-        row.tags = query.value(16).toString();
-        row.openTodos = query.value(17).toInt();
-        row.activeJobStatus = query.value(18).toString();
+        row.deadlineOn = query.value(15).toString();
+        row.category = query.value(16).toString();
+        row.tags = query.value(17).toString();
+        row.openTodos = query.value(18).toInt();
+        row.activeJobStatus = query.value(19).toString();
         result.rows.push_back(row);
     }
 
@@ -216,6 +229,10 @@ ListResult listSites(QSqlDatabase &db, const ListQuery &listQuery)
         SqlExec::run(db, QStringLiteral("SELECT COUNT(*) FROM sites WHERE archived_at IS NULL"));
     if (count.next()) {
         result.total = count.value(0).toInt();
+    }
+    QSqlQuery categories = SqlExec::run(db, QStringLiteral("SELECT name FROM categories ORDER BY name"));
+    while (categories.next()) {
+        result.categories.append(categories.value(0).toString());
     }
     return result;
 }

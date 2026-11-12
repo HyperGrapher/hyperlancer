@@ -8,6 +8,7 @@
 #include "Dashboard.h"
 #include "Database.h"
 #include "Discovery.h"
+#include "GmailInbox.h"
 #include "GmailService.h"
 #include "HealthModel.h"
 #include "Integrations.h"
@@ -48,6 +49,7 @@ class AppContext : public QObject
     Q_PROPERTY(Discovery *discovery READ discovery CONSTANT)
     Q_PROPERTY(Integrations *integrations READ integrations CONSTANT)
     Q_PROPERTY(GmailService *gmail READ gmail CONSTANT)
+    Q_PROPERTY(GmailInbox *inbox READ inbox CONSTANT)
     Q_PROPERTY(HealthModel *health READ health CONSTANT)
     Q_PROPERTY(QString version READ version CONSTANT)
 
@@ -67,6 +69,7 @@ public:
     [[nodiscard]] Discovery *discovery() { return &m_discovery; }
     [[nodiscard]] Integrations *integrations() { return &m_integrations; }
     [[nodiscard]] GmailService *gmail() { return &m_gmail; }
+    [[nodiscard]] GmailInbox *inbox() { return &m_inbox; }
     [[nodiscard]] HealthModel *health() { return &m_health; }
     [[nodiscard]] QString version() const;
 
@@ -101,6 +104,7 @@ private:
     PageSpeedClient m_pageSpeed;
     Integrations m_integrations;
     GmailService m_gmail;
+    GmailInbox m_inbox;
     SiteListModel m_sites;
     JobListModel m_jobs;
     SiteDetail m_siteDetail;

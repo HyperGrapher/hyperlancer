@@ -18,7 +18,9 @@
 #include "Database.h"
 #include "DbTime.h"
 #include "GmailQuery.h"
+#include "MailStore.h"
 #include "SecretStore.h"
+#include "SiteOrganizer.h"
 #include "SiteStore.h"
 #include "SqlExec.h"
 
@@ -27,7 +29,6 @@ namespace {
 const QUrl kAuthorizationUrl(QStringLiteral("https://accounts.google.com/o/oauth2/v2/auth"));
 const QUrl kTokenUrl(QStringLiteral("https://oauth2.googleapis.com/token"));
 const QUrl kRevokeUrl(QStringLiteral("https://oauth2.googleapis.com/revoke"));
-const QString kApiBase = QStringLiteral("https://gmail.googleapis.com/gmail/v1/users/me/");
 constexpr int kMaxMessagesPerSync = 40;
 
 QString localPath(const QString &pathOrUrl)
@@ -36,27 +37,28 @@ QString localPath(const QString &pathOrUrl)
     return url.isLocalFile() ? url.toLocalFile() : pathOrUrl.trimmed();
 }
 
-QNetworkRequest apiRequest(const QUrl &url, const QString &token)
-{
-    QNetworkRequest request(url);
-    request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
-    request.setTransferTimeout(30000);
-    return request;
-}
-
 // --- storage (database thread) -------------------------------------------------------------
 
-qint64 upsertAccount(QSqlDatabase &db, const QString &email, const QString &historyId)
+struct Account
 {
-    QSqlQuery existing =
-        SqlExec::run(db, QStringLiteral("SELECT id FROM mail_accounts WHERE email = ?"), {email});
+    qint64 id = 0;
+    QString historyId; // where background polling resumes
+};
+
+// The mailbox row. The stored history position is kept, so mail that arrived while the app
+// was closed is still seen; only a new row starts from Gmail's current position.
+Account upsertAccount(QSqlDatabase &db, const QString &email, const QString &historyId)
+{
+    QSqlQuery existing = SqlExec::run(
+        db, QStringLiteral("SELECT id, history_id FROM mail_accounts WHERE email = ?"), {email});
     if (existing.next()) {
         const qint64 id = existing.value(0).toLongLong();
+        const QString stored = existing.value(1).toString();
         SqlExec::run(db,
                      QStringLiteral("UPDATE mail_accounts SET status = 'connected', history_id = "
-                                    "COALESCE(?, history_id) WHERE id = ?"),
+                                    "COALESCE(history_id, ?) WHERE id = ?"),
                      {SqlExec::textOrNull(historyId), id});
-        return id;
+        return {id, stored.isEmpty() ? historyId : stored};
     }
     QSqlQuery insert = SqlExec::run(
         db,
@@ -64,29 +66,7 @@ qint64 upsertAccount(QSqlDatabase &db, const QString &email, const QString &hist
             "INSERT INTO mail_accounts (email, history_id, status, created_at) VALUES (?, "
             "?, 'connected', ?)"),
         {email, SqlExec::textOrNull(historyId), DbTime::now()});
-    return insert.lastInsertId().toLongLong();
-}
-
-void storeMessages(QSqlDatabase &db, qint64 accountId, qint64 siteId,
-                   const QList<GmailQuery::MessageMeta> &messages)
-{
-    const QString sql =
-        SqlExec::insertIgnore(db) +
-        QStringLiteral(
-            " INTO mail_messages (account_id, gmail_id, thread_id, site_id, direction, "
-            "from_addr, to_addrs, subject, snippet, sent_at, has_attachments, is_bounce, "
-            "is_auto_reply) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    for (const GmailQuery::MessageMeta &meta : messages) {
-        SqlExec::run(db, sql,
-                     {accountId, meta.gmailId, meta.threadId, siteId,
-                      meta.sent ? QStringLiteral("sent") : QStringLiteral("received"),
-                      meta.from.left(500), meta.to, meta.subject.left(1000), meta.snippet,
-                      meta.sentAt.isValid() ? QVariant(DbTime::toDb(meta.sentAt)) : QVariant(),
-                      meta.hasAttachments ? 1 : 0, meta.isBounce ? 1 : 0,
-                      meta.isAutoReply ? 1 : 0});
-    }
-    SqlExec::run(db, QStringLiteral("UPDATE mail_accounts SET last_sync_at = ? WHERE id = ?"),
-                 {DbTime::now(), accountId});
+    return {insert.lastInsertId().toLongLong(), historyId};
 }
 
 QVariantList loadSiteMessages(QSqlDatabase &db, qint64 siteId)
@@ -118,6 +98,14 @@ QVariantList loadSiteMessages(QSqlDatabase &db, qint64 siteId)
 }
 
 } // namespace
+
+QNetworkRequest GmailService::apiRequest(const QUrl &url, const QString &token)
+{
+    QNetworkRequest request(url);
+    request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
+    request.setTransferTimeout(30000);
+    return request;
+}
 
 GmailService::GmailService(SecretStore &secrets, Database &database, QNetworkAccessManager &network,
                            QObject *parent)
@@ -349,9 +337,10 @@ void GmailService::loadProfile()
         self->m_database.run(
             self,
             [email, historyId](QSqlDatabase &db) { return upsertAccount(db, email, historyId); },
-            [self](qint64 accountId) {
+            [self](const Account &account) {
                 if (self) {
-                    self->m_accountId = accountId;
+                    self->m_accountId = account.id;
+                    emit self->accountReady(account.id, account.historyId);
                 }
             });
         self->setState(true, false, tr("Connected as %1").arg(email));
@@ -476,12 +465,15 @@ void GmailService::fetchMessages(qint64 siteId, const QString &query, const QStr
                         self->m_database.run(
                             self,
                             [accountId, siteId, messages](QSqlDatabase &db) {
-                                storeMessages(db, accountId, siteId, messages);
-                                return true;
+                                MailStore::storeMessages(db, accountId, siteId, messages);
+                                return SiteOrganizer::applyMailStatus(db, siteId);
                             },
-                            [self, siteId](bool) {
+                            [self, siteId](bool statusChanged) {
                                 if (self) {
                                     self->emitStoredMessages(siteId, QString());
+                                    if (statusChanged) {
+                                        emit self->siteMailChanged();
+                                    }
                                 }
                             });
                     });
