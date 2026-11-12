@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "SoundEvents.h"
+
 namespace {
 
 constexpr auto kReducedMotionKey = "motion/reduced";
@@ -10,6 +12,9 @@ constexpr auto kAmbientSpeedKey = "motion/ambientSpeed";
 constexpr auto kGlassHighlightsKey = "appearance/glassHighlights";
 constexpr auto kGmailChromeProfileKey = "gmail/chromeProfile";
 constexpr auto kNotifyNewMailKey = "gmail/notifyNewMail";
+constexpr auto kSoundsEnabledKey = "sounds/enabled";
+constexpr auto kSoundVolumeKey = "sounds/volume";
+constexpr auto kSoundPrefix = "sounds/event/";
 constexpr auto kShowFaviconsKey = "appearance/showFavicons";
 constexpr auto kBackgroundIntensityKey = "appearance/backgroundIntensity";
 constexpr auto kPerformanceOverlayKey = "diagnostics/performanceOverlay";
@@ -41,6 +46,8 @@ AppSettings::AppSettings(const QString &storagePath, QObject *parent)
     m_glassHighlights = m_storage.value(kGlassHighlightsKey, m_glassHighlights).toBool();
     m_gmailChromeProfile = m_storage.value(kGmailChromeProfileKey).toString();
     m_notifyNewMail = m_storage.value(kNotifyNewMailKey, m_notifyNewMail).toBool();
+    m_soundsEnabled = m_storage.value(kSoundsEnabledKey, m_soundsEnabled).toBool();
+    m_soundVolume = std::clamp(m_storage.value(kSoundVolumeKey, m_soundVolume).toDouble(), 0.0, 1.0);
     m_showFavicons = m_storage.value(kShowFaviconsKey, m_showFavicons).toBool();
     m_performanceOverlay = m_storage.value(kPerformanceOverlayKey, m_performanceOverlay).toBool();
     m_ambientSpeed =
@@ -93,6 +100,53 @@ void AppSettings::setNotifyNewMail(bool enabled)
     m_notifyNewMail = enabled;
     m_storage.setValue(kNotifyNewMailKey, enabled);
     emit notifyNewMailChanged();
+}
+
+void AppSettings::setSoundsEnabled(bool enabled)
+{
+    if (m_soundsEnabled == enabled) {
+        return;
+    }
+    m_soundsEnabled = enabled;
+    m_storage.setValue(kSoundsEnabledKey, enabled);
+    emit soundsEnabledChanged();
+}
+
+void AppSettings::setSoundVolume(double volume)
+{
+    const double clamped = std::clamp(volume, 0.0, 1.0);
+    if (qFuzzyCompare(m_soundVolume, clamped)) {
+        return;
+    }
+    m_soundVolume = clamped;
+    m_storage.setValue(kSoundVolumeKey, clamped);
+    emit soundVolumeChanged();
+}
+
+QString AppSettings::soundFor(const QString &eventId) const
+{
+    // A stored empty string is a deliberate "no sound"; a missing key means "use the default".
+    const QString key = QLatin1String(kSoundPrefix) + eventId;
+    return m_storage.contains(key) ? m_storage.value(key).toString()
+                                   : SoundEvents::defaultSoundFor(eventId);
+}
+
+QVariantMap AppSettings::soundAssignments() const
+{
+    QVariantMap assignments;
+    for (const SoundEvents::Event &event : SoundEvents::kEvents) {
+        assignments.insert(QString::fromLatin1(event.id), soundFor(QString::fromLatin1(event.id)));
+    }
+    return assignments;
+}
+
+void AppSettings::setSoundFor(const QString &eventId, const QString &soundName)
+{
+    if (SoundEvents::defaultSoundFor(eventId).isNull() || soundFor(eventId) == soundName) {
+        return;
+    }
+    m_storage.setValue(QLatin1String(kSoundPrefix) + eventId, soundName);
+    emit soundAssignmentsChanged();
 }
 
 void AppSettings::setShowFavicons(bool enabled)

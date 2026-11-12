@@ -14,6 +14,11 @@ Item {
     readonly property var messages: detail.emails
     property var openMessage: null
 
+    function resetScroll() {
+        openMessage = null;
+        list.positionViewAtBeginning();
+    }
+
     onVisibleChanged: if (!visible) openMessage = null
 
     GlassPanel {

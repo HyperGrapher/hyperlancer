@@ -97,6 +97,8 @@ signals:
     void loadedChanged();
     void progressChanged();
     void speedRunningChanged();
+    // Both PageSpeed calls answered; ok is false when either failed.
+    void speedCheckFinished(bool ok);
     void emailsChanged();
     void notice(const QString &message, bool isError);
     // A status, category, tag or to-do changed: the Websites list should refresh.

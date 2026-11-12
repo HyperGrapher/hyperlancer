@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QSettings>
+#include <QVariantMap>
 #include <QString>
 #include <QtQml/qqmlregistration.h>
 
@@ -24,6 +25,10 @@ class AppSettings : public QObject
     Q_PROPERTY(QString gmailChromeProfile READ gmailChromeProfile WRITE setGmailChromeProfile NOTIFY
                    gmailChromeProfileChanged)
     Q_PROPERTY(bool notifyNewMail READ notifyNewMail WRITE setNotifyNewMail NOTIFY notifyNewMailChanged)
+    Q_PROPERTY(bool soundsEnabled READ soundsEnabled WRITE setSoundsEnabled NOTIFY soundsEnabledChanged)
+    Q_PROPERTY(double soundVolume READ soundVolume WRITE setSoundVolume NOTIFY soundVolumeChanged)
+    // event id -> sound name; an empty name means no sound for that event.
+    Q_PROPERTY(QVariantMap soundAssignments READ soundAssignments NOTIFY soundAssignmentsChanged)
     Q_PROPERTY(bool showFavicons READ showFavicons WRITE setShowFavicons NOTIFY showFaviconsChanged)
     Q_PROPERTY(bool performanceOverlay READ performanceOverlay WRITE setPerformanceOverlay NOTIFY
                    performanceOverlayChanged)
@@ -59,10 +64,18 @@ public:
 
     [[nodiscard]] bool glassHighlights() const { return m_glassHighlights; }
     [[nodiscard]] bool notifyNewMail() const { return m_notifyNewMail; }
+    [[nodiscard]] bool soundsEnabled() const { return m_soundsEnabled; }
+    [[nodiscard]] double soundVolume() const { return m_soundVolume; }
+    [[nodiscard]] QVariantMap soundAssignments() const;
+    // The sound for an event: the user's choice, or the event's default.
+    [[nodiscard]] Q_INVOKABLE QString soundFor(const QString &eventId) const;
     [[nodiscard]] bool showFavicons() const { return m_showFavicons; }
     [[nodiscard]] QString gmailChromeProfile() const { return m_gmailChromeProfile; }
     void setGlassHighlights(bool enabled);
     void setShowFavicons(bool enabled);
+    void setSoundsEnabled(bool enabled);
+    void setSoundVolume(double volume);
+    Q_INVOKABLE void setSoundFor(const QString &eventId, const QString &soundName);
     void setNotifyNewMail(bool enabled);
     void setGmailChromeProfile(const QString &profileName);
 
@@ -96,6 +109,9 @@ signals:
     void ambientEnabledChanged();
     void glassHighlightsChanged();
     void showFaviconsChanged();
+    void soundsEnabledChanged();
+    void soundVolumeChanged();
+    void soundAssignmentsChanged();
     void notifyNewMailChanged();
     void gmailChromeProfileChanged();
     void performanceOverlayChanged();
@@ -110,6 +126,8 @@ private:
     bool m_ambientEnabled = true;
     bool m_glassHighlights = true;
     bool m_showFavicons = true;
+    bool m_soundsEnabled = true;
+    double m_soundVolume = 0.7;
     bool m_notifyNewMail = true;
     QString m_gmailChromeProfile;
     bool m_performanceOverlay = false;

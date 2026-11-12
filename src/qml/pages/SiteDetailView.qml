@@ -31,7 +31,20 @@ Item {
 
     signal backRequested
 
-    onSiteKeyChanged: currentTab = 0
+    // Every tab starts at the top again, so the next website does not inherit the scroll
+    // position (or opened note) of the last one.
+    function resetScroll() {
+        profileTab.contentY = 0;
+        workspaceTab.resetScroll();
+        emailsTab.resetScroll();
+        historyList.resetScroll();
+        activityList.resetScroll();
+    }
+
+    onSiteKeyChanged: {
+        currentTab = 0;
+        resetScroll();
+    }
 
     // ---- header ----
     Item {
@@ -371,6 +384,8 @@ Item {
         anchors.bottom: parent.bottom
 
         ProfileSections {
+            id: profileTab
+
             anchors.fill: parent
             visible: view.currentTab === 0 && view.hasProfile
             summary: view.summary
@@ -402,12 +417,16 @@ Item {
         }
 
         SiteEmails {
+            id: emailsTab
+
             anchors.fill: parent
             visible: view.currentTab === 2
             app: view.app
         }
 
         HistoryList {
+            id: historyList
+
             anchors.fill: parent
             visible: view.currentTab === 3
         }
@@ -421,6 +440,8 @@ Item {
         }
 
         ActivityList {
+            id: activityList
+
             anchors.fill: parent
             visible: view.currentTab === 4
         }
@@ -517,6 +538,10 @@ Item {
     }
 
     component HistoryList: GlassPanel {
+        function resetScroll() {
+            historyRows.positionViewAtBeginning();
+        }
+
         radius: Theme.radiusCard
         clip: true
 
@@ -533,6 +558,8 @@ Item {
         }
 
         ListView {
+            id: historyRows
+
             anchors.top: historyHeader.bottom
             anchors.left: parent.left
             anchors.right: parent.right
@@ -632,10 +659,16 @@ Item {
     }
 
     component ActivityList: GlassPanel {
+        function resetScroll() {
+            activityRows.positionViewAtBeginning();
+        }
+
         radius: Theme.radiusCard
         clip: true
 
         ListView {
+            id: activityRows
+
             anchors.fill: parent
             anchors.margins: Theme.spacingL
             clip: true

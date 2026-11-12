@@ -18,6 +18,7 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     : QObject(parent)
     , m_paths(paths)
     , m_settings(settings)
+    , m_sounds(settings)
     , m_secrets(QDir(paths.dataDir).filePath(QStringLiteral("secrets-dev.ini")))
     , m_runner(m_database, m_paths, m_settings)
     , m_langSearch(m_network)
@@ -39,6 +40,28 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     connect(&m_database, &Database::ready, this, &AppContext::onDatabaseReady);
     connect(&m_runner, &JobRunner::notice, this, &AppContext::notice);
     connect(&m_gmail, &GmailService::notice, this, &AppContext::notice);
+    // Sounds for the moments the user cares about; which sound each plays is a setting.
+    connect(&m_inbox, &GmailInbox::newMessages, &m_sounds,
+            [this](const QVariantList &) { m_sounds.playEvent(QStringLiteral("mailArrived")); });
+    connect(&m_runner, &JobRunner::jobFinished, &m_sounds,
+            [this](qint64, qint64, const QString &status) {
+                if (status == QStringLiteral("failed")) {
+                    m_sounds.playEvent(QStringLiteral("analysisFailed"));
+                } else if (status != QStringLiteral("canceled")) {
+                    m_sounds.playEvent(QStringLiteral("analysisDone"));
+                }
+            });
+    connect(&m_siteDetail, &SiteDetail::speedCheckFinished, &m_sounds, [this](bool ok) {
+        m_sounds.playEvent(ok ? QStringLiteral("speedCheckDone") : QStringLiteral("error"));
+    });
+    connect(&m_discovery, &Discovery::searchFinished, &m_sounds, [this](bool ok) {
+        m_sounds.playEvent(ok ? QStringLiteral("discoveryDone") : QStringLiteral("error"));
+    });
+    connect(this, &AppContext::notice, &m_sounds, [this](const QString &, bool isError) {
+        if (isError) {
+            m_sounds.playEvent(QStringLiteral("error"));
+        }
+    });
     connect(&m_gmail, &GmailService::siteMailChanged, &m_sites, &SiteListModel::refreshSoon);
     connect(&m_inbox, &GmailInbox::siteMailChanged, &m_sites, &SiteListModel::refreshSoon);
     connect(&m_siteDetail, &SiteDetail::notice, this, &AppContext::notice);

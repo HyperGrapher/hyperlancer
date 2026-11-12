@@ -9,6 +9,7 @@
 #include "Database.h"
 #include "Discovery.h"
 #include "GmailInbox.h"
+#include "SoundPlayer.h"
 #include "GmailService.h"
 #include "HealthModel.h"
 #include "Integrations.h"
@@ -49,6 +50,7 @@ class AppContext : public QObject
     Q_PROPERTY(Discovery *discovery READ discovery CONSTANT)
     Q_PROPERTY(Integrations *integrations READ integrations CONSTANT)
     Q_PROPERTY(GmailService *gmail READ gmail CONSTANT)
+    Q_PROPERTY(SoundPlayer *sounds READ sounds CONSTANT)
     Q_PROPERTY(GmailInbox *inbox READ inbox CONSTANT)
     Q_PROPERTY(HealthModel *health READ health CONSTANT)
     Q_PROPERTY(QString version READ version CONSTANT)
@@ -69,6 +71,7 @@ public:
     [[nodiscard]] Discovery *discovery() { return &m_discovery; }
     [[nodiscard]] Integrations *integrations() { return &m_integrations; }
     [[nodiscard]] GmailService *gmail() { return &m_gmail; }
+    [[nodiscard]] SoundPlayer *sounds() { return &m_sounds; }
     [[nodiscard]] GmailInbox *inbox() { return &m_inbox; }
     [[nodiscard]] HealthModel *health() { return &m_health; }
     [[nodiscard]] QString version() const;
@@ -99,6 +102,7 @@ private:
 
     AppPaths m_paths;
     AppSettings &m_settings;
+    SoundPlayer m_sounds;
     QNetworkAccessManager m_network;
     SecretStore m_secrets;
     Database m_database;

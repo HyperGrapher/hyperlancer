@@ -36,7 +36,7 @@ jobs:
           host: linux
           target: desktop
           arch: linux_gcc_64
-          modules: qtshadertools qtwebsockets qtnetworkauth qttasktree
+          modules: qtshadertools qtwebsockets qtnetworkauth qttasktree qtmultimedia
           cache: true
 
       # aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout, so the action only
@@ -56,7 +56,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/Qt
-          key: qt-6.11.3-win64_mingw-shadertools-websockets-networkauth-tasktree-v1
+          key: qt-6.11.3-win64_mingw-shadertools-websockets-networkauth-tasktree-multimedia-v1
 
       - name: Install Qt (Windows)
         if: runner.os == 'Windows'
@@ -66,7 +66,7 @@ jobs:
           kit="$root/6.11.3/mingw_64"
           if [ ! -d "$kit/lib/cmake/Qt6" ]; then
             python .github/scripts/install_qt_windows.py --version 6.11.3 --arch win64_mingw \
-              --flavor mingw --modules qtshadertools qtwebsockets qtnetworkauth qttasktree \
+              --flavor mingw --modules qtshadertools qtwebsockets qtnetworkauth qttasktree qtmultimedia \
               --output "$root"
           fi
           echo "QT_ROOT_DIR=$kit" >> "$GITHUB_ENV"

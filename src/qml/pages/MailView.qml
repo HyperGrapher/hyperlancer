@@ -27,6 +27,7 @@ GlassPanel {
     radius: Theme.radiusCard
     clip: true
     onGmailIdChanged: {
+        scroller.contentY = 0;
         body = "";
         bodyError = "";
         if (gmailId.length > 0)

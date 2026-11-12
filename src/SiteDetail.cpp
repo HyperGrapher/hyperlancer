@@ -184,6 +184,7 @@ void SiteDetail::checkSpeed()
                         }
                         self->m_speedRunning = false;
                         emit self->speedRunningChanged();
+                        emit self->speedCheckFinished(pending->firstError.isEmpty());
                         if (!pending->firstError.isEmpty()) {
                             emit self->notice(pending->firstError, true);
                         }

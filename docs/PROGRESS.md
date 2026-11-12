@@ -96,6 +96,12 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - **Click-through:** a click on a dropdown or calendar popup also hit the row behind it, because TapHandler is passive. Popups now have a MouseArea behind their content and options use MouseArea. Reproduced and verified with real mouse clicks under Xvfb (`xdotool`): the old code opened the website, the new code does not. Rule: items inside a Popup that sits over other clickable items must use MouseArea, not TapHandler.
 - Known cosmetic: Markdown links in notes use Qt's default blue (the importer ignores `Text.linkColor`).
 
+### Sounds
+- `resources/sounds/*.mp3` are bundled automatically (CMake globs the folder) and offered in Settings → Appearance → **Sounds**: on/off, volume, and one sound per event with a play button ("No sound" silences one event). Events live in `SoundEvents.h` (new email, analysis finished, analysis failed, speed check finished, discovery finished, other errors) with defaults (message, ding, error, ding, idea, error). Assignments are stored in `AppSettings` (`sounds/event/<id>`; a stored empty string means no sound).
+- `SoundPlayer` (Qt Multimedia, one `QMediaPlayer` per file) is wired in `AppContext` to the inbox, job runner, speed check, discovery and every error notice; events within 400 ms of each other play once. Adding a new sound = drop an `.mp3` in the folder; adding a new event = one line in `SoundEvents.h` and a connection in `AppContext`.
+- New dependency: **Qt Multimedia** (README, `ci.yml`, `release.yml` and the Windows install cache key updated). MP3 decoding works with Qt's bundled FFmpeg (checked on Linux); no sound device in the test container, so playback itself was not heard. `contract`, `project`, `conflict` and `click` are available to assign but unused by default.
+- Website detail tabs reset their scroll position (and the opened note) when the site changes or the detail view closes.
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.
@@ -108,7 +114,7 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 
 ## 3. What the user should check on Windows
 
-1. Install Qt 6.11 components: Shader Tools, WebSockets, Network Authorization (Maintenance Tool). Build as in README.
+1. Install Qt 6.11 components: Shader Tools, WebSockets, Network Authorization, Multimedia (Maintenance Tool). Build as in README.
 2. `uv sync --project web-dashboard\scripts`, start the app, Settings → Health should be green except Gmail/PageSpeed until set up.
 3. Analyze one site from the Dashboard; watch the steps; open the Profile tab.
 4. Settings → Connections: add the LangSearch key, Test; Discover a niche + place; Add and analyze.

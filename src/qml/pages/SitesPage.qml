@@ -62,6 +62,7 @@ PageBase {
 
     function closeDetail() {
         detailOpen = false;
+        detailLayer.resetScroll();
         app.sites.refreshSoon();
     }
 

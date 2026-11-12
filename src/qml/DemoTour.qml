@@ -16,6 +16,7 @@ Item {
     // Shows two sample mail notices; the capture goes to the notification window.
     signal sampleMailRequested
     signal mailPopupCaptureRequested(string path)
+    signal settingsTabRequested(int tab)
     signal sampleSiteRequested
     // Shows a tab of the open website, or closes the detail view for -1.
     signal detailTabRequested(int tab)
@@ -39,7 +40,9 @@ Item {
         { wait: 1300, run: () => capture("06-jobs") },
         { wait: 0, run: () => navigateRequested(5) },
         { wait: 1300, run: () => capture("07-settings") },
-        { wait: 0, run: () => sampleMailRequested() },
+        { wait: 0, run: () => settingsTabRequested(3) },
+        { wait: 900, run: () => capture("07c-settings-appearance") },
+        { wait: 400, run: () => sampleMailRequested() },
         { wait: 900, run: () => mailPopupCaptureRequested(outputDirectory + "/07b-mail-notification.png") },
         { wait: 700, run: () => navigateRequested(1) },
         { wait: 900, run: () => sampleSiteRequested() },

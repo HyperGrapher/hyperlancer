@@ -17,6 +17,7 @@ private slots:
     void emitsOnlyOnRealChanges();
     void resetRestoresDefaults();
     void persistsDatabaseAndToolSettings();
+    void soundAssignmentsDefaultAndPersist();
 
 private:
     [[nodiscard]] QString storagePath() const { return m_directory->filePath("settings.ini"); }
@@ -91,6 +92,33 @@ void AppSettingsTest::resetRestoresDefaults()
     QCOMPARE(settings.reducedMotion(), false);
     QCOMPARE(settings.performanceOverlay(), false);
     QCOMPARE(settings.backgroundIntensity(), 1.0);
+}
+
+void AppSettingsTest::soundAssignmentsDefaultAndPersist()
+{
+    {
+        AppSettings settings(storagePath());
+        QVERIFY(settings.soundsEnabled());
+        QCOMPARE(settings.soundFor(QStringLiteral("mailArrived")), QStringLiteral("message"));
+        QCOMPARE(settings.soundFor(QStringLiteral("analysisFailed")), QStringLiteral("error"));
+        QVERIFY(settings.soundFor(QStringLiteral("nonsense")).isEmpty());
+
+        QSignalSpy changed(&settings, &AppSettings::soundAssignmentsChanged);
+        settings.setSoundFor(QStringLiteral("mailArrived"), QStringLiteral("idea"));
+        settings.setSoundFor(QStringLiteral("mailArrived"), QStringLiteral("idea")); // no change
+        settings.setSoundFor(QStringLiteral("discoveryDone"), QString());            // deliberately silent
+        settings.setSoundFor(QStringLiteral("nonsense"), QStringLiteral("idea"));    // unknown event
+        QCOMPARE(changed.count(), 2);
+        settings.setSoundVolume(7.0);
+        QCOMPARE(settings.soundVolume(), 1.0);
+    }
+    // A new instance reads the same file: the choices, including "no sound", persist.
+    const AppSettings reloaded(storagePath());
+    QCOMPARE(reloaded.soundFor(QStringLiteral("mailArrived")), QStringLiteral("idea"));
+    QVERIFY(reloaded.soundFor(QStringLiteral("discoveryDone")).isEmpty());
+    QCOMPARE(reloaded.soundFor(QStringLiteral("analysisDone")), QStringLiteral("ding"));
+    QCOMPARE(reloaded.soundAssignments().size(), 6);
+    QCOMPARE(reloaded.soundVolume(), 1.0);
 }
 
 QTEST_GUILESS_MAIN(AppSettingsTest)

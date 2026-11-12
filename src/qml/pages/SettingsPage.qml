@@ -556,6 +556,77 @@ PageBase {
                 }
 
                 Group {
+                    title: qsTr("SOUNDS")
+
+                    SettingRow {
+                        width: parent.width
+                        glyph: Icons.waveform
+                        title: qsTr("Play sounds")
+                        description: qsTr("Short sounds for new mail, finished analyses and errors.")
+
+                        ToggleSwitch {
+                            checked: page.settings.soundsEnabled
+                            onToggled: page.settings.soundsEnabled = checked
+                        }
+                    }
+
+                    SettingRow {
+                        width: parent.width
+                        glyph: Icons.waveform
+                        title: qsTr("Volume")
+                        description: qsTr("Applies to every sound.")
+                        enabled: page.settings.soundsEnabled
+                        opacity: enabled ? 1 : 0.45
+
+                        StyledSlider {
+                            from: 0
+                            to: 1
+                            value: page.settings.soundVolume
+                            onMoved: page.settings.soundVolume = value
+                        }
+                    }
+
+                    // One sound per event; "No sound" silences that event only.
+                    Repeater {
+                        model: page.app.sounds.events
+
+                        delegate: SettingRow {
+                            id: soundRow
+
+                            required property var modelData
+                            readonly property string chosen: page.settings.soundAssignments[modelData.id] || ""
+
+                            width: parent.width
+                            glyph: Icons.waveform
+                            title: modelData.label
+                            enabled: page.settings.soundsEnabled
+                            opacity: enabled ? 1 : 0.45
+
+                            Row {
+                                spacing: Theme.spacingS
+
+                                Dropdown {
+                                    width: 190
+                                    options: [{ value: "", label: qsTr("No sound") }].concat(page.app.sounds.sounds)
+                                    currentValue: soundRow.chosen
+                                    onActivated: value => {
+                                        page.settings.setSoundFor(soundRow.modelData.id, value);
+                                        page.app.sounds.preview(value);
+                                    }
+                                }
+
+                                IconButton {
+                                    glyph: Icons.play
+                                    hint: qsTr("Play")
+                                    enabled: soundRow.chosen.length > 0
+                                    onClicked: page.app.sounds.preview(soundRow.chosen)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Group {
                     title: qsTr("APPEARANCE")
 
                     SettingRow {

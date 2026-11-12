@@ -31,7 +31,7 @@ What is built so far, and what comes next, is in [docs/PROGRESS.md](docs/PROGRES
 
 - Windows 10 or 11 (Linux works for development)
 - **Qt 6.11** with the MinGW 64-bit kit and these components: **Qt Shader Tools**,
-  **Qt WebSockets**, **Qt Network Authorization**. Qt Quick, Qt SQL and Qt Network are part of
+  **Qt WebSockets**, **Qt Network Authorization**, **Qt Multimedia** (plays the sounds). Qt Quick, Qt SQL and Qt Network are part of
   the base install.
 - CMake 3.21 or newer and Ninja (both come with the Qt installer under *Developer and
   Designer Tools*)

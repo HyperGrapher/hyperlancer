@@ -171,6 +171,7 @@ void Discovery::search(const QString &query, int count, const QString &freshness
             if (!response.error.isEmpty()) {
                 setBusy(false);
                 showRows({}, request.query, response.error);
+                emit searchFinished(false);
                 return;
             }
             // One row per website: search results often hold several pages of one site.
@@ -251,6 +252,7 @@ void Discovery::search(const QString &query, int count, const QString &freshness
                     setBusy(false);
                     showRows(std::move(rows), query, QString());
                     loadRecentRuns();
+                    emit searchFinished(true);
                 });
         });
 }

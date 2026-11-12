@@ -11,7 +11,7 @@ option(HYPERLANCER_BUILD_TESTS "Build the unit tests" ON)
 # 6.9 or newer for refreshTokens() and scope tokens; WebSockets is reserved for an upcoming
 # feature and linked now so deployment already carries it.
 find_package(Qt6 6.11 REQUIRED COMPONENTS
-    Concurrent Gui Network NetworkAuth Qml Quick QuickControls2 ShaderTools Sql WebSockets Widgets)
+    Concurrent Gui Network NetworkAuth Qml Quick QuickControls2 ShaderTools Sql WebSockets Widgets Multimedia)
 
 qt_standard_project_setup(REQUIRES 6.11)
 
@@ -74,6 +74,15 @@ qt_add_resources(HyperlancerCore "hyperlancer_data"
         resources/migrations/mysql/0004_screenshots.sql
 )
 
+# Every file in resources/sounds is bundled and offered in Settings → Appearance → Sounds.
+file(GLOB HYPERLANCER_SOUND_FILES CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+     "resources/sounds/*.mp3")
+qt_add_resources(HyperlancerCore "hyperlancer_sounds"
+    PREFIX "/"
+    BASE resources
+    FILES ${HYPERLANCER_SOUND_FILES}
+)
+
 set(HYPERLANCER_APP_SOURCES
     src/AmbientClock.h src/AmbientClock.cpp
     src/AppSettings.h src/AppSettings.cpp
@@ -82,6 +91,8 @@ set(HYPERLANCER_APP_SOURCES
     src/PlatformWindow.h
     src/AppContext.h src/AppContext.cpp
     src/TrayIcon.h src/TrayIcon.cpp
+    src/SoundPlayer.h src/SoundPlayer.cpp
+    src/SoundEvents.h
     src/JobRunner.h src/JobRunner.cpp
     src/JobListModel.h src/JobListModel.cpp
     src/SiteListModel.h src/SiteListModel.cpp
@@ -225,6 +236,7 @@ target_link_libraries(Hyperlancer
         Qt6::QuickControls2
         Qt6::WebSockets
         Qt6::Widgets
+        Qt6::Multimedia
 )
 
 if(WIN32)

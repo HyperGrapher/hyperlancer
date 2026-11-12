@@ -472,6 +472,7 @@ Window {
                 { gmailId: "b", from: "info@baska.com", subject: "Meeting on Thursday?", snippet: "" }]
             onMailPopupCaptureRequested: path => mailNotifications.contentItem.grabToImage(result => result.saveToFile(path))
             onDetailTabRequested: tab => root.tourTabRequested(tab)
+            onSettingsTabRequested: tab => root.settingsTabRequested(tab)
         }
     }
 }

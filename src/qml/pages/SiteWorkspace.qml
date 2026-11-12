@@ -420,6 +420,12 @@ Flickable {
         }
     }
 
+    function resetScroll() {
+        scrollAnimation.stop();
+        contentY = 0;
+        expandedNote = -1;
+    }
+
     function scrollTo(card) {
         scrollAnimation.stop();
         scrollAnimation.to = Math.max(0, card.mapToItem(column, 0, 0).y - Theme.spacingS);

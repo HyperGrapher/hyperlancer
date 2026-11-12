@@ -68,6 +68,8 @@ public:
 
 signals:
     void busyChanged();
+    // A search ended: ok is false when it failed.
+    void searchFinished(bool ok);
     void resultsChanged();
     void selectionChanged();
     void recentRunsChanged();
