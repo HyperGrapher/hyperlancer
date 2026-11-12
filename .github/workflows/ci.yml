@@ -28,16 +28,50 @@ jobs:
       - name: Install CMake and Ninja
         uses: lukka/get-cmake@latest
 
-      - name: Install Qt
+      - name: Install Qt (Linux)
+        if: runner.os == 'Linux'
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.11.3
-          host: ${{ matrix.platform == 'windows-x64' && 'windows' || 'linux' }}
+          host: linux
           target: desktop
-          arch: ${{ matrix.platform == 'windows-x64' && 'win64_mingw' || 'linux_gcc_64' }}
+          arch: linux_gcc_64
           modules: qtshadertools qtwebsockets qtnetworkauth qttasktree
-          tools: ${{ matrix.platform == 'windows-x64' && 'tools_mingw1310,qt.tools.win64_mingw1310' || '' }}
           cache: true
+
+      # aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout, so the action only
+      # installs the MinGW toolchain and a small script installs the Qt kit itself.
+      - name: Install MinGW (Windows)
+        if: runner.os == 'Windows'
+        uses: jurplel/install-qt-action@v4
+        with:
+          tools-only: true
+          host: windows
+          target: desktop
+          tools: tools_mingw1310,qt.tools.win64_mingw1310
+          cache: true
+
+      - name: Cache Qt (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/Qt
+          key: qt-6.11.3-win64_mingw-shadertools-websockets-networkauth-tasktree-v1
+
+      - name: Install Qt (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          root="$(cygpath -m "$RUNNER_TEMP")/Qt"
+          kit="$root/6.11.3/mingw_64"
+          if [ ! -d "$kit/lib/cmake/Qt6" ]; then
+            python .github/scripts/install_qt_windows.py --version 6.11.3 --arch win64_mingw \
+              --flavor mingw --modules qtshadertools qtwebsockets qtnetworkauth qttasktree \
+              --output "$root"
+          fi
+          echo "QT_ROOT_DIR=$kit" >> "$GITHUB_ENV"
+          echo "$kit/bin" >> "$GITHUB_PATH"
+          echo "$(cygpath -m "$IQTA_TOOLS")/mingw1310_64/bin" >> "$GITHUB_PATH"
 
       - name: Install Linux runtime packages
         if: runner.os == 'Linux'
@@ -57,6 +91,7 @@ jobs:
         shell: bash
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" \
             -DCMAKE_CXX_COMPILER="$IQTA_TOOLS/mingw1310_64/bin/g++.exe"
 
       - name: Build
