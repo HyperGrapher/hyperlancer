@@ -36,6 +36,30 @@ PageBase {
         detailOpen = true;
     }
 
+    // Used by the verification tour: switches the open website to a tab, -1 closes it.
+    function showDetailTab(tab) {
+        if (tab < 0) {
+            closeDetail();
+            return;
+        }
+        if (tab >= 10) {
+            detailLayer.showWorkspacePart(["deadline", "tags", "note"][tab - 10]);
+            return;
+        }
+        detailLayer.currentTab = tab;
+        if (tab === 0 && app.siteDetail.siteId > 0) {
+            // Gives the sample site some organizer data so the tabs have something to show.
+            const detail = app.siteDetail;
+            detail.setStatus("contacted");
+            detail.setCategory("Dental clinic");
+            detail.addTag("vip");
+            detail.addTag("slow site");
+            detail.setDeadline(Qt.formatDate(new Date(Date.now() + 9 * 86400000), "yyyy-MM-dd"));
+            detail.addTodo("Send the first offer", Qt.formatDate(new Date(Date.now() + 3 * 86400000), "yyyy-MM-dd"));
+            detail.addNote("Call notes", "## Owner\n- Prefers **email**\n- Site is on an old theme\n\nSee [example](https://example.org).");
+        }
+    }
+
     function closeDetail() {
         detailOpen = false;
         app.sites.refreshSoon();
@@ -184,7 +208,7 @@ PageBase {
                 TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Category"); sortKey: 3; Layout.preferredWidth: 104 }
                 TableHeader.Caption { text: qsTr("Tags"); Layout.preferredWidth: 120; visible: page.wide }
                 TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Deadline"); sortKey: 4; Layout.preferredWidth: 84 }
-                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("To-dos"); sortKey: 5; Layout.preferredWidth: 46 }
+                TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("To-dos"); sortKey: 5; Layout.preferredWidth: 60 }
                 TableHeader.SortCaption { activeKey: page.app.sites.sortKey; descending: page.app.sites.sortDescending; onSortRequested: key => page.sortBy(key); baseText: qsTr("Analyzed"); sortKey: 0; Layout.preferredWidth: 104 }
                 Item { Layout.preferredWidth: 72 }
             }

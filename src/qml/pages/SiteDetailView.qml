@@ -24,6 +24,11 @@ Item {
     readonly property var steps: [qsTr("Resolve"), qsTr("Fetch"), qsTr("Read page"), qsTr("DNS & host"),
                                   qsTr("SSL"), qsTr("Registry"), qsTr("Sitemaps"), qsTr("Archive")]
 
+    // Verification tour only.
+    function showWorkspacePart(name) {
+        workspaceTab.showPart(name);
+    }
+
     signal backRequested
 
     onSiteKeyChanged: currentTab = 0
@@ -392,6 +397,8 @@ Item {
         }
 
         SiteWorkspace {
+            id: workspaceTab
+
             anchors.fill: parent
             visible: view.currentTab === 1
             app: view.app

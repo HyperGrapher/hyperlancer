@@ -12,6 +12,10 @@ Item {
 
     signal picked(string value) // an ISO date, or "" when cleared
 
+    function open() {
+        popup.open();
+    }
+
     function iso(date) {
         return Qt.formatDate(date, "yyyy-MM-dd");
     }
@@ -80,6 +84,7 @@ Item {
         y: control.height + 4
         width: 280
         padding: 10
+        margins: 8 // keeps the popup inside the window
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         onAboutToShow: {
             shownYear = control.selected.getFullYear();

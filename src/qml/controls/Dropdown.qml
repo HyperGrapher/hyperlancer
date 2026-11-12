@@ -101,6 +101,7 @@ Item {
         y: control.height + 4
         width: control.popupWidth
         padding: 6
+        margins: 8 // keeps the popup inside the window
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         onOpened: {
             searchField.clear();

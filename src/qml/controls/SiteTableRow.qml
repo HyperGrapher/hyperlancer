@@ -120,7 +120,7 @@ Item {
         }
 
         Cell {
-            Layout.preferredWidth: 46
+            Layout.preferredWidth: 60
             text: row.openTodos > 0 ? String(row.openTodos) : "—"
             color: row.openTodos > 0 ? Theme.textPrimary : Theme.textMuted
             font.features: { "tnum": 1 }

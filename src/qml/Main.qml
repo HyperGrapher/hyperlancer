@@ -41,6 +41,7 @@ Window {
 
     // Pages ask for another page's content through these.
     signal siteRequested(var siteId)
+    signal tourTabRequested(int tab)
     signal settingsTabRequested(int tab)
 
     // Switches section: moves the sidebar pill, spreads the new mood from the clicked icon,
@@ -232,6 +233,10 @@ Window {
 
                             function onSiteRequested(siteId) {
                                 sitesPage.openSite(siteId);
+                            }
+
+                            function onTourTabRequested(tab) {
+                                sitesPage.showDetailTab(tab);
                             }
                         }
                     }
@@ -449,6 +454,8 @@ Window {
             host: pageHost
             sectionCount: root.sections.length
             onNavigateRequested: index => sidebar.select(index)
+            onSampleSiteRequested: root.app.addSite("example.org", false)
+            onDetailTabRequested: tab => root.tourTabRequested(tab)
         }
     }
 }

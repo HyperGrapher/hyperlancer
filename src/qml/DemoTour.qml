@@ -12,11 +12,15 @@ Item {
     property int sectionCount: 5
 
     signal navigateRequested(int index)
+    // Adds a sample website with status, category, tags, to-do and note, and opens it.
+    signal sampleSiteRequested
+    // Shows a tab of the open website, or closes the detail view for -1.
+    signal detailTabRequested(int tab)
 
     property int stepIndex: 0
     property int stressSwitches: 0
     readonly property int stressTotal: 40
-    readonly property var stressPattern: [1, 3, 0, 2, 4, 1, 2, 0]
+    readonly property var stressPattern: [1, 3, 0, 2, 5, 1, 4, 0]
 
     readonly property var steps: [
         { wait: 0, run: () => navigateRequested(0) },
@@ -27,10 +31,28 @@ Item {
         { wait: 0, run: () => navigateRequested(2) },
         { wait: 1300, run: () => capture("04-discover") },
         { wait: 0, run: () => navigateRequested(3) },
-        { wait: 1300, run: () => capture("05-jobs") },
+        { wait: 1300, run: () => capture("05-emails") },
         { wait: 0, run: () => navigateRequested(4) },
-        { wait: 1300, run: () => capture("06-settings") },
-        { wait: 0, run: () => startStress() }
+        { wait: 1300, run: () => capture("06-jobs") },
+        { wait: 0, run: () => navigateRequested(5) },
+        { wait: 1300, run: () => capture("07-settings") },
+        { wait: 0, run: () => navigateRequested(1) },
+        { wait: 900, run: () => sampleSiteRequested() },
+        { wait: 1800, run: () => detailTabRequested(0) },
+        { wait: 1200, run: () => capture("08-site-profile") },
+        { wait: 400, run: () => detailTabRequested(1) },
+        { wait: 1000, run: () => capture("09-site-workspace") },
+        { wait: 400, run: () => detailTabRequested(10) },
+        { wait: 800, run: () => capture("09b-deadline-picker") },
+        { wait: 400, run: () => detailTabRequested(11) },
+        { wait: 800, run: () => capture("09c-tag-dropdown") },
+        { wait: 400, run: () => detailTabRequested(12) },
+        { wait: 900, run: () => capture("09d-note-markdown") },
+        { wait: 400, run: () => detailTabRequested(2) },
+        { wait: 1000, run: () => capture("10-site-emails") },
+        { wait: 400, run: () => detailTabRequested(-1) },
+        { wait: 1200, run: () => capture("11-websites-with-data") },
+        { wait: 400, run: () => startStress() }
     ]
 
     function capture(name) {
@@ -68,7 +90,7 @@ Item {
         }
         console.log("TOUR stress", ok ? "OK" : "FAILED", "current", host.currentIndex,
                     "expected", expected, "presences", JSON.stringify(presences));
-        capture("07-after-rapid-switching");
+        capture("12-after-rapid-switching");
         quitTimer.start();
     }
 

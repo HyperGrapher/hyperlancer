@@ -66,6 +66,8 @@ Flickable {
 
                 FieldLabel { text: qsTr("Deadline") }
                 DateField {
+                    id: deadlineField
+
                     Layout.preferredWidth: 240
                     value: workspace.organizer.deadlineOn || ""
                     placeholder: qsTr("No deadline")
@@ -96,6 +98,8 @@ Flickable {
 
                 // Click to see the tags used elsewhere; typing narrows the list or makes a new tag.
                 Dropdown {
+                    id: tagDropdown
+
                     width: 170
                     implicitHeight: 30
                     compact: true
@@ -390,6 +394,20 @@ Flickable {
                     }
                 }
             }
+        }
+    }
+
+    // Used by the verification tour to bring a popup or the open note into view.
+    function showPart(name) {
+        if (name === "deadline") {
+            contentY = 0;
+            deadlineField.open();
+        } else if (name === "tags") {
+            contentY = 0;
+            tagDropdown.open();
+        } else if (name === "note" && notes.length > 0) {
+            expandedNote = notes[0].id;
+            contentY = Math.max(0, contentHeight - height);
         }
     }
 
