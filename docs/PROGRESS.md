@@ -80,6 +80,7 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 ## 4. Design notes for the next agent
 
 - **Two SQL dialects.** Keep store SQL portable: bind times as strings via `DbTime::toDb` (UTC `yyyy-MM-dd HH:mm:ss.zzz`), read with `DbTime::fromDb`; use `SqlExec::insertIgnore(db)`; avoid `ON CONFLICT`/`ON DUPLICATE KEY` (update-then-insert instead); avoid reserved words (`key` → table `app_settings.name`). Every schema change needs a migration in **both** folders with the same number.
+- MySQL servers close idle connections after `wait_timeout` (hosted servers: often 30–60 s). `Database::connection()` pings with `SELECT 1` before work when the connection was idle more than 5 s and reconnects if needed (fixed in v0.2.1 after "Server has gone away" on Windows). `tst_database` reproduces it with `SET SESSION wait_timeout = 2`.
 - `Database::run` skips the work and returns a default-constructed result when the connection is not open; result types must be default-constructible and carry their own error text.
 - `Integrations` was first called `Connections`, which clashed with QtQuick's `Connections` type in QML. Avoid QML type names for C++ classes.
 - `Database` lives in the core library without Qt Qml; QML sees it through `DatabaseForeign` (QML_FOREIGN) in `AppContext.h`.

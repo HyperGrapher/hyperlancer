@@ -108,6 +108,7 @@ template <typename Work, typename Done> void Database::run(QObject *context, Wor
             Result result{};
             if (m_connection.isOpen()) {
                 result = work(connection());
+                m_lastUse = QDateTime::currentDateTimeUtc();
             }
             // Hop back through this object (always alive while the thread runs) and check the
             // guard there, on the thread that owns the context.
@@ -130,6 +131,7 @@ template <typename Work> void Database::post(Work work)
         [this, work = std::move(work)]() mutable {
             if (m_connection.isOpen()) {
                 work(connection());
+                m_lastUse = QDateTime::currentDateTimeUtc();
             }
         },
         Qt::QueuedConnection);

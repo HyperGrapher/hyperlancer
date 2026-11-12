@@ -10,8 +10,10 @@
 namespace {
 
 // A remote connection that sat idle this long is checked with a cheap query before use, so a
-// server-side timeout turns into a reconnect instead of a failed query.
-constexpr qint64 kIdleCheckSeconds = 120;
+// server-side idle timeout ("MySQL server has gone away") turns into a reconnect instead of a
+// failed query. Hosted servers often close idle connections after 30-60 seconds or less, so
+// the check runs after any pause; during a burst of queries it is skipped.
+constexpr qint64 kIdleCheckMs = 5000;
 
 void applyOptions(QSqlDatabase &db, const DatabaseConfig &config)
 {
@@ -141,18 +143,28 @@ QSqlDatabase &Database::connection()
 {
     const QDateTime now = QDateTime::currentDateTimeUtc();
     if (m_connection.isValid() && m_connection.driverName() == QStringLiteral("QMYSQL") &&
-        m_lastUse.secsTo(now) > kIdleCheckSeconds) {
+        m_lastUse.msecsTo(now) > kIdleCheckMs) {
         QSqlQuery ping(m_connection);
         if (!ping.exec(QStringLiteral("SELECT 1"))) {
-            qWarning("Database connection lost, reconnecting: %s",
+            qWarning("Database connection lost (%s), reconnecting",
                      qPrintable(ping.lastError().text()));
+            ping.finish();
             m_connection.close();
             if (m_connection.open()) {
-                initSession(m_connection, m_config);
+                const QString sessionError = initSession(m_connection, m_config);
+                if (!sessionError.isEmpty()) {
+                    qWarning("Database reconnected, but session setup failed: %s",
+                             qPrintable(sessionError));
+                } else {
+                    qInfo("Database reconnected");
+                }
+            } else {
+                qWarning("Database reconnect failed: %s",
+                         qPrintable(m_connection.lastError().text()));
             }
         }
     }
-    m_lastUse = now;
+    m_lastUse = QDateTime::currentDateTimeUtc();
     return m_connection;
 }
 
