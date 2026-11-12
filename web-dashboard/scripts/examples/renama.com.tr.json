@@ -1,0 +1,305 @@
+{
+  "metadata": {
+    "tool": "Freelance Website Profiler",
+    "version": "1.0",
+    "scanned_at_utc": "2026-10-24T00:44:43Z",
+    "method": "Non-invasive public checks: the requested page, DNS, TLS, RDAP/WHOIS, robots/sitemap, and Wayback index."
+  },
+  "input": {
+    "requested_url": "https://renama.com.tr/",
+    "initial_host": "renama.com.tr",
+    "final_url": "https://www.renama.com.tr/",
+    "registrable_domain": "renama.com.tr",
+    "site_domain": "renama.com.tr",
+    "public_suffix": "com.tr",
+    "uses_private_public_suffix": false
+  },
+  "domain_registration": {
+    "lookup_domain": "renama.com.tr",
+    "lookup_method": "WHOIS",
+    "registration_date": "2017-05-16",
+    "registration_year": 2017,
+    "domain_age_years": 9.4,
+    "expiration_date": null,
+    "last_updated": "2026-10-24",
+    "registrar": null,
+    "nameservers": [],
+    "statuses": [
+      "Active"
+    ],
+    "rdap_server": null,
+    "whois_server": "whois.trabis.gov.tr",
+    "source": "whois://whois.trabis.gov.tr:43",
+    "error": null,
+    "note": "Registry records may omit or redact contact details; only domain-level metadata is collected."
+  },
+  "website_history": {
+    "earliest_capture_utc": "2018-04-10T02:24:09+00:00",
+    "earliest_capture_year": 2018,
+    "earliest_capture_url": "http://renama.com.tr:80/",
+    "earliest_capture_archive_url": "https://web.archive.org/web/20180410022409/http://renama.com.tr:80/",
+    "latest_capture_utc": "2026-06-17T19:06:40+00:00",
+    "latest_capture_url": "http://www.renama.com.tr/",
+    "latest_capture_archive_url": "https://web.archive.org/web/20260617190640/http://www.renama.com.tr/",
+    "queried_homepages": [
+      "https://renama.com.tr/",
+      "http://renama.com.tr/",
+      "https://www.renama.com.tr/",
+      "http://www.renama.com.tr/"
+    ],
+    "capture_rows_returned": 8,
+    "source": "https://web.archive.org/cdx/search/cdx",
+    "error": null,
+    "note": "Captures are for the supplied and final homepage host variants only. An archive capture proves the site existed by then; it does not establish the exact launch or build date."
+  },
+  "http": {
+    "status": 200,
+    "final_url": "https://www.renama.com.tr/",
+    "content_type": "text/html; charset=UTF-8",
+    "body_truncated": false,
+    "redirects": [
+      {
+        "status": 301,
+        "from": "https://renama.com.tr/",
+        "to": "https://www.renama.com.tr/"
+      }
+    ],
+    "error": null,
+    "notable_headers": {
+      "server": "Apache",
+      "link": "<https://www.renama.com.tr/index.php?rest_route=/>; rel=\"https://api.w.org/\", <https://www.renama.com.tr/index.php?rest_route=/wp/v2/pages/2428>; rel=\"alternate\"; title=\"JSON\"; type=\"application/json\", <https://www.renama.com.tr/>; rel=shortlink",
+      "content-type": "text/html; charset=UTF-8"
+    },
+    "security_headers": {
+      "present": {
+        "Strict-Transport-Security": null,
+        "Content-Security-Policy": null,
+        "X-Frame-Options": null,
+        "X-Content-Type-Options": null,
+        "Referrer-Policy": null,
+        "Permissions-Policy": null
+      },
+      "missing": [
+        "Strict-Transport-Security",
+        "Content-Security-Policy",
+        "X-Frame-Options",
+        "X-Content-Type-Options",
+        "Referrer-Policy",
+        "Permissions-Policy"
+      ]
+    },
+    "cookies": []
+  },
+  "page": {
+    "parseable_html": true,
+    "content_type": "text/html; charset=UTF-8",
+    "title": "Renama Enerji – Güneş Enerji Sistemleri – Antalya – Renama Enerji – Güneş Enerji Sistemleri Kurulumu, Proje, Mühendislik, Müşavirlik, Uygulama-Entegrasyon , İşletme – Bakım Hizmetleri vermektedir.",
+    "title_length": 196,
+    "meta_description": null,
+    "meta_description_length": 0,
+    "meta_keywords": null,
+    "meta_generator": "WordPress 6.9.4",
+    "html_language": "tr",
+    "declared_charset": "UTF-8",
+    "meta_robots": "max-image-preview:large",
+    "canonical_url": "https://www.renama.com.tr/",
+    "open_graph_title": null,
+    "open_graph_image": null,
+    "h1_count": 1,
+    "image_count": 19,
+    "images_missing_alt": 0,
+    "form_count": 3,
+    "script_count": 14,
+    "external_script_hosts": [
+      "www.googletagmanager.com"
+    ],
+    "structured_data_types": []
+  },
+  "dns": {
+    "domain_records": {
+      "queried_name": "renama.com.tr",
+      "records": {
+        "A": [
+          "94.102.4.40"
+        ],
+        "AAAA": [],
+        "TXT": [
+          "v=spf1 +a +mx +ip4:94.102.4.40 +ip4:93.113.63.29 +ip4:94.102.6.217 ~all"
+        ],
+        "CAA": [],
+        "SOA": [
+          "ns1.mmchost2.net. root.server.mmchost2.net. 2026091001 3600 1800 1209600 86400"
+        ],
+        "CNAME": [],
+        "DNSKEY": [],
+        "MX": [
+          "0 renama.com.tr"
+        ],
+        "NS": []
+      },
+      "spf_records": [
+        "v=spf1 +a +mx +ip4:94.102.4.40 +ip4:93.113.63.29 +ip4:94.102.6.217 ~all"
+      ],
+      "dmarc_records": [
+        "v=DMARC1;p=quarantine;sp=none;adkim=r;aspf=r;pct=100;fo=0;rf=afrf;ri=86400"
+      ],
+      "dnskey_present": false,
+      "errors": {
+        "NS": "The resolution lifetime expired after 5.102 seconds: Server Do53:192.168.1.1@53 answered The DNS operation timed out.; Server Do53:192.168.44.1@53 answered The DNS operation timed out."
+      }
+    },
+    "website_host_records": {
+      "queried_name": "www.renama.com.tr",
+      "records": {
+        "A": [
+          "94.102.4.40"
+        ],
+        "MX": [
+          "0 renama.com.tr"
+        ],
+        "SOA": [
+          "ns1.mmchost2.net. root.server.mmchost2.net. 2026091001 3600 1800 1209600 86400"
+        ],
+        "DNSKEY": [],
+        "AAAA": [],
+        "CNAME": [
+          "renama.com.tr"
+        ],
+        "CAA": [],
+        "TXT": [
+          "v=spf1 +a +mx +ip4:94.102.4.40 +ip4:93.113.63.29 +ip4:94.102.6.217 ~all"
+        ],
+        "NS": []
+      },
+      "spf_records": [
+        "v=spf1 +a +mx +ip4:94.102.4.40 +ip4:93.113.63.29 +ip4:94.102.6.217 ~all"
+      ],
+      "dmarc_records": [],
+      "dnskey_present": false,
+      "errors": {
+        "NS": "The resolution lifetime expired after 5.115 seconds: Server Do53:192.168.1.1@53 answered The DNS operation timed out.; Server Do53:192.168.44.1@53 answered The DNS operation timed out."
+      }
+    }
+  },
+  "tls_certificate": {
+    "connection_verified": true,
+    "subject": "commonName=renama.com.tr",
+    "issuer": "countryName=US, organizationName=Let's Encrypt, commonName=YR2",
+    "serial_number": "06622B80B9C070AC1CD1FD192286FF6B5CE3",
+    "valid_from_utc": "2026-09-10T05:50:47+00:00",
+    "valid_until_utc": "2026-12-09T05:50:46+00:00",
+    "days_until_expiry": 46.2,
+    "dns_subject_alt_name_count": 4,
+    "dns_subject_alt_names_sample": [
+      "*.renama.com.tr",
+      "*.renama.tr",
+      "renama.com.tr",
+      "renama.tr"
+    ],
+    "sha256_fingerprint": "fcbdc0a39b5837fb0dc91b3f5aded61d75c1969ae13de160690c971cf81cb324",
+    "cipher": [
+      "TLS_AES_256_GCM_SHA384",
+      "TLSv1.3",
+      256
+    ],
+    "error": null
+  },
+  "robots_and_sitemaps": {
+    "robots": {
+      "url": "https://www.renama.com.tr/robots.txt",
+      "status": 200,
+      "error": null,
+      "sitemap_directives": [
+        "https://renama.com.tr/sitemapindex.xml",
+        "https://renama.com.tr/sitemap523.xml",
+        "https://renama.com.tr/sitemap707.xml",
+        "https://renama.com.tr/sitemap197.xml",
+        "https://renama.com.tr/sitemap532.xml",
+        "https://renama.com.tr/sitemap522.xml",
+        "https://renama.com.tr/search.php/sitemap104.xml",
+        "https://renama.com.tr/wp-admin/shop.php/sitemap208.xml"
+      ],
+      "allow_rule_count": 1,
+      "disallow_rule_count": 0
+    },
+    "sitemaps": [
+      {
+        "url": "https://renama.com.tr/sitemapindex.xml",
+        "error": "Skipped sitemap on a different origin."
+      },
+      {
+        "url": "https://renama.com.tr/sitemap523.xml",
+        "error": "Skipped sitemap on a different origin."
+      },
+      {
+        "url": "https://renama.com.tr/sitemap707.xml",
+        "error": "Skipped sitemap on a different origin."
+      }
+    ]
+  },
+  "technologies": [
+    {
+      "category": "Analytics",
+      "name": "Meta Pixel",
+      "confidence": "medium",
+      "evidence": [
+        "Found marker(s): connect.facebook.net"
+      ]
+    },
+    {
+      "category": "CMS",
+      "name": "WordPress",
+      "confidence": "high",
+      "evidence": [
+        "Found marker(s): /wp-content/, /wp-includes/, name=\"generator\" content=\"wordpress"
+      ]
+    },
+    {
+      "category": "Client-side language",
+      "name": "JavaScript",
+      "confidence": "high",
+      "evidence": [
+        "HTML contains 14 script tag(s)."
+      ]
+    },
+    {
+      "category": "HTTP server header",
+      "name": "Apache",
+      "confidence": "high",
+      "evidence": [
+        "Server response header: Apache"
+      ]
+    },
+    {
+      "category": "Library",
+      "name": "Bootstrap",
+      "confidence": "medium",
+      "evidence": [
+        "Found marker(s): bootstrap.min.css"
+      ]
+    },
+    {
+      "category": "Library",
+      "name": "jQuery",
+      "confidence": "medium",
+      "evidence": [
+        "Found marker(s): jquery.min.js, jquery-migrate"
+      ]
+    },
+    {
+      "category": "Likely backend language",
+      "name": "PHP",
+      "confidence": "high",
+      "evidence": [
+        "Evidence: .php"
+      ]
+    }
+  ],
+  "limitations": [
+    "Wayback dates cover the homepage host variants queried and show when the archive first saw that page, not the confirmed site build or launch date.",
+    "Framework, CMS, server, and language detections are heuristic and include their evidence and confidence.",
+    "A website's backend language usually cannot be proven from its public response; no evidence means unknown, not absent.",
+    "Public registration services may omit or redact records. Some country-code registries do not offer RDAP or WHOIS over TCP.",
+    "Only the supplied page, robots.txt, and up to three sitemap files are fetched; linked site pages and assets are not crawled."
+  ]
+}

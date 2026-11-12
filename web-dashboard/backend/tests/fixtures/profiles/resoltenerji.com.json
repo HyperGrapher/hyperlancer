@@ -1,0 +1,172 @@
+{
+  "metadata": {
+    "tool": "Freelance Website Profiler",
+    "version": "1.0",
+    "scanned_at_utc": "2026-10-22T21:22:31Z",
+    "method": "Non-invasive public checks: the requested page, DNS, TLS, RDAP/WHOIS, robots/sitemap, and Wayback index."
+  },
+  "input": {
+    "requested_url": "https://www.resoltenerji.com/",
+    "initial_host": "www.resoltenerji.com",
+    "final_url": "https://www.resoltenerji.com/",
+    "registrable_domain": "resoltenerji.com",
+    "site_domain": "resoltenerji.com",
+    "public_suffix": "com",
+    "uses_private_public_suffix": false
+  },
+  "domain_registration": {
+    "lookup_domain": "resoltenerji.com",
+    "lookup_method": "RDAP",
+    "registration_date": "2018-06-01",
+    "registration_year": 2018,
+    "domain_age_years": 8.4,
+    "expiration_date": "2028-06-01",
+    "last_updated": "2023-04-11",
+    "registrar": "Nics Telekomunikasyon A.S.",
+    "nameservers": [
+      "ns1.natrohost.com",
+      "ns2.natrohost.com"
+    ],
+    "statuses": [
+      "client transfer prohibited"
+    ],
+    "rdap_server": "https://rdap.verisign.com/com/v1/",
+    "whois_server": null,
+    "source": "https://rdap.verisign.com/com/v1/domain/resoltenerji.com",
+    "error": null,
+    "note": "Registry records may omit or redact contact details; only domain-level metadata is collected."
+  },
+  "website_history": {
+    "earliest_capture_utc": "2018-11-09T04:59:53+00:00",
+    "earliest_capture_year": 2018,
+    "earliest_capture_url": "http://www.resoltenerji.com:80/",
+    "earliest_capture_archive_url": "https://web.archive.org/web/20181109045953/http://www.resoltenerji.com:80/",
+    "latest_capture_utc": "2026-10-03T08:36:17+00:00",
+    "latest_capture_url": "http://www.resoltenerji.com/",
+    "latest_capture_archive_url": "https://web.archive.org/web/20261003083617/http://www.resoltenerji.com/",
+    "queried_homepages": [
+      "https://www.resoltenerji.com/",
+      "http://www.resoltenerji.com/"
+    ],
+    "capture_rows_returned": 4,
+    "source": "https://web.archive.org/cdx/search/cdx",
+    "error": null,
+    "note": "Captures are for the supplied and final homepage host variants only. An archive capture proves the site existed by then; it does not establish the exact launch or build date."
+  },
+  "http": {
+    "status": null,
+    "final_url": "https://www.resoltenerji.com/",
+    "content_type": null,
+    "body_truncated": false,
+    "redirects": [],
+    "error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate (_ssl.c:1028)>",
+    "notable_headers": {},
+    "security_headers": {
+      "present": {
+        "Strict-Transport-Security": null,
+        "Content-Security-Policy": null,
+        "X-Frame-Options": null,
+        "X-Content-Type-Options": null,
+        "Referrer-Policy": null,
+        "Permissions-Policy": null
+      },
+      "missing": [
+        "Strict-Transport-Security",
+        "Content-Security-Policy",
+        "X-Frame-Options",
+        "X-Content-Type-Options",
+        "Referrer-Policy",
+        "Permissions-Policy"
+      ]
+    },
+    "cookies": []
+  },
+  "page": {
+    "parseable_html": false,
+    "error": "The response does not appear to be an HTML page.",
+    "content_type": null
+  },
+  "dns": {
+    "domain_records": {
+      "queried_name": "resoltenerji.com",
+      "records": {
+        "A": [
+          "78.135.65.24"
+        ],
+        "AAAA": [],
+        "CNAME": [],
+        "CAA": [],
+        "SOA": [
+          "ns1.natrohost.com. hostmaster.resoltenerji.com. 2024010201 10800 3600 777600 3600"
+        ],
+        "TXT": [
+          "v=spf1 include:_spfcls.natrohost.com include:_netblockshalon.natrohost.com ~all ",
+          "google-site-verification=fSQmWYoLwfmL6c7jRAVI24qFyk79YeOYAAkysS-13PI"
+        ],
+        "DNSKEY": [],
+        "MX": [
+          "1000 mx-in03b.natrohost.com",
+          "1 mx-in03.natrohost.com"
+        ],
+        "NS": []
+      },
+      "spf_records": [
+        "v=spf1 include:_spfcls.natrohost.com include:_netblockshalon.natrohost.com ~all "
+      ],
+      "dmarc_records": [],
+      "dnskey_present": false,
+      "errors": {
+        "NS": "The resolution lifetime expired after 5.104 seconds: Server Do53:192.168.1.1@53 answered The DNS operation timed out.; Server Do53:192.168.44.1@53 answered The DNS operation timed out."
+      }
+    },
+    "website_host_records": {
+      "queried_name": "www.resoltenerji.com",
+      "records": {
+        "A": [
+          "78.135.65.24"
+        ],
+        "AAAA": [],
+        "NS": [],
+        "DNSKEY": [],
+        "CAA": [],
+        "CNAME": [],
+        "SOA": [],
+        "TXT": [],
+        "MX": []
+      },
+      "spf_records": [],
+      "dmarc_records": [],
+      "dnskey_present": false,
+      "errors": {}
+    }
+  },
+  "tls_certificate": {
+    "connection_verified": false,
+    "subject": null,
+    "issuer": null,
+    "valid_from_utc": null,
+    "valid_until_utc": null,
+    "days_until_expiry": null,
+    "dns_subject_alt_name_count": 0,
+    "dns_subject_alt_names_sample": [],
+    "sha256_fingerprint": null,
+    "cipher": null,
+    "error": "SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate (_ssl.c:1028)"
+  },
+  "robots_and_sitemaps": {
+    "robots": {
+      "url": null,
+      "status": null,
+      "error": "Skipped because the website request failed."
+    },
+    "sitemaps": []
+  },
+  "technologies": [],
+  "limitations": [
+    "Wayback dates cover the homepage host variants queried and show when the archive first saw that page, not the confirmed site build or launch date.",
+    "Framework, CMS, server, and language detections are heuristic and include their evidence and confidence.",
+    "A website's backend language usually cannot be proven from its public response; no evidence means unknown, not absent.",
+    "Public registration services may omit or redact records. Some country-code registries do not offer RDAP or WHOIS over TCP.",
+    "Only the supplied page, robots.txt, and up to three sitemap files are fetched; linked site pages and assets are not crawled."
+  ]
+}

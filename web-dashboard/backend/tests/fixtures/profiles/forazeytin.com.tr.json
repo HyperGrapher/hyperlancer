@@ -1,0 +1,285 @@
+{
+  "metadata": {
+    "tool": "Freelance Website Profiler",
+    "version": "1.0",
+    "scanned_at_utc": "2026-10-16T13:53:08Z",
+    "method": "Non-invasive public checks: the requested page, DNS, TLS, RDAP/WHOIS, robots/sitemap, and Wayback index."
+  },
+  "input": {
+    "requested_url": "https://forazeytin.com.tr/",
+    "initial_host": "forazeytin.com.tr",
+    "final_url": "https://forazeytin.com.tr/",
+    "registrable_domain": "forazeytin.com.tr",
+    "site_domain": "forazeytin.com.tr",
+    "public_suffix": "com.tr",
+    "uses_private_public_suffix": false
+  },
+  "domain_registration": {
+    "lookup_domain": "forazeytin.com.tr",
+    "lookup_method": "WHOIS",
+    "registration_date": "2000-07-06",
+    "registration_year": 2000,
+    "domain_age_years": 26.3,
+    "expiration_date": null,
+    "last_updated": "2026-10-16",
+    "registrar": null,
+    "nameservers": [],
+    "statuses": [
+      "Active"
+    ],
+    "rdap_server": null,
+    "whois_server": "whois.trabis.gov.tr",
+    "source": "whois://whois.trabis.gov.tr:43",
+    "error": null,
+    "note": "Registry records may omit or redact contact details; only domain-level metadata is collected."
+  },
+  "website_history": {
+    "earliest_capture_utc": "2003-08-06T00:14:17+00:00",
+    "earliest_capture_year": 2003,
+    "earliest_capture_url": "http://www.forazeytin.com.tr:80/",
+    "earliest_capture_archive_url": "https://web.archive.org/web/20030806001417/http://www.forazeytin.com.tr:80/",
+    "latest_capture_utc": "2026-07-12T02:15:58+00:00",
+    "latest_capture_url": "https://forazeytin.com.tr/",
+    "latest_capture_archive_url": "https://web.archive.org/web/20260712021558/https://forazeytin.com.tr/",
+    "queried_homepages": [
+      "https://forazeytin.com.tr/",
+      "http://forazeytin.com.tr/"
+    ],
+    "capture_rows_returned": 3,
+    "source": "https://web.archive.org/cdx/search/cdx",
+    "error": "https://forazeytin.com.tr/ (limit 1): TimeoutError: The read operation timed out",
+    "note": "Captures are for the supplied and final homepage host variants only. An archive capture proves the site existed by then; it does not establish the exact launch or build date."
+  },
+  "http": {
+    "status": 200,
+    "final_url": "https://forazeytin.com.tr/",
+    "content_type": "text/html; charset=UTF-8",
+    "body_truncated": false,
+    "redirects": [],
+    "error": null,
+    "notable_headers": {
+      "x-powered-by": "PHP/7.4.33",
+      "content-type": "text/html; charset=UTF-8",
+      "content-length": "34274",
+      "server": "LiteSpeed",
+      "alt-svc": "h3=\":443\"; ma=2592000, h3-29=\":443\"; ma=2592000"
+    },
+    "security_headers": {
+      "present": {
+        "Strict-Transport-Security": null,
+        "Content-Security-Policy": null,
+        "X-Frame-Options": null,
+        "X-Content-Type-Options": null,
+        "Referrer-Policy": null,
+        "Permissions-Policy": null
+      },
+      "missing": [
+        "Strict-Transport-Security",
+        "Content-Security-Policy",
+        "X-Frame-Options",
+        "X-Content-Type-Options",
+        "Referrer-Policy",
+        "Permissions-Policy"
+      ]
+    },
+    "cookies": []
+  },
+  "page": {
+    "parseable_html": true,
+    "content_type": "text/html; charset=UTF-8",
+    "title": "Fora Zeytin | Doğal Siyah Zeytin ve Yeşil Zeytin Çeşitleri",
+    "title_length": 58,
+    "meta_description": "Fora Zeytin hakkında bilgi alın, alışveriş yapın. Türkiye'nin en iyi zeytinlerini, dünya standartlarında üreten lider zeytin markası!",
+    "meta_description_length": 133,
+    "meta_keywords": null,
+    "meta_generator": null,
+    "html_language": "tr",
+    "declared_charset": "utf-8",
+    "meta_robots": null,
+    "canonical_url": null,
+    "open_graph_title": null,
+    "open_graph_image": null,
+    "h1_count": 0,
+    "image_count": 61,
+    "images_missing_alt": 3,
+    "form_count": 1,
+    "script_count": 10,
+    "external_script_hosts": [
+      "maps.googleapis.com",
+      "www.googletagmanager.com"
+    ],
+    "structured_data_types": []
+  },
+  "dns": {
+    "domain_records": {
+      "queried_name": "forazeytin.com.tr",
+      "records": {
+        "CNAME": [],
+        "A": [
+          "89.19.30.15"
+        ],
+        "AAAA": [],
+        "MX": [
+          "1 mx-in03.natrohost.com",
+          "1000 mx-in03b.natrohost.com"
+        ],
+        "SOA": [
+          "ns1.natrohost.com. hostmaster.forazeytin.com.tr. 2026060101 10800 3600 777600 3600"
+        ],
+        "CAA": [],
+        "DNSKEY": [],
+        "TXT": [
+          "v=spf1 include:_spfcls.natrohost.net include:_spfcls.natrohost.com ~all"
+        ],
+        "NS": []
+      },
+      "spf_records": [
+        "v=spf1 include:_spfcls.natrohost.net include:_spfcls.natrohost.com ~all"
+      ],
+      "dmarc_records": [
+        "v=DMARC1; p=none; sp=none; rua=mailto:dmarc@inbm.net; ruf=mailto:dmarc@inbm.net; rf=afrf; pct=100; ri=86400"
+      ],
+      "dnskey_present": false,
+      "errors": {
+        "NS": "The resolution lifetime expired after 5.103 seconds: Server Do53:192.168.1.1@53 answered The DNS operation timed out.; Server Do53:192.168.44.1@53 answered The DNS operation timed out."
+      }
+    },
+    "website_host_records": {
+      "queried_name": "forazeytin.com.tr",
+      "records": {
+        "CNAME": [],
+        "A": [
+          "89.19.30.15"
+        ],
+        "AAAA": [],
+        "MX": [
+          "1 mx-in03.natrohost.com",
+          "1000 mx-in03b.natrohost.com"
+        ],
+        "SOA": [
+          "ns1.natrohost.com. hostmaster.forazeytin.com.tr. 2026060101 10800 3600 777600 3600"
+        ],
+        "CAA": [],
+        "DNSKEY": [],
+        "TXT": [
+          "v=spf1 include:_spfcls.natrohost.net include:_spfcls.natrohost.com ~all"
+        ],
+        "NS": []
+      },
+      "spf_records": [
+        "v=spf1 include:_spfcls.natrohost.net include:_spfcls.natrohost.com ~all"
+      ],
+      "dmarc_records": [
+        "v=DMARC1; p=none; sp=none; rua=mailto:dmarc@inbm.net; ruf=mailto:dmarc@inbm.net; rf=afrf; pct=100; ri=86400"
+      ],
+      "dnskey_present": false,
+      "errors": {
+        "NS": "The resolution lifetime expired after 5.103 seconds: Server Do53:192.168.1.1@53 answered The DNS operation timed out.; Server Do53:192.168.44.1@53 answered The DNS operation timed out."
+      }
+    }
+  },
+  "tls_certificate": {
+    "connection_verified": true,
+    "subject": "commonName=forazeytin.com.tr",
+    "issuer": "countryName=GB, organizationName=Sectigo Limited, commonName=Sectigo Public Server Authentication CA DV R36",
+    "serial_number": "B253EE0FBAF01DF8EF25D6C0E1CAD0A1",
+    "valid_from_utc": "2026-06-01T00:00:00+00:00",
+    "valid_until_utc": "2026-12-16T23:59:59+00:00",
+    "days_until_expiry": 61.4,
+    "dns_subject_alt_name_count": 2,
+    "dns_subject_alt_names_sample": [
+      "forazeytin.com.tr",
+      "www.forazeytin.com.tr"
+    ],
+    "sha256_fingerprint": "233e8d78e8404a6be797796ad22138e36774791774b56b381e7a49d4ef0b2cda",
+    "cipher": [
+      "TLS_AES_256_GCM_SHA384",
+      "TLSv1.3",
+      256
+    ],
+    "error": null
+  },
+  "robots_and_sitemaps": {
+    "robots": {
+      "url": "https://forazeytin.com.tr/robots.txt",
+      "status": 200,
+      "error": null,
+      "sitemap_directives": [],
+      "allow_rule_count": 0,
+      "disallow_rule_count": 0
+    },
+    "sitemaps": [
+      {
+        "url": "https://forazeytin.com.tr/sitemap.xml",
+        "status": 200,
+        "error": null,
+        "parse_error": "DOCTYPE declarations are not parsed"
+      }
+    ]
+  },
+  "technologies": [
+    {
+      "category": "Analytics",
+      "name": "Legacy Universal Analytics",
+      "confidence": "high",
+      "evidence": [
+        "Found ID UA-109580919-1 in page HTML."
+      ]
+    },
+    {
+      "category": "Client-side language",
+      "name": "JavaScript",
+      "confidence": "high",
+      "evidence": [
+        "HTML contains 10 script tag(s)."
+      ]
+    },
+    {
+      "category": "HTTP server header",
+      "name": "LiteSpeed",
+      "confidence": "high",
+      "evidence": [
+        "Server response header: LiteSpeed"
+      ]
+    },
+    {
+      "category": "Library",
+      "name": "Bootstrap",
+      "confidence": "medium",
+      "evidence": [
+        "Found marker(s): bootstrap.min.css, bootstrap.min.js"
+      ]
+    },
+    {
+      "category": "Library",
+      "name": "jQuery",
+      "confidence": "medium",
+      "evidence": [
+        "Found marker(s): jquery.min.js"
+      ]
+    },
+    {
+      "category": "Likely backend language",
+      "name": "PHP",
+      "confidence": "high",
+      "evidence": [
+        "Evidence: x-powered-by: php, .php"
+      ]
+    },
+    {
+      "category": "Server-side hint",
+      "name": "PHP/7.4.33",
+      "confidence": "high",
+      "evidence": [
+        "X-Powered-By response header: PHP/7.4.33"
+      ]
+    }
+  ],
+  "limitations": [
+    "Wayback dates cover the homepage host variants queried and show when the archive first saw that page, not the confirmed site build or launch date.",
+    "Framework, CMS, server, and language detections are heuristic and include their evidence and confidence.",
+    "A website's backend language usually cannot be proven from its public response; no evidence means unknown, not absent.",
+    "Public registration services may omit or redact records. Some country-code registries do not offer RDAP or WHOIS over TCP.",
+    "Only the supplied page, robots.txt, and up to three sitemap files are fetched; linked site pages and assets are not crawled."
+  ]
+}

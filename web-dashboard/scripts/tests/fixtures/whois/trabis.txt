@@ -1,0 +1,35 @@
+** Domain Name: forazeytin.com.tr
+Domain Status: Active
+Frozen Status: -
+Transfer Status: The domain is LOCKED to transfer.
+
+** Registrant:
+Example Registrant A.S.
+Hidden upon user request
+Hidden upon user request
+Hidden upon user request
+Hidden upon user request
+
+
+** Registrar:
+NIC Handle              : ogv40
+Organization Name       : ODTÜ GELİŞTİRME VAKFI BİLGİ TEKNOLOJİLERİ SAN. VE TİC. A.Ş.
+Address                 : Mustafa Kemal Mahallesi Dumlupınar Bulvarı
+                          No:280G/1104 Çankaya
+                          06800 Ankara Türkiye
+Phone                   : 90-xxxxxxx
+Fax                     : -
+
+
+** Domain Servers:
+ns1.natrohost.com
+ns2.natrohost.com
+
+
+** Additional Info:
+Created on..............: 2000-Jul-06.
+Expires on..............: 2027-Jul-05.
+
+
+** Whois Server:
+Last Update Time: 2026-10-27T00:31:45+03:00

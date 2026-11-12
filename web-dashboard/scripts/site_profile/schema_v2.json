@@ -1,0 +1,845 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Site profile report, schema v2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "errors",
+    "timings_ms",
+    "metadata",
+    "input",
+    "http",
+    "page",
+    "contacts",
+    "wordpress",
+    "domain_registration",
+    "website_history",
+    "dns",
+    "email",
+    "hosting",
+    "tls_certificate",
+    "robots_and_sitemaps",
+    "design",
+    "technologies",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 2
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "partial",
+        "failed"
+      ]
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "section",
+          "code",
+          "message"
+        ]
+      }
+    },
+    "timings_ms": {
+      "type": "object"
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "tool",
+        "version",
+        "scanned_at_utc",
+        "duration_ms",
+        "method"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "scanned_at_utc": {
+          "type": "string"
+        },
+        "duration_ms": {
+          "type": "integer"
+        },
+        "method": {
+          "type": "string"
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "required": [
+        "requested_url",
+        "initial_host",
+        "final_url",
+        "registrable_domain",
+        "site_domain",
+        "public_suffix",
+        "uses_private_public_suffix",
+        "allow_private_network"
+      ],
+      "properties": {
+        "requested_url": {
+          "type": "string"
+        },
+        "initial_host": {
+          "type": "string"
+        },
+        "final_url": {
+          "type": "string"
+        },
+        "registrable_domain": {},
+        "site_domain": {},
+        "public_suffix": {},
+        "uses_private_public_suffix": {
+          "type": "boolean"
+        },
+        "allow_private_network": {
+          "type": "boolean"
+        }
+      }
+    },
+    "http": {
+      "type": "object",
+      "required": [
+        "status",
+        "final_url",
+        "content_type",
+        "content_encoding",
+        "compression",
+        "http_version",
+        "body_truncated",
+        "html_bytes",
+        "ttfb_ms",
+        "total_ms",
+        "redirects",
+        "error",
+        "error_code",
+        "notable_headers",
+        "security_headers",
+        "cookies",
+        "checks",
+        "bot_protection"
+      ],
+      "properties": {
+        "status": {},
+        "final_url": {
+          "type": "string"
+        },
+        "content_type": {},
+        "content_encoding": {},
+        "compression": {},
+        "http_version": {},
+        "body_truncated": {
+          "type": "boolean"
+        },
+        "html_bytes": {
+          "type": "integer"
+        },
+        "ttfb_ms": {},
+        "total_ms": {},
+        "redirects": {
+          "type": "array"
+        },
+        "error": {},
+        "error_code": {},
+        "notable_headers": {
+          "type": "object",
+          "required": [],
+          "properties": {}
+        },
+        "security_headers": {
+          "type": "object",
+          "required": [
+            "present",
+            "missing"
+          ],
+          "properties": {
+            "present": {
+              "type": "object",
+              "required": [],
+              "properties": {}
+            },
+            "missing": {
+              "type": "array"
+            }
+          }
+        },
+        "cookies": {
+          "type": "array"
+        },
+        "checks": {
+          "type": "object",
+          "required": [
+            "tls_verified",
+            "tls_error",
+            "https_redirect",
+            "www_canonical",
+            "www_redirect"
+          ],
+          "properties": {
+            "tls_verified": {},
+            "tls_error": {},
+            "https_redirect": {},
+            "www_canonical": {},
+            "www_redirect": {}
+          }
+        },
+        "bot_protection": {
+          "type": "object",
+          "required": [
+            "detected",
+            "provider",
+            "evidence"
+          ],
+          "properties": {
+            "detected": {
+              "type": "boolean"
+            },
+            "provider": {},
+            "evidence": {
+              "type": "array"
+            }
+          }
+        }
+      }
+    },
+    "page": {
+      "type": "object",
+      "required": [
+        "parseable_html",
+        "error",
+        "content_type",
+        "title",
+        "title_length",
+        "meta_description",
+        "meta_description_length",
+        "meta_keywords",
+        "meta_generator",
+        "html_language",
+        "declared_charset",
+        "meta_robots",
+        "noindex",
+        "canonical_url",
+        "favicon_url",
+        "viewport",
+        "open_graph",
+        "twitter",
+        "hreflang",
+        "headings",
+        "h1_count",
+        "image_count",
+        "images_missing_alt",
+        "form_count",
+        "script_count",
+        "external_script_hosts",
+        "structured_data_types",
+        "links",
+        "consent_tool"
+      ],
+      "properties": {
+        "parseable_html": {
+          "type": "boolean"
+        },
+        "error": {},
+        "content_type": {},
+        "title": {},
+        "title_length": {
+          "type": "integer"
+        },
+        "meta_description": {},
+        "meta_description_length": {
+          "type": "integer"
+        },
+        "meta_keywords": {},
+        "meta_generator": {},
+        "html_language": {},
+        "declared_charset": {},
+        "meta_robots": {},
+        "noindex": {
+          "type": "boolean"
+        },
+        "canonical_url": {},
+        "favicon_url": {},
+        "viewport": {},
+        "open_graph": {
+          "type": "object",
+          "required": [
+            "title",
+            "description",
+            "image",
+            "type",
+            "url",
+            "site_name"
+          ],
+          "properties": {
+            "title": {},
+            "description": {},
+            "image": {},
+            "type": {},
+            "url": {},
+            "site_name": {}
+          }
+        },
+        "twitter": {
+          "type": "object",
+          "required": [
+            "card",
+            "title",
+            "description",
+            "image"
+          ],
+          "properties": {
+            "card": {},
+            "title": {},
+            "description": {},
+            "image": {}
+          }
+        },
+        "hreflang": {
+          "type": "array"
+        },
+        "headings": {
+          "type": "array"
+        },
+        "h1_count": {
+          "type": "integer"
+        },
+        "image_count": {
+          "type": "integer"
+        },
+        "images_missing_alt": {
+          "type": "integer"
+        },
+        "form_count": {
+          "type": "integer"
+        },
+        "script_count": {
+          "type": "integer"
+        },
+        "external_script_hosts": {
+          "type": "array"
+        },
+        "structured_data_types": {
+          "type": "array"
+        },
+        "links": {
+          "type": "object",
+          "required": [
+            "internal",
+            "external",
+            "nofollow"
+          ],
+          "properties": {
+            "internal": {
+              "type": "integer"
+            },
+            "external": {
+              "type": "integer"
+            },
+            "nofollow": {
+              "type": "integer"
+            }
+          }
+        },
+        "consent_tool": {}
+      }
+    },
+    "contacts": {
+      "type": "object",
+      "required": [
+        "emails",
+        "phones",
+        "address",
+        "socials",
+        "whatsapp"
+      ],
+      "properties": {
+        "emails": {
+          "type": "array"
+        },
+        "phones": {
+          "type": "array"
+        },
+        "address": {},
+        "socials": {
+          "type": "array"
+        },
+        "whatsapp": {
+          "type": "array"
+        }
+      }
+    },
+    "wordpress": {
+      "type": "object",
+      "required": [
+        "detected",
+        "version",
+        "theme",
+        "plugins"
+      ],
+      "properties": {
+        "detected": {
+          "type": "boolean"
+        },
+        "version": {},
+        "theme": {},
+        "plugins": {
+          "type": "array"
+        }
+      }
+    },
+    "domain_registration": {
+      "type": "object",
+      "required": [
+        "lookup_domain",
+        "lookup_method",
+        "registration_date",
+        "registration_year",
+        "domain_age_years",
+        "expiration_date",
+        "last_updated",
+        "registrar",
+        "nameservers",
+        "statuses",
+        "registrant",
+        "transfer_locked",
+        "transfer_status",
+        "rdap_server",
+        "whois_server",
+        "source",
+        "error",
+        "note"
+      ],
+      "properties": {
+        "lookup_domain": {
+          "type": "string"
+        },
+        "lookup_method": {},
+        "registration_date": {},
+        "registration_year": {},
+        "domain_age_years": {},
+        "expiration_date": {},
+        "last_updated": {},
+        "registrar": {},
+        "nameservers": {
+          "type": "array"
+        },
+        "statuses": {
+          "type": "array"
+        },
+        "registrant": {},
+        "transfer_locked": {},
+        "transfer_status": {},
+        "rdap_server": {},
+        "whois_server": {},
+        "source": {},
+        "error": {},
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "website_history": {
+      "type": "object",
+      "required": [
+        "earliest_capture_utc",
+        "earliest_capture_year",
+        "earliest_capture_url",
+        "earliest_capture_archive_url",
+        "latest_capture_utc",
+        "latest_capture_url",
+        "latest_capture_archive_url",
+        "queried_homepages",
+        "capture_rows_returned",
+        "source",
+        "error",
+        "note"
+      ],
+      "properties": {
+        "earliest_capture_utc": {},
+        "earliest_capture_year": {},
+        "earliest_capture_url": {},
+        "earliest_capture_archive_url": {},
+        "latest_capture_utc": {},
+        "latest_capture_url": {},
+        "latest_capture_archive_url": {},
+        "queried_homepages": {
+          "type": "array"
+        },
+        "capture_rows_returned": {
+          "type": "integer"
+        },
+        "source": {
+          "type": "string"
+        },
+        "error": {},
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "dns": {
+      "type": "object",
+      "required": [
+        "domain_records",
+        "website_host_records",
+        "ns"
+      ],
+      "properties": {
+        "domain_records": {
+          "type": "object",
+          "required": [
+            "queried_name",
+            "records",
+            "spf_records",
+            "dmarc_records",
+            "dnskey_present",
+            "nxdomain",
+            "errors"
+          ],
+          "properties": {
+            "queried_name": {
+              "type": "string"
+            },
+            "records": {
+              "type": "object",
+              "required": [
+                "A",
+                "AAAA",
+                "CNAME",
+                "NS",
+                "MX",
+                "TXT",
+                "CAA",
+                "SOA",
+                "DNSKEY"
+              ],
+              "properties": {
+                "A": {
+                  "type": "array"
+                },
+                "AAAA": {
+                  "type": "array"
+                },
+                "CNAME": {
+                  "type": "array"
+                },
+                "NS": {
+                  "type": "array"
+                },
+                "MX": {
+                  "type": "array"
+                },
+                "TXT": {
+                  "type": "array"
+                },
+                "CAA": {
+                  "type": "array"
+                },
+                "SOA": {
+                  "type": "array"
+                },
+                "DNSKEY": {
+                  "type": "array"
+                }
+              }
+            },
+            "spf_records": {
+              "type": "array"
+            },
+            "dmarc_records": {
+              "type": "array"
+            },
+            "dnskey_present": {
+              "type": "boolean"
+            },
+            "nxdomain": {
+              "type": "boolean"
+            },
+            "errors": {
+              "type": "object",
+              "required": [],
+              "properties": {}
+            }
+          }
+        },
+        "website_host_records": {
+          "type": "object",
+          "required": [
+            "queried_name",
+            "records",
+            "spf_records",
+            "dmarc_records",
+            "dnskey_present",
+            "nxdomain",
+            "errors"
+          ],
+          "properties": {
+            "queried_name": {
+              "type": "string"
+            },
+            "records": {
+              "type": "object",
+              "required": [
+                "A",
+                "AAAA",
+                "CNAME",
+                "NS",
+                "MX",
+                "TXT",
+                "CAA",
+                "SOA",
+                "DNSKEY"
+              ],
+              "properties": {
+                "A": {
+                  "type": "array"
+                },
+                "AAAA": {
+                  "type": "array"
+                },
+                "CNAME": {
+                  "type": "array"
+                },
+                "NS": {
+                  "type": "array"
+                },
+                "MX": {
+                  "type": "array"
+                },
+                "TXT": {
+                  "type": "array"
+                },
+                "CAA": {
+                  "type": "array"
+                },
+                "SOA": {
+                  "type": "array"
+                },
+                "DNSKEY": {
+                  "type": "array"
+                }
+              }
+            },
+            "spf_records": {
+              "type": "array"
+            },
+            "dmarc_records": {
+              "type": "array"
+            },
+            "dnskey_present": {
+              "type": "boolean"
+            },
+            "nxdomain": {
+              "type": "boolean"
+            },
+            "errors": {
+              "type": "object",
+              "required": [],
+              "properties": {}
+            }
+          }
+        },
+        "ns": {
+          "type": "object",
+          "required": [
+            "values",
+            "source"
+          ],
+          "properties": {
+            "values": {
+              "type": "array"
+            },
+            "source": {}
+          }
+        }
+      }
+    },
+    "email": {
+      "type": "object",
+      "required": [
+        "provider",
+        "mx"
+      ],
+      "properties": {
+        "provider": {},
+        "mx": {
+          "type": "array"
+        }
+      }
+    },
+    "hosting": {
+      "type": "object",
+      "required": [
+        "ips",
+        "ipv6",
+        "reverse_dns",
+        "asn",
+        "as_name",
+        "prefix",
+        "country",
+        "source"
+      ],
+      "properties": {
+        "ips": {
+          "type": "array"
+        },
+        "ipv6": {
+          "type": "array"
+        },
+        "reverse_dns": {},
+        "asn": {},
+        "as_name": {},
+        "prefix": {},
+        "country": {},
+        "source": {}
+      }
+    },
+    "tls_certificate": {
+      "type": "object",
+      "required": [
+        "connection_verified",
+        "subject",
+        "issuer",
+        "serial_number",
+        "valid_from_utc",
+        "valid_until_utc",
+        "days_until_expiry",
+        "dns_subject_alt_name_count",
+        "dns_subject_alt_names_sample",
+        "sha256_fingerprint",
+        "cipher",
+        "error"
+      ],
+      "properties": {
+        "connection_verified": {
+          "type": "boolean"
+        },
+        "subject": {},
+        "issuer": {},
+        "serial_number": {},
+        "valid_from_utc": {},
+        "valid_until_utc": {},
+        "days_until_expiry": {},
+        "dns_subject_alt_name_count": {
+          "type": "integer"
+        },
+        "dns_subject_alt_names_sample": {
+          "type": "array"
+        },
+        "sha256_fingerprint": {},
+        "cipher": {},
+        "error": {}
+      }
+    },
+    "robots_and_sitemaps": {
+      "type": "object",
+      "required": [
+        "robots",
+        "sitemaps"
+      ],
+      "properties": {
+        "robots": {
+          "type": "object",
+          "required": [
+            "url",
+            "status",
+            "error",
+            "sitemap_directives",
+            "allow_rule_count",
+            "disallow_rule_count",
+            "crawl_delay"
+          ],
+          "properties": {
+            "url": {},
+            "status": {},
+            "error": {},
+            "sitemap_directives": {
+              "type": "array"
+            },
+            "allow_rule_count": {
+              "type": "integer"
+            },
+            "disallow_rule_count": {
+              "type": "integer"
+            },
+            "crawl_delay": {}
+          }
+        },
+        "sitemaps": {
+          "type": "object",
+          "required": [
+            "files",
+            "total_urls",
+            "urls",
+            "truncated"
+          ],
+          "properties": {
+            "files": {
+              "type": "array"
+            },
+            "total_urls": {
+              "type": "integer"
+            },
+            "urls": {
+              "type": "array"
+            },
+            "truncated": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "design": {
+      "type": "object",
+      "required": [
+        "estimated_from",
+        "latest_asset",
+        "confidence",
+        "basis",
+        "clues"
+      ],
+      "properties": {
+        "estimated_from": {},
+        "latest_asset": {},
+        "confidence": {},
+        "basis": {
+          "type": "array"
+        },
+        "clues": {
+          "type": "array"
+        }
+      }
+    },
+    "technologies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "category",
+          "name",
+          "confidence",
+          "evidence"
+        ]
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

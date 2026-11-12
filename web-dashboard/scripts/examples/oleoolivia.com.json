@@ -1,0 +1,339 @@
+{
+  "metadata": {
+    "tool": "Freelance Website Profiler",
+    "version": "1.0",
+    "scanned_at_utc": "2026-10-14T19:44:03Z",
+    "method": "Non-invasive public checks: the requested page, DNS, TLS, RDAP/WHOIS, robots/sitemap, and Wayback index."
+  },
+  "input": {
+    "requested_url": "https://oleoolivia.com/",
+    "initial_host": "oleoolivia.com",
+    "final_url": "https://www.oleoolivia.com/",
+    "registrable_domain": "oleoolivia.com",
+    "site_domain": "oleoolivia.com",
+    "public_suffix": "com",
+    "uses_private_public_suffix": false
+  },
+  "domain_registration": {
+    "lookup_domain": "oleoolivia.com",
+    "lookup_method": "RDAP",
+    "registration_date": "2021-09-09",
+    "registration_year": 2021,
+    "domain_age_years": 5.1,
+    "expiration_date": "2027-09-09",
+    "last_updated": "2026-08-10",
+    "registrar": "Wix.com Ltd.",
+    "nameservers": [
+      "ns0.wixdns.net",
+      "ns1.wixdns.net"
+    ],
+    "statuses": [
+      "client transfer prohibited",
+      "client update prohibited"
+    ],
+    "rdap_server": "https://rdap.verisign.com/com/v1/",
+    "whois_server": null,
+    "source": "https://rdap.verisign.com/com/v1/domain/oleoolivia.com",
+    "error": null,
+    "note": "Registry records may omit or redact contact details; only domain-level metadata is collected."
+  },
+  "website_history": {
+    "earliest_capture_utc": "2022-04-12T14:40:52+00:00",
+    "earliest_capture_year": 2022,
+    "earliest_capture_url": "https://www.oleoolivia.com/",
+    "earliest_capture_archive_url": "https://web.archive.org/web/20220412144052/https://www.oleoolivia.com/",
+    "latest_capture_utc": "2026-07-10T13:38:22+00:00",
+    "latest_capture_url": "https://www.oleoolivia.com/",
+    "latest_capture_archive_url": "https://web.archive.org/web/20260710133822/https://www.oleoolivia.com/",
+    "queried_homepages": [
+      "https://oleoolivia.com/",
+      "http://oleoolivia.com/",
+      "https://www.oleoolivia.com/",
+      "http://www.oleoolivia.com/"
+    ],
+    "capture_rows_returned": 7,
+    "source": "https://web.archive.org/cdx/search/cdx",
+    "error": "https://oleoolivia.com/ (limit -1): TimeoutError: The read operation timed out",
+    "note": "Captures are for the supplied and final homepage host variants only. An archive capture proves the site existed by then; it does not establish the exact launch or build date."
+  },
+  "http": {
+    "status": 200,
+    "final_url": "https://www.oleoolivia.com/",
+    "content_type": "text/html; charset=UTF-8",
+    "body_truncated": false,
+    "redirects": [
+      {
+        "status": 301,
+        "from": "https://oleoolivia.com/",
+        "to": "https://www.oleoolivia.com/"
+      }
+    ],
+    "error": null,
+    "notable_headers": {
+      "content-type": "text/html; charset=UTF-8",
+      "cf-ray": "a4a9130f9a891229-AMS",
+      "cf-cache-status": "DYNAMIC",
+      "x-served-by": "cache-ams-eham8680057-AMS",
+      "age": "83559",
+      "cache-control": "private,max-age=0,must-revalidate",
+      "set-cookie": "[redacted: 4 cookie(s)]",
+      "etag": "W/\"7731093f941268baae0b60ff0fa05304\"",
+      "link": "<https://static.parastorage.com/>; rel=preconnect; crossorigin, <https://static.parastorage.com/>; rel=preconnect, <https://static.wixstatic.com/>; rel=preconnect; crossorigin, <https://static.wixstatic.com/>; rel=preconnect, <https://siteassets.parastorage.com>; rel=preconnect; crossorigin",
+      "server": "cloudflare",
+      "vary": "Accept-Encoding",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "x-cache": "MISS"
+    },
+    "security_headers": {
+      "present": {
+        "Strict-Transport-Security": "max-age=31556952",
+        "Content-Security-Policy": null,
+        "X-Frame-Options": null,
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": null,
+        "Permissions-Policy": null
+      },
+      "missing": [
+        "Content-Security-Policy",
+        "X-Frame-Options",
+        "Referrer-Policy",
+        "Permissions-Policy"
+      ]
+    },
+    "cookies": [
+      {
+        "name": "XSRF-TOKEN",
+        "secure": true,
+        "http_only": false,
+        "same_site": "None"
+      },
+      {
+        "name": "sec-fetch-unsupported",
+        "secure": true,
+        "http_only": false,
+        "same_site": "Lax"
+      },
+      {
+        "name": "ssr-caching",
+        "secure": false,
+        "http_only": false,
+        "same_site": null
+      },
+      {
+        "name": "__cf_bm",
+        "secure": true,
+        "http_only": true,
+        "same_site": "None"
+      }
+    ]
+  },
+  "page": {
+    "parseable_html": true,
+    "content_type": "text/html; charset=UTF-8",
+    "title": "Spanish Extra Virgin Olive Oil - Óleo Olivia",
+    "title_length": 44,
+    "meta_description": "We are a family run company providing high quality Spanish extra virgin olive oil straight from the farm. The most environmentally friendly olive oil on the market.",
+    "meta_description_length": 164,
+    "meta_keywords": null,
+    "meta_generator": "Wix.com Website Builder",
+    "html_language": "en",
+    "declared_charset": "utf-8",
+    "meta_robots": null,
+    "canonical_url": "https://www.oleoolivia.com",
+    "open_graph_title": "Spanish Extra Virgin Olive Oil - Óleo Olivia",
+    "open_graph_image": "https://static.wixstatic.com/media/3da764_572a0899e681478780243592a16ccb5e~mv2.png/v1/fill/w_2500,h_2500,al_c/3da764_572a0899e681478780243592a16ccb5e~mv2.png",
+    "h1_count": 2,
+    "image_count": 18,
+    "images_missing_alt": 0,
+    "form_count": 0,
+    "script_count": 65,
+    "external_script_hosts": [
+      "browser.sentry-cdn.com",
+      "static.parastorage.com"
+    ],
+    "structured_data_types": [
+      "LocalBusiness",
+      "PostalAddress",
+      "WebSite"
+    ]
+  },
+  "dns": {
+    "domain_records": {
+      "queried_name": "oleoolivia.com",
+      "records": {
+        "A": [
+          "185.230.63.171",
+          "185.230.63.107",
+          "185.230.63.186"
+        ],
+        "DNSKEY": [],
+        "AAAA": [],
+        "CAA": [],
+        "SOA": [
+          "ns0.wixdns.net. support.wix.com. 2021090917 10800 3600 1209600 3600"
+        ],
+        "MX": [
+          "20 alt1.aspmx.l.google.com",
+          "10 aspmx.l.google.com",
+          "30 alt2.aspmx.l.google.com",
+          "40 alt3.aspmx.l.google.com",
+          "50 alt4.aspmx.l.google.com"
+        ],
+        "TXT": [
+          "v=spf1 include:_spf.google.com ~all",
+          "google-site-verification=cy9Fv6VW_GJymseNag4IX6AUh_3uydT5LLOtCcUHhmA"
+        ],
+        "CNAME": [],
+        "NS": []
+      },
+      "spf_records": [
+        "v=spf1 include:_spf.google.com ~all"
+      ],
+      "dmarc_records": [],
+      "dnskey_present": false,
+      "errors": {
+        "NS": "The resolution lifetime expired after 5.112 seconds: Server Do53:192.168.1.1@53 answered The DNS operation timed out.; Server Do53:192.168.44.1@53 answered The DNS operation timed out."
+      }
+    },
+    "website_host_records": {
+      "queried_name": "www.oleoolivia.com",
+      "records": {
+        "A": [
+          "162.159.143.12",
+          "172.66.3.8"
+        ],
+        "CNAME": [
+          "cdn3.wixdns.net"
+        ],
+        "AAAA": [],
+        "SOA": [],
+        "NS": [],
+        "MX": [],
+        "TXT": [],
+        "CAA": [],
+        "DNSKEY": []
+      },
+      "spf_records": [],
+      "dmarc_records": [],
+      "dnskey_present": false,
+      "errors": {}
+    }
+  },
+  "tls_certificate": {
+    "connection_verified": true,
+    "subject": "commonName=oleoolivia.com",
+    "issuer": "countryName=US, organizationName=Google Trust Services, commonName=WR1",
+    "serial_number": "05EAFD3AF4C1A05211159447C991025E",
+    "valid_from_utc": "2026-09-25T04:31:02+00:00",
+    "valid_until_utc": "2026-12-24T04:31:01+00:00",
+    "days_until_expiry": 70.4,
+    "dns_subject_alt_name_count": 2,
+    "dns_subject_alt_names_sample": [
+      "oleoolivia.com",
+      "www.oleoolivia.com"
+    ],
+    "sha256_fingerprint": "8587c86bea6afcf95d45118193fa2bf7d41523e85a5588cd03136279d0d2edd5",
+    "cipher": [
+      "TLS_AES_256_GCM_SHA384",
+      "TLSv1.3",
+      256
+    ],
+    "error": null
+  },
+  "robots_and_sitemaps": {
+    "robots": {
+      "url": "https://www.oleoolivia.com/robots.txt",
+      "status": 200,
+      "error": null,
+      "sitemap_directives": [
+        "https://www.oleoolivia.com/sitemap.xml",
+        "https://www.oleoolivia.com/es_es-sitemap.xml"
+      ],
+      "allow_rule_count": 1,
+      "disallow_rule_count": 4
+    },
+    "sitemaps": [
+      {
+        "url": "https://www.oleoolivia.com/sitemap.xml",
+        "status": 200,
+        "error": null,
+        "kind": "sitemapindex",
+        "url_count": null,
+        "child_sitemap_count": 2,
+        "sample_locations": [
+          "https://www.oleoolivia.com/store-products-sitemap.xml",
+          "https://www.oleoolivia.com/pages-sitemap.xml"
+        ]
+      },
+      {
+        "url": "https://www.oleoolivia.com/es_es-sitemap.xml",
+        "status": 200,
+        "error": null,
+        "kind": "sitemapindex",
+        "url_count": null,
+        "child_sitemap_count": 2,
+        "sample_locations": [
+          "https://www.oleoolivia.com/es_es-store-products-sitemap.xml",
+          "https://www.oleoolivia.com/es_es-pages-sitemap.xml"
+        ]
+      }
+    ]
+  },
+  "technologies": [
+    {
+      "category": "CMS",
+      "name": "Wix",
+      "confidence": "high",
+      "evidence": [
+        "Found marker(s): wixstatic.com, parastorage.com, wix.com"
+      ]
+    },
+    {
+      "category": "Client-side language",
+      "name": "JavaScript",
+      "confidence": "high",
+      "evidence": [
+        "HTML contains 65 script tag(s)."
+      ]
+    },
+    {
+      "category": "Framework",
+      "name": "React",
+      "confidence": "medium",
+      "evidence": [
+        "Found marker(s): react-dom, __react"
+      ]
+    },
+    {
+      "category": "HTTP server header",
+      "name": "cloudflare",
+      "confidence": "high",
+      "evidence": [
+        "Server response header: cloudflare"
+      ]
+    },
+    {
+      "category": "Hosting / edge",
+      "name": "Cloudflare",
+      "confidence": "high",
+      "evidence": [
+        "Found marker(s): cf-ray, server: cloudflare"
+      ]
+    },
+    {
+      "category": "Hosting / edge",
+      "name": "Fastly",
+      "confidence": "medium",
+      "evidence": [
+        "Found marker(s): x-served-by: cache-"
+      ]
+    }
+  ],
+  "limitations": [
+    "Wayback dates cover the homepage host variants queried and show when the archive first saw that page, not the confirmed site build or launch date.",
+    "Framework, CMS, server, and language detections are heuristic and include their evidence and confidence.",
+    "A website's backend language usually cannot be proven from its public response; no evidence means unknown, not absent.",
+    "Public registration services may omit or redact records. Some country-code registries do not offer RDAP or WHOIS over TCP.",
+    "Only the supplied page, robots.txt, and up to three sitemap files are fetched; linked site pages and assets are not crawled."
+  ]
+}
