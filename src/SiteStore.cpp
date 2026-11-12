@@ -64,14 +64,8 @@ QString orderBy(const ListQuery &query)
             .arg(direction);
     case SortKey::Cms:
         return nullsLast(QStringLiteral("s.cms"));
-    case SortKey::Hosting:
-        return nullsLast(QStringLiteral("s.hosting"));
     case SortKey::Http:
         return nullsLast(QStringLiteral("s.http_status"));
-    case SortKey::Ssl:
-        return nullsLast(QStringLiteral("s.tls_valid_until"));
-    case SortKey::Domain:
-        return nullsLast(QStringLiteral("s.domain_expires_on"));
     case SortKey::Analyzed:
         break;
     }

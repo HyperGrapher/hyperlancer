@@ -17,20 +17,14 @@ Item {
     required property string url
     required property string title
     required property string cms
-    required property string hosting
     required property int httpStatus
     required property string outcome
     required property string lastFetchedAt
-    required property string tlsValidUntil
-    required property string domainExpiresOn
     required property string jobStatus
     required property real progress
     required property string progressLabel
-    property bool wide: true
 
     readonly property bool working: jobStatus === "running" || jobStatus === "queued"
-    readonly property var sslDays: Format.daysUntil(tlsValidUntil)
-    readonly property var domainDays: Format.daysUntil(domainExpiresOn)
 
     signal opened(var siteId)
     signal analyzeRequested(var siteId, string url)
@@ -106,29 +100,10 @@ Item {
         }
 
         Cell {
-            Layout.preferredWidth: 140
-            visible: row.wide
-            text: Format.orDash(row.hosting)
-        }
-
-        Cell {
             Layout.preferredWidth: 46
             text: row.httpStatus > 0 ? String(row.httpStatus) : "—"
             color: row.httpStatus >= 400 ? Theme.danger : row.httpStatus >= 300 ? Theme.warning : Theme.textSecondary
             font.features: { "tnum": 1 }
-        }
-
-        Cell {
-            Layout.preferredWidth: 64
-            text: Format.daysLabel(row.sslDays)
-            color: Format.daysColor(row.sslDays)
-        }
-
-        Cell {
-            Layout.preferredWidth: 64
-            visible: row.wide
-            text: Format.daysLabel(row.domainDays)
-            color: Format.daysColor(row.domainDays)
         }
 
         Item {

@@ -165,7 +165,7 @@ void SiteOrganizerTest::listSorts()
     QCOMPARE(result.rows.at(2).status, QStringLiteral("rejected"));
 
     // Every key must at least produce valid SQL.
-    for (int key = 0; key <= static_cast<int>(SiteStore::SortKey::Domain); ++key) {
+    for (int key = 0; key <= static_cast<int>(SiteStore::SortKey::Http); ++key) {
         query.sortKey = static_cast<SiteStore::SortKey>(key);
         QVERIFY(SiteStore::listSites(db, query).error.isEmpty());
         QCOMPARE(SiteStore::listSites(db, query).rows.size(), size_t(3));

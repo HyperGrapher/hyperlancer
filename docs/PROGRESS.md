@@ -65,7 +65,7 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 
 ### Organize round (migration 0002)
 - Per site: lead **status** (new, contacted, replied, client, rejected), one **category**, **tags**, **notes**, **to-dos** (optional due date). Tables `categories`, `tags`, `site_tags`, `notes`, `todos`, columns `sites.status` and `sites.category_id`. Code: `SiteOrganizer` (store functions) and `SiteDetail` (invokables; every change reloads the detail and refreshes the list). New detail tab **Workspace** (`SiteWorkspace.qml`).
-- Websites list: Status column, category/tags/open to-dos in the second line, status filter row, click a column header to sort (Site, Status, CMS, Hosting, HTTP, SSL, Domain, Analyzed; empty values always last). Search also matches tags and categories.
+- Websites list: Status column, category/tags/open to-dos in the second line, status filter row, click a column header to sort (Site, Status, CMS, HTTP, Analyzed; empty values always last). Search also matches tags and categories.
 - Tested on SQLite with Qt 6.4 (`tst_siteorganizer`: 7 pass). Not run: MySQL migration 0002, the QML (Qt 6.11 missing here).
 - Still open from §5: saved views, snapshot diff, bulk actions, a global to-do list.
 

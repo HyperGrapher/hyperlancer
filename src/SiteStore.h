@@ -62,10 +62,7 @@ enum class SortKey
     Site,
     Status,
     Cms,
-    Hosting,
-    Http,
-    Ssl,
-    Domain
+    Http
 };
 
 struct ListQuery

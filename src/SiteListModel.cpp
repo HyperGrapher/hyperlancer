@@ -150,7 +150,7 @@ void SiteListModel::setStatusFilter(const QString &status)
 void SiteListModel::setSortKey(int key)
 {
     const auto value = static_cast<SiteStore::SortKey>(
-        std::clamp(key, 0, static_cast<int>(SiteStore::SortKey::Domain)));
+        std::clamp(key, 0, static_cast<int>(SiteStore::SortKey::Http)));
     if (m_sortKey == value) {
         return;
     }
