@@ -131,6 +131,14 @@ Sidebar bottom card shows live background jobs (and a database warning). New con
 - The sidebar shows the version at the bottom; the release workflow passes the tag as `HYPERLANCER_VERSION`, other builds show the project version (0.2).
 - The Fingerprint line is gone from SSL / TLS.
 
+### Wix sites in the content crawler (`site_crawl/wix.py`)
+Found on a real Wix site (en.cankayaenerji.com.tr):
+- **Previews instead of originals:** Wix markup only references resize URLs (`.../media/<file>/v1/fill/w_514,...`). The crawler now tries the uploaded file (`.../media/<file>`) first and keeps the preview as the fallback (`wix.original_url`; applies to any `static.wixstatic.com` image, Wix site or not).
+- **Gallery images missing:** Pro Gallery marks items outside the viewport `aria-hidden="true"`, which the renderer treated as hidden. On Wix pages `aria-hidden` no longer hides anything. The markup only holds the first ~25 items; the rest were found by watching the page in a headless browser: it pages `GET /pro-gallery-webapp/v1/galleries/<id>?offset=N&limit=...` with the site's public access token (`/_api/v1/access-tokens`, app `22bef345-...`) as `Authorization`. `wix.fetch_all_items` does the same (100 per request, up to 2000 items; videos become their largest poster frame). 220 of 220 items on the test site. Galleries are scoped to components inside the page content (not header/footer).
+- **Missing text:** `tidy()` dropped any heading followed by another heading of the same level, which removed title-only headings such as a feature grid. It now only drops a heading followed by a *higher*-level heading or by nothing (this change applies to every site).
+- Not covered: Wix galleries other than Pro Gallery, CSS background images, Wix Stores/Blog item lists, and the planned headless-browser render pass. 12 new pytest tests (`tests/test_crawl_wix.py`), 106 pass; the WordPress crawl tests are unchanged and pass.
+- `Fetcher.get` takes optional request headers now.
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup, Tag
 from .assets import AssetStore
 from .options import Options
 from .render import Renderer
+from . import wix
 from .urls import IMAGE_EXT, classify_link
 
 # Page chrome removed before extraction. header/footer/aside inside <article>, <main> or <section> are kept: they
@@ -82,12 +83,28 @@ class PageExtractor:
             if link[0] == "page":
                 (out.internal if host_allowed(link[1], self.base, self.opts.include_subdomains) else out.external).append(link[1])
 
+        wix_page = wix.is_wix(soup)
+        wix_scripts = wix.parse_scripts(soup) if wix_page else []  # the scripts are removed next
         for tag in soup(["script", "style", "noscript", "template"]):
             tag.decompose()
 
         root = self._root(soup, out, fragment)
         if not fragment:
             self._remove_chrome(soup, root)
+        if wix_page:
+            for gallery in wix.galleries(soup, root, wix_scripts):
+                if gallery.total > len(gallery.items):
+                    # The page ships only the first items; Wix loads the rest while it is scrolled.
+                    fetcher = getattr(self.assets, "fetcher", None)
+                    parts = urlparse(url)
+                    everything = wix.fetch_all_items(fetcher, f"{parts.scheme}://{parts.netloc}", gallery) if fetcher else None
+                    if everything:
+                        gallery.items = everything
+                    if len(gallery.items) < min(gallery.total, wix.MAX_ITEMS):
+                        out.notes.append(
+                            f"Wix gallery {gallery.component_id}: {len(gallery.items)} of {gallery.total} items found; "
+                            "the rest could not be loaded")
+                wix.add_missing_gallery_images(soup, root, gallery)
         for selector in self.opts.strip:
             for element in soup.select(selector):
                 if not getattr(element, "decomposed", False) and element is not root and not any(p is element for p in root.parents):
@@ -118,6 +135,8 @@ class PageExtractor:
                     candidates.insert(0, target)
             if "/wp-content/uploads/" in src and WP_SIZE_SUFFIX.search(src):
                 candidates.insert(0, WP_SIZE_SUFFIX.sub("", src))  # the full-size original, the resized one as fallback
+            # Wix previews: the uploaded file is at the URL without the /v1/... resize part.
+            candidates = [o for c in candidates if (o := wix.original_url(c))] + candidates
             alt = (tag.get("alt") or tag.get("title") or "").strip()
             asset = self.assets.save(list(dict.fromkeys(candidates)), "image", page_id, alt)
             if not asset:
@@ -126,7 +145,7 @@ class PageExtractor:
                 image_ids.append(asset.id)
             return rel_prefix + asset.file, alt
 
-        renderer = Renderer(url, save_image, self.assets.ignore)
+        renderer = Renderer(url, save_image, self.assets.ignore, aria_hidden_is_hidden=not wix_page)
         blocks = renderer.render(root)
         if not blocks:
             out.notes.append("no text found (the page may be rendered by JavaScript)")

@@ -66,19 +66,19 @@ class Fetcher:
         if wait:
             time.sleep(wait)
 
-    def get(self, url: str, max_bytes: int = 5_000_000) -> Resp:
+    def get(self, url: str, max_bytes: int = 5_000_000, headers: dict[str, str] | None = None) -> Resp:
         """GET with manual redirects (each hop checked), retries, and a hard cap on the body size."""
         result = Resp(url=url)
         for attempt in range(self.retries + 1):
             self.cancel.check()
-            result = self._once(url, max_bytes)
+            result = self._once(url, max_bytes, headers)
             retryable = result.error is not None and not result.blocked and not result.too_large
             if result.blocked or result.too_large or not (retryable or result.status in RETRY_STATUS) or attempt == self.retries:
                 return result
             time.sleep(1.5 * (attempt + 1))
         return result
 
-    def _once(self, url: str, max_bytes: int) -> Resp:
+    def _once(self, url: str, max_bytes: int, headers: dict[str, str] | None = None) -> Resp:
         current = url
         try:
             for _ in range(6):
@@ -87,23 +87,23 @@ class Fetcher:
                 except netguard.BlockedTarget as blocked:
                     return Resp(url=current, error=str(blocked), blocked=True)
                 self._throttle()
-                with self._client.stream("GET", current) as response:
+                with self._client.stream("GET", current, headers=headers) as response:
                     location = response.headers.get("location")
                     if response.status_code in REDIRECTS and location:
                         current = urljoin(current, location)
                         continue
-                    headers = {k.lower(): v.strip() for k, v in response.headers.items()}
-                    declared = headers.get("content-length", "")
+                    reply = {k.lower(): v.strip() for k, v in response.headers.items()}
+                    declared = reply.get("content-length", "")
                     if declared.isdigit() and int(declared) > max_bytes:
-                        return Resp(url=current, status=response.status_code, headers=headers, too_large=True)
+                        return Resp(url=current, status=response.status_code, headers=reply, too_large=True)
                     chunks: list[bytes] = []
                     size = 0
                     for chunk in response.iter_bytes():
                         size += len(chunk)
                         if size > max_bytes:
-                            return Resp(url=current, status=response.status_code, headers=headers, too_large=True)
+                            return Resp(url=current, status=response.status_code, headers=reply, too_large=True)
                         chunks.append(chunk)
-                    return Resp(url=current, status=response.status_code, headers=headers, body=b"".join(chunks))
+                    return Resp(url=current, status=response.status_code, headers=reply, body=b"".join(chunks))
             return Resp(url=current, error="Too many redirects.")
         except Exception as exc:  # noqa: BLE001 - every network failure becomes a result, not a crash
             return Resp(url=current, error=f"{type(exc).__name__}: {exc}")

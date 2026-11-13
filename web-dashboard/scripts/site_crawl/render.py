@@ -72,8 +72,11 @@ def pick_srcset(value: str | None) -> str | None:
 
 
 class Renderer:
-    def __init__(self, base_url: str, image_cb: ImageCb, is_ignored: Callable[[str], bool] = lambda url: False):
+    def __init__(self, base_url: str, image_cb: ImageCb, is_ignored: Callable[[str], bool] = lambda url: False,
+                 aria_hidden_is_hidden: bool = True):
         self.base_url = base_url
+        # Page builders (Wix galleries) mark items outside the viewport aria-hidden but still show them.
+        self.aria_hidden_is_hidden = aria_hidden_is_hidden
         self.image_cb = image_cb
         self.is_ignored = is_ignored
         self._links: list[str | None] = []
@@ -326,13 +329,12 @@ class Renderer:
 
         return tag.find(is_block) is not None
 
-    @staticmethod
-    def _hidden(tag: Tag) -> bool:
+    def _hidden(self, tag: Tag) -> bool:
         style = tag.get("style") or ""
         return (
             bool(re.search(r"display\s*:\s*none", style, re.I))
             or tag.has_attr("hidden")
-            or tag.get("aria-hidden") == "true" and tag.name in ("div", "span", "section")
+            or (self.aria_hidden_is_hidden and tag.get("aria-hidden") == "true" and tag.name in ("div", "span", "section"))
         )
 
 
@@ -378,7 +380,9 @@ def tidy(blocks: list[str]) -> list[str]:
         lvl = level(block)
         if lvl:
             nxt = cleaned[i + 1] if i + 1 < len(cleaned) else None
-            if nxt is None or (level(nxt) and level(nxt) <= lvl):
+            # A heading followed by a higher-level heading (or by nothing) introduces nothing. A heading followed by
+            # another one of the same level is kept: feature grids and card lists are made of such title-only headings.
+            if nxt is None or (level(nxt) and level(nxt) < lvl):
                 continue
         result.append(block)
     return result
