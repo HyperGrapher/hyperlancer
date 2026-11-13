@@ -18,6 +18,7 @@ Flickable {
     readonly property var urls: summary.url || ({})
     readonly property var hosting: summary.hosting || ({})
     readonly property var dns: summary.dns || ({})
+    readonly property var channels: (summary.contact || ({})).channels || ({})
     readonly property var emailAuth: summary.emailAuth || ({})
     readonly property var trackers: summary.trackers || ({})
     readonly property var tls: summary.tls || ({})
@@ -266,6 +267,78 @@ Flickable {
                 visible: !!sections.trackers.hasTagManager
                 label: qsTr("Note")
                 value: qsTr("Tag Manager found; tags it loads later are not in the HTML.")
+                valueColor: Theme.textMuted
+                last: true
+            }
+        }
+
+        // Which way to reach the business: numbers normalised to E.164, WhatsApp (confirmed from a chat
+        // link, or only likely for a mobile number), emails by kind, and where each was found.
+        Section {
+            title: qsTr("Reach out")
+            glyph: Icons.at
+            failure: sections.errorFor("contacts")
+            visible: sections.channels.phones !== undefined && (sections.channels.phones.length + sections.channels.emails.length + sections.channels.whatsapp.length) > 0
+
+            Repeater {
+                model: sections.channels.phones || []
+
+                delegate: Fact {
+                    required property var modelData
+
+                    label: modelData.type === "mobile" ? qsTr("Mobile") : modelData.type === "fixed" ? qsTr("Landline") : qsTr("Phone")
+                    value: modelData.display
+                }
+            }
+
+            Repeater {
+                model: sections.channels.whatsapp || []
+
+                delegate: Fact {
+                    required property var modelData
+
+                    label: qsTr("WhatsApp")
+                    value: (modelData.status === "confirmed" ? "✓ " : "") + modelData.number + "  ·  " + (modelData.status === "confirmed" ? qsTr("confirmed") : qsTr("likely"))
+                    actionGlyph: Icons.openExternal
+                    actionHint: qsTr("Open a WhatsApp chat")
+                    onActionRequested: sections.linkRequested("https://wa.me/" + modelData.number.replace(/\D/g, ""))
+                }
+            }
+
+            Repeater {
+                model: sections.channels.emails || []
+
+                delegate: Fact {
+                    required property var modelData
+
+                    label: modelData.kind === "generic" ? qsTr("Email (generic)") : qsTr("Email (personal)")
+                    value: modelData.address
+                    actionGlyph: Icons.envelope
+                    actionHint: qsTr("Write an email")
+                    onActionRequested: sections.linkRequested("mailto:" + modelData.address)
+                }
+            }
+
+            Repeater {
+                model: sections.channels.people || []
+
+                delegate: Fact {
+                    required property var modelData
+
+                    label: qsTr("Person")
+                    value: modelData.name + (modelData.role ? "  ·  " + modelData.role : "")
+                }
+            }
+
+            Fact {
+                visible: (sections.channels.widgets || []).length > 0
+                label: qsTr("Chat widget")
+                value: (sections.channels.widgets || []).join(", ")
+            }
+
+            Fact {
+                label: qsTr("Pages scanned")
+                value: String((sections.channels.pagesScanned || []).length)
                 valueColor: Theme.textMuted
                 last: true
             }

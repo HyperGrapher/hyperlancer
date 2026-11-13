@@ -139,6 +139,11 @@ Found on a real Wix site (en.cankayaenerji.com.tr):
 - Not covered: Wix galleries other than Pro Gallery, CSS background images, Wix Stores/Blog item lists, and the planned headless-browser render pass. 12 new pytest tests (`tests/test_crawl_wix.py`), 106 pass; the WordPress crawl tests are unchanged and pass.
 - `Fetcher.get` takes optional request headers now.
 
+### Contact channels (summary `contact.channels`)
+- Python `site_profile/channels.py` (new dependency `phonenumbers`): scans the homepage and up to five contact-like pages found from its links (iletisim, bize-ulasin, contact, kontakt, hakkimizda, about, ...). Phones normalised to E.164 with line type (mobile / landline / ...), default region from the domain suffix; WhatsApp numbers from chat links (`wa.me`, `api.whatsapp.com/send`, `whatsapp://send`) are *confirmed*, a mobile number without a link is only *likely* (never checked against WhatsApp); chat widgets (Joinchat, Click to Chat, GetButton, Elfsight); emails labelled generic or personal with the pages they were found on; people from schema.org Person.
+- The Profile tab has a "Reach out" section with a button to open a WhatsApp chat (`https://wa.me/<number>`) or write an email. Checked on en.cankayaenerji.com.tr (found the number on three pages, labelled likely). 7 new pytest tests (113 pass).
+- Still open: people from team pages without schema.org markup, a message template for the WhatsApp chat, the outreach composer (M6).
+
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.

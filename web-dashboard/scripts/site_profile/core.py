@@ -10,12 +10,14 @@ from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
 from typing import Any, Callable
 
+from bs4 import BeautifulSoup
+
 from site_tools import exitcodes
 from site_tools.cancel import CancelToken, Cancelled
 from site_tools.events import Emitter
 from site_tools.netguard import BlockedTarget, check_url
 
-from . import SCHEMA_VERSION, TOOL_VERSION, archive, design, dnsinfo, hosting, mailauth, page as page_mod, registration, sitemaps, tech, tls, trackers
+from . import SCHEMA_VERSION, TOOL_VERSION, archive, design, dnsinfo, hosting, mailauth, page as page_mod, registration, sitemaps, tech, tls, trackers, channels
 from .http import Response, decode_body, fetch, fetch_once
 from .urls import domain_parts, get_host, normalize_url, strip_www
 
@@ -345,8 +347,28 @@ def collect(params: ProfileParams, emit: Emitter, cancel: CancelToken) -> tuple[
         data = _section("design", lambda: design.collect(body_text, final_url, timeout, params.allow_private), timings, design.empty(), local)
         return {"data": data, "errors": local}
 
+    def task_contacts() -> dict[str, Any]:
+        """Phones, WhatsApp, emails and people from the homepage and up to five contact-like pages."""
+        local: list[dict[str, str]] = []
+        if not is_html:
+            return {"data": channels.empty(), "errors": []}
+
+        def run() -> dict[str, Any]:
+            scanned = [channels.scan_html(body_text, final_url, contacts)]
+            for contact_url in channels.contact_page_urls(BeautifulSoup(body_text, "html.parser"), final_url):
+                cancel.check()
+                reply = fetch(contact_url, timeout=min(timeout, 8), max_bytes=MAX_PAGE_BYTES, allow_private=params.allow_private)
+                if not reply.ok or not reply.body:
+                    continue
+                text = decode_body(reply.body, reply.headers.get("content-type", ""))
+                _, page_contacts, _ = page_mod.extract(text, reply.url, reply.headers.get("content-type", ""))
+                scanned.append(channels.scan_html(text, reply.url, page_contacts))
+            return channels.build(scanned, final_host)
+
+        return {"data": _section("contacts", run, timings, channels.empty(), local), "errors": local}
+
     tasks: dict[str, Callable[[], dict[str, Any]]] = {
-        "design": task_design, "dns": task_dns, "tls": task_tls, "registration": task_registration,
+        "contacts": task_contacts, "design": task_design, "dns": task_dns, "tls": task_tls, "registration": task_registration,
         "sitemaps": task_sitemaps, "archive": task_archive, "checks": task_checks,
     }
     results: dict[str, dict[str, Any]] = {}
@@ -355,7 +377,7 @@ def collect(params: ProfileParams, emit: Emitter, cancel: CancelToken) -> tuple[
         futures = {pool.submit(fn): name for name, fn in tasks.items()}
 
         def on_done(name: str) -> None:
-            if name not in {"checks", "design"}:
+            if name not in {"checks", "design", "contacts"}:
                 phase_done(name)
 
         done_futures = dict(futures)
@@ -365,7 +387,7 @@ def collect(params: ProfileParams, emit: Emitter, cancel: CancelToken) -> tuple[
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
 
-    for name in ("design", "dns", "tls", "registration", "sitemaps", "archive", "checks"):
+    for name in ("design", "dns", "tls", "registration", "sitemaps", "archive", "checks", "contacts"):
         errors.extend(results[name].get("errors", []))
 
     dns_result = results["dns"]
@@ -389,6 +411,7 @@ def collect(params: ProfileParams, emit: Emitter, cancel: CancelToken) -> tuple[
         reg.get("registration_date"),
         [u.get("lastmod") or "" for u in report["robots_and_sitemaps"]["sitemaps"]["urls"]],
     )
+    report["contact_channels"] = results["contacts"]["data"]
     http["checks"].update(results["checks"]["data"])
 
     http_reached = response.error is None and bool(response.status)

@@ -308,6 +308,7 @@ def summarize(raw: dict[str, Any]) -> dict[str, Any]:
             "address": _get(raw, "contacts.address"),
             "socials": _list(_get(raw, "contacts.socials")),
             "whatsapp": _list(_get(raw, "contacts.whatsapp")),
+            "channels": _dict(raw.get("contact_channels")),
         },
         "security": {
             "present": present,
