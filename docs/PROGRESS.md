@@ -192,3 +192,4 @@ Found on a real Wix site (en.cankayaenerji.com.tr):
 `docs/LangSearch-apikey.txt` holds a live API key and is committed to the repository. Rotate the
 key in the LangSearch dashboard, paste the new one in the app, and remove the file from the
 repository (and its history if the repository is or becomes public).
+- **DNS fallback:** if the computer's own DNS resolver fails or times out, the profile retries with public resolvers (1.1.1.1, 8.8.8.8, 9.9.9.9); a resolver chosen by the user is never replaced. Fixes empty Hosting, DNS, Email and Email authentication on networks where the system resolver does not answer. Test: `tests/test_dns_fallback.py`.

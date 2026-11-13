@@ -10,7 +10,7 @@ import dns.exception
 import dns.resolver
 import dns.reversename
 
-from .dnsinfo import make_resolver
+from .dnsinfo import resolve
 
 # Substring of the MX host (lower-case) -> provider.
 EMAIL_PROVIDERS = (
@@ -49,7 +49,7 @@ def profile_email(domain_records: dict[str, Any]) -> dict[str, Any]:
 
 def _txt(name: str, timeout: float, resolver_ip: str | None) -> list[str]:
     try:
-        answer = make_resolver(timeout, resolver_ip).resolve(name, "TXT", raise_on_no_answer=False)
+        answer = resolve(name, "TXT", timeout, resolver_ip)
         return [b"".join(item.strings).decode("utf-8", errors="replace") for item in answer] if answer.rrset else []
     except (dns.exception.DNSException, OSError):
         return []
@@ -79,7 +79,7 @@ def _cymru(ip: str, timeout: float, resolver_ip: str | None) -> dict[str, Any]:
 
 def reverse_dns(ip: str, timeout: float, resolver_ip: str | None) -> str | None:
     try:
-        answer = make_resolver(timeout, resolver_ip).resolve(dns.reversename.from_address(ip), "PTR", raise_on_no_answer=False)
+        answer = resolve(dns.reversename.from_address(ip), "PTR", timeout, resolver_ip)
         return answer[0].to_text().rstrip(".") if answer.rrset else None
     except (dns.exception.DNSException, OSError):
         return None

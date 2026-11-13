@@ -12,14 +12,22 @@ import dns.reversename
 
 RECORD_TYPES = ("A", "AAAA", "CNAME", "NS", "MX", "TXT", "CAA", "SOA")
 ATTEMPTS = 2
+# Used when the computer's own resolver fails (VPNs, odd Windows network setups, routers that drop queries).
+PUBLIC_RESOLVERS = ["1.1.1.1", "8.8.8.8", "9.9.9.9"]
 
 
-def make_resolver(timeout: float, resolver_ip: str | None, dnssec: bool = False) -> dns.resolver.Resolver:
-    resolver = dns.resolver.Resolver()
+def make_resolver(timeout: float, resolver_ip: str | None, dnssec: bool = False, public: bool = False) -> dns.resolver.Resolver:
+    try:
+        resolver = dns.resolver.Resolver(configure=not public)
+    except Exception:  # noqa: BLE001 - an unreadable system DNS setup must not stop the profile
+        resolver = dns.resolver.Resolver(configure=False)
+        public = True
     resolver.timeout = min(timeout, 3)
     resolver.lifetime = min(timeout, 4)
     if resolver_ip:
         resolver.nameservers = [resolver_ip]
+    elif public or not resolver.nameservers:
+        resolver.nameservers = list(PUBLIC_RESOLVERS)
     if dnssec:
         resolver.use_edns(edns=0, ednsflags=dns.flags.DO)
     return resolver
@@ -37,13 +45,24 @@ def _values(record_type: str, answer: Any) -> list[str]:
     return values
 
 
+def resolve(name: str, record_type: str, timeout: float, resolver_ip: str | None, dnssec: bool = False) -> Any:
+    """dnspython's answer. The system resolver goes first; on a failure the public ones get a turn (unless one was chosen)."""
+    try:
+        return make_resolver(timeout, resolver_ip, dnssec).resolve(name, record_type, raise_on_no_answer=False)
+    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+        raise
+    except (dns.exception.DNSException, OSError):
+        if resolver_ip:
+            raise
+    return make_resolver(timeout, None, dnssec, public=True).resolve(name, record_type, raise_on_no_answer=False)
+
+
 def lookup(name: str, record_type: str, timeout: float, resolver_ip: str | None) -> tuple[list[str], str | None, bool]:
     """Returns (values, error, nxdomain). Timeouts are retried; NXDOMAIN/NoAnswer are not errors."""
     last_error: str | None = None
     for _ in range(ATTEMPTS):
         try:
-            resolver = make_resolver(timeout, resolver_ip, dnssec=record_type == "DNSKEY")
-            answer = resolver.resolve(name, record_type, raise_on_no_answer=False)
+            answer = resolve(name, record_type, timeout, resolver_ip, dnssec=record_type == "DNSKEY")
             return (_values(record_type, answer) if answer.rrset is not None else []), None, False
         except dns.resolver.NXDOMAIN:
             return [], None, True
