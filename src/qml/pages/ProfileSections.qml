@@ -403,8 +403,22 @@ Flickable {
             glyph: Icons.history
             failure: sections.errorFor("archive")
 
-            Fact { label: qsTr("First capture"); value: Format.shortDate(sections.archive.first) || "—" }
-            Fact { label: qsTr("Latest capture"); value: Format.shortDate(sections.archive.last) || "—"; last: true }
+            // The button opens the capture on archive.org in the browser.
+            Fact {
+                label: qsTr("First capture")
+                value: Format.shortDate(sections.archive.first) || "—"
+                actionGlyph: sections.archive.firstUrl ? Icons.openExternal : ""
+                actionHint: qsTr("Open this capture in the browser")
+                onActionRequested: sections.linkRequested(sections.archive.firstUrl)
+            }
+            Fact {
+                label: qsTr("Latest capture")
+                value: Format.shortDate(sections.archive.last) || "—"
+                last: true
+                actionGlyph: sections.archive.lastUrl ? Icons.openExternal : ""
+                actionHint: qsTr("Open this capture in the browser")
+                onActionRequested: sections.linkRequested(sections.archive.lastUrl)
+            }
         }
     }
 

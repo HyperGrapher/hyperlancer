@@ -140,7 +140,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Run tests
-        working-directory: web-dashboard/scripts
+        working-directory: tools
         run: |
           uv sync
           uv run pytest -q

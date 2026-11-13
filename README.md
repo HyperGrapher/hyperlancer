@@ -3,7 +3,7 @@
 A Windows desktop app for a freelance web developer: find businesses with weak websites,
 analyze each site, and keep everything about a lead in one place. Built with C++, Qt 6.11
 (Qt Quick) and CMake. The site analysis itself runs in the Python tools under
-`web-dashboard/scripts`.
+`tools/`.
 
 The product requirements are in [docs/PRD-Freelance-lead-generation-desktop-app.md](docs/PRD-Freelance-lead-generation-desktop-app.md).
 What is built so far, and what comes next, is in [docs/PROGRESS.md](docs/PROGRESS.md).
@@ -50,13 +50,13 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release `
 cmake --build build --parallel
 ```
 
-Prepare the Python tools once (and again after pulling changes to `web-dashboard/scripts`):
+Prepare the Python tools once (and again after pulling changes to `tools`):
 
 ```powershell
-uv sync --project web-dashboard\scripts
+uv sync --project tools
 ```
 
-Run `build\Hyperlancer.exe`. The app finds `web-dashboard\scripts` by looking upward from the
+Run `build\Hyperlancer.exe`. The app finds `tools` by looking upward from the
 executable, so a build inside the project folder needs no setup. Settings → Health shows
 whether Python and the tools were found.
 
@@ -68,7 +68,7 @@ again.
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=/path/to/Qt/6.11.3/gcc_64
 cmake --build build --parallel
-uv sync --project web-dashboard/scripts
+uv sync --project tools
 ./build/Hyperlancer
 ```
 
@@ -150,7 +150,7 @@ a site's detail view.
 
 ```bash
 ctest --test-dir build --output-on-failure
-uv run --project web-dashboard/scripts pytest web-dashboard/scripts
+uv run --project tools pytest tools
 ```
 
 The C++ tests cover URL normalization and the Public Suffix List, NDJSON parsing, migrations,
@@ -172,7 +172,8 @@ src/qml/             QML: Main.qml, theme/, shell/, navigation/, pages/, control
 src/shaders/         GLSL fragment shaders, compiled to .qsb at build time
 resources/           Fonts, Public Suffix List, SQL migrations (sqlite/ and mysql/)
 tests/               Qt Test unit tests
-web-dashboard/       The earlier web version; its Python tools (scripts/) do the site analysis
+tools/               Python tools the app runs as jobs (site_profile, site_crawl, site_render), a uv project
+web-dashboard/       The earlier web version, kept for reference only
 docs/                PRD, progress notes, screenshots
 ```
 
@@ -189,7 +190,7 @@ Settings → Appearance has reduced motion and a performance overlay.
 
 Push a version tag such as `v0.2.0` to build portable packages for Windows x64 and Linux x64.
 The Windows zip contains the app, the Qt runtime, the MySQL driver and the Python tools folder;
-after unpacking, run `uv sync --project web-dashboard\scripts` inside it once.
+after unpacking, run `uv sync --project tools` inside it once.
 
 ```bash
 git tag v0.2.0

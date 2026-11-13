@@ -25,8 +25,13 @@ struct IngestResult
 // path, createdAt }; empty when the website was never crawled.
 [[nodiscard]] QVariantMap latest(QSqlDatabase &db, qint64 siteId);
 
-// The pages of a crawl folder (structure.json): { title, url, file, wordCount, depth, lang }.
+// The pages of a crawl folder (structure.json): { id, title, url, file, wordCount, depth, lang,
+// imageCount }.
 [[nodiscard]] QVariantList pages(const QString &dataDir, const QString &relativePath);
+
+// The images of a crawl folder (assets.json): { file (absolute path), url (where it came from),
+// alt, width, height, bytes, pageIds, source (file URL for an Image) }. The pages list tells how many images each page has.
+[[nodiscard]] QVariantList images(const QString &dataDir, const QString &relativePath);
 
 // Removes every crawl folder of a website, for when the website is deleted.
 void removeFiles(QSqlDatabase &db, const QString &dataDir, qint64 siteId);

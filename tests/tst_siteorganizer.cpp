@@ -351,7 +351,11 @@ void SiteOrganizerTest::crawlStoreKeepsOnlyTheLatestCrawl()
                            .arg(pages).toUtf8());
         QFile structure(folder + QStringLiteral("/structure.json"));
         structure.open(QIODevice::WriteOnly);
-        structure.write(R"({"pages":[{"title":"Home","url":"https://firma.com.tr/","file":"pages/index.md","word_count":120,"depth":0,"lang":"tr"}]})");
+        QFile assets(folder + QStringLiteral("/assets.json"));
+        assets.open(QIODevice::WriteOnly);
+        assets.write(R"({"assets":[{"kind":"image","file":"images/logo.png","url":"https://firma.com.tr/logo.png","width":10,"height":5,"bytes":70,"alt_texts":["logo"],"used_on":["p1"]},
+            {"kind":"file","file":"files/a.pdf","used_on":["p1"]}]})");
+        structure.write(R"({"pages":[{"id":"p1","title":"Home","url":"https://firma.com.tr/","file":"pages/index.md","word_count":120,"depth":0,"lang":"tr"}]})");
         return folder + QStringLiteral("/manifest.json");
     };
     QVERIFY(CrawlStore::latest(db, site).isEmpty());
@@ -365,6 +369,11 @@ void SiteOrganizerTest::crawlStoreKeepsOnlyTheLatestCrawl()
     const QVariantList pages = CrawlStore::pages(dataDir, latest.value(QStringLiteral("path")).toString());
     QCOMPARE(pages.size(), 1);
     QCOMPARE(pages.front().toMap().value(QStringLiteral("wordCount")).toInt(), 120);
+    QCOMPARE(pages.front().toMap().value(QStringLiteral("imageCount")).toInt(), 1); // the PDF is not an image
+    const QVariantList images = CrawlStore::images(dataDir, latest.value(QStringLiteral("path")).toString());
+    QCOMPARE(images.size(), 1);
+    QCOMPARE(images.front().toMap().value(QStringLiteral("pageIds")).toList().front().toString(), QStringLiteral("p1"));
+    QVERIFY(images.front().toMap().value(QStringLiteral("file")).toString().endsWith(QStringLiteral("jobs/1/crawl/images/logo.png")));
 
     const QString second = writeCrawl(QStringLiteral("2"), 9);
     QVERIFY(CrawlStore::ingest(db, dataDir, site, 2, second).error.isEmpty());

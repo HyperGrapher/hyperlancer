@@ -2,9 +2,11 @@
 
 #include <QDir>
 #include <QFile>
+#include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QUrl>
 
 #include "DbTime.h"
 #include "SqlExec.h"
@@ -81,16 +83,52 @@ QVariantMap latest(QSqlDatabase &db, qint64 siteId)
             {QStringLiteral("createdAt"), DbTime::toIso(query.value(10))}};
 }
 
+QVariantList images(const QString &dataDir, const QString &relativePath)
+{
+    QVariantList list;
+    const QString folder = QDir(dataDir).filePath(relativePath);
+    const QJsonArray assets = readJson(QDir(folder).filePath(QStringLiteral("assets.json")))
+                                  .value(QStringLiteral("assets"))
+                                  .toArray();
+    for (const QJsonValue &value : assets) {
+        const QJsonObject asset = value.toObject();
+        if (asset.value(QStringLiteral("kind")).toString() != QStringLiteral("image")) {
+            continue;
+        }
+        const QJsonArray alts = asset.value(QStringLiteral("alt_texts")).toArray();
+        const QString file = QDir(folder).filePath(asset.value(QStringLiteral("file")).toString());
+        list.append(QVariantMap{
+            {QStringLiteral("file"), file},
+            {QStringLiteral("source"), QUrl::fromLocalFile(file)},
+            {QStringLiteral("url"), asset.value(QStringLiteral("url")).toString()},
+            {QStringLiteral("alt"), alts.isEmpty() ? QString() : alts.first().toString()},
+            {QStringLiteral("width"), asset.value(QStringLiteral("width")).toInt()},
+            {QStringLiteral("height"), asset.value(QStringLiteral("height")).toInt()},
+            {QStringLiteral("bytes"), static_cast<qint64>(asset.value(QStringLiteral("bytes")).toDouble())},
+            {QStringLiteral("pageIds"), asset.value(QStringLiteral("used_on")).toVariant()}});
+    }
+    return list;
+}
+
 QVariantList pages(const QString &dataDir, const QString &relativePath)
 {
     QVariantList list;
     const QString folder = QDir(dataDir).filePath(relativePath);
+    QHash<QString, int> imageCounts;
+    for (const QVariant &image : images(dataDir, relativePath)) {
+        for (const QVariant &pageId : image.toMap().value(QStringLiteral("pageIds")).toList()) {
+            ++imageCounts[pageId.toString()];
+        }
+    }
     const QJsonArray entries = readJson(QDir(folder).filePath(QStringLiteral("structure.json")))
                                    .value(QStringLiteral("pages"))
                                    .toArray();
     for (const QJsonValue &value : entries) {
         const QJsonObject page = value.toObject();
-        list.append(QVariantMap{{QStringLiteral("title"), page.value(QStringLiteral("title")).toString()},
+        const QString id = page.value(QStringLiteral("id")).toString();
+        list.append(QVariantMap{{QStringLiteral("id"), id},
+                                {QStringLiteral("imageCount"), imageCounts.value(id)},
+                                {QStringLiteral("title"), page.value(QStringLiteral("title")).toString()},
                                 {QStringLiteral("url"), page.value(QStringLiteral("url")).toString()},
                                 {QStringLiteral("file"), QDir(folder).filePath(page.value(QStringLiteral("file")).toString())},
                                 {QStringLiteral("wordCount"), page.value(QStringLiteral("word_count")).toInt()},

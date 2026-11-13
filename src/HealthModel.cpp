@@ -133,7 +133,7 @@ void HealthModel::checkPythonTools()
         setCheck(
             QStringLiteral("python"), tr("Python tools"), QStringLiteral("error"),
             tr("Tools folder not found"),
-            tr("Set the folder that contains pyproject.toml (web-dashboard\\scripts) in Tools."));
+            tr("Set the folder that contains pyproject.toml (tools) in Tools."));
         return;
     }
     if (!QFileInfo(tools.python).isExecutable()) {

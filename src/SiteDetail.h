@@ -35,13 +35,15 @@ class SiteDetail : public QObject
     Q_PROPERTY(bool diffLoading READ isDiffLoading NOTIFY snapshotDiffChanged)
     Q_PROPERTY(QVariantMap speed READ speed NOTIFY loadedChanged)
     Q_PROPERTY(QVariantMap speedDesktop READ speedDesktop NOTIFY loadedChanged)
-    // "mobile" and "desktop": { url (file URL), createdAt } of the newest screenshot.
+    // "mobile" and "desktop": { url (file URL), path (relative to the data folder), createdAt } of the newest screenshot.
     Q_PROPERTY(QVariantMap screenshots READ screenshots NOTIFY loadedChanged)
     Q_PROPERTY(QVariantMap organizer READ organizer NOTIFY loadedChanged)
     Q_PROPERTY(QStringList statuses READ statuses CONSTANT)
     // The latest content crawl (see CrawlStore::latest) and its pages; empty when never crawled.
     Q_PROPERTY(QVariantMap crawl READ crawl NOTIFY loadedChanged)
     Q_PROPERTY(QVariantList crawlPages READ crawlPages NOTIFY loadedChanged)
+    // The downloaded images of the latest crawl (see CrawlStore::images).
+    Q_PROPERTY(QVariantList crawlImages READ crawlImages NOTIFY loadedChanged)
     // The latest browser render (title, loadMs, requestCount, trackers); empty when never rendered.
     Q_PROPERTY(QVariantMap render READ render NOTIFY loadedChanged)
     Q_PROPERTY(bool renderRunning READ isRenderRunning NOTIFY renderRunningChanged)
@@ -79,6 +81,7 @@ public:
     [[nodiscard]] QStringList statuses() const;
     [[nodiscard]] QVariantMap crawl() const { return m_crawl; }
     [[nodiscard]] QVariantList crawlPages() const { return m_crawlPages; }
+    [[nodiscard]] QVariantList crawlImages() const { return m_crawlImages; }
     [[nodiscard]] QVariantMap render() const { return m_render; }
     [[nodiscard]] bool isRenderRunning() const { return m_renderRunning; }
     [[nodiscard]] bool isCrawlRunning() const { return m_crawlRunning; }
@@ -160,6 +163,7 @@ private:
     QVariantMap m_speed;
     QVariantMap m_crawl;
     QVariantList m_crawlPages;
+    QVariantList m_crawlImages;
     QVariantMap m_render;
     bool m_renderRunning = false;
     bool m_crawlRunning = false;

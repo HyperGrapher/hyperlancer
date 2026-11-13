@@ -96,6 +96,7 @@ void SiteDetail::setSiteId(qint64 siteId)
     m_renderRunning = false;
     emit renderRunningChanged();
     m_crawlPages.clear();
+    m_crawlImages.clear();
     m_crawlJobId = 0;
     setCrawlProgress(false, 0.0, QString());
     closeComparison();
@@ -126,8 +127,9 @@ void SiteDetail::reload()
             const QVariantMap crawl = CrawlStore::latest(db, siteId);
             detail.insert(QStringLiteral("crawl"), crawl);
             if (!crawl.isEmpty()) {
-                detail.insert(QStringLiteral("crawlPages"),
-                              CrawlStore::pages(dataDir, crawl.value(QStringLiteral("path")).toString()));
+                const QString crawlPath = crawl.value(QStringLiteral("path")).toString();
+                detail.insert(QStringLiteral("crawlPages"), CrawlStore::pages(dataDir, crawlPath));
+                detail.insert(QStringLiteral("crawlImages"), CrawlStore::images(dataDir, crawlPath));
             }
             detail.insert(QStringLiteral("render"), RenderStore::latest(db, siteId));
             detail.insert(QStringLiteral("organizer"), SiteOrganizer::load(db, siteId));
@@ -147,6 +149,7 @@ void SiteDetail::reload()
             m_crawl = detail.value(QStringLiteral("crawl")).toMap();
             m_render = detail.value(QStringLiteral("render")).toMap();
             m_crawlPages = detail.value(QStringLiteral("crawlPages")).toList();
+            m_crawlImages = detail.value(QStringLiteral("crawlImages")).toList();
             m_speedDesktop = detail.value(QStringLiteral("speedDesktop")).toMap();
             m_screenshots.clear();
             const QVariantMap stored = detail.value(QStringLiteral("screenshots")).toMap();
@@ -157,6 +160,7 @@ void SiteDetail::reload()
                     QVariantMap{{QStringLiteral("url"),
                                  QUrl::fromLocalFile(QDir(m_dataDir).filePath(
                                                          shot.value(QStringLiteral("path")).toString()))},
+                                {QStringLiteral("path"), shot.value(QStringLiteral("path"))},
                                 {QStringLiteral("createdAt"), shot.value(QStringLiteral("createdAt"))}});
             }
             m_organizer = detail.value(QStringLiteral("organizer")).toMap();

@@ -148,7 +148,7 @@ Found on a real Wix site (en.cankayaenerji.com.tr):
 ### CI and releases
 - Windows: aqtinstall 3.3 cannot read Qt 6.11's new Windows package layout (`qt6_6113/qt6_6113_mingw/`). `.github/scripts/install_qt_windows.py` installs the MinGW kit from the official `Updates.xml` (SHA-1 checked); the install action only provides the MinGW 13.1 toolchain. Linux still uses the action.
 - The official Windows kit has **no `qsqlmysql.dll`**. `.github/scripts/build_mysql_driver.sh` builds it from the qtbase sources against MSYS2's `libmariadbclient` and installs it into the kit; the release zip includes it plus `libmariadb.dll` and its DLL dependencies.
-- The Windows release zip also contains `web-dashboard/scripts` (run `uv sync` in it once).
+- The Windows release zip also contains `tools` (run `uv sync` in it once).
 - Releases: push a `v*.*.*` tag, or run "Build portable releases" manually with a version input; the manual run creates the tag together with the GitHub Release. (Cloud agent sessions may not be allowed to push tags; they use the manual run through the GitHub API.)
 - The Linux AppImage keeps only the SQLite and MySQL drivers; the other Qt SQL plugins need client libraries that are not installed.
 - `v0.2.0` was released from `master` at the end of session 1.
@@ -158,7 +158,7 @@ Found on a real Wix site (en.cankayaenerji.com.tr):
 ## 3. What the user should check on Windows
 
 1. Install Qt 6.11 components: Shader Tools, WebSockets, Network Authorization, Multimedia (Maintenance Tool). Build as in README.
-2. `uv sync --project web-dashboard\scripts`, start the app, Settings → Health should be green except Gmail/PageSpeed until set up.
+2. `uv sync --project tools`, start the app, Settings → Health should be green except Gmail/PageSpeed until set up.
 3. Analyze one site from the Dashboard; watch the steps; open the Profile tab.
 4. Settings → Connections: add the LangSearch key, Test; Discover a niche + place; Add and analyze.
 5. Gmail: Import file… → Connect → approve in browser → open a site that you have emailed → Emails tab.
@@ -194,3 +194,4 @@ key in the LangSearch dashboard, paste the new one in the app, and remove the fi
 repository (and its history if the repository is or becomes public).
 - **DNS fallback:** if the computer's own DNS resolver fails, times out, or answers "name does not exist" (seen on a Windows PC whose first DNS server, 127.0.0.1, said NXDOMAIN for example.com), the profile retries with public resolvers (1.1.1.1, 8.8.8.8, 9.9.9.9); a resolver chosen by the user is never replaced. Fixes empty Hosting, DNS, Email and Email authentication on networks where the system resolver does not answer. Test: `tests/test_dns_fallback.py`.
 - **To-dos All tab, Notes page, editable notes:** To-dos has a third tab **All**: every to-do (done or not, with or without a date) under its website's domain; click the domain to open the website. New sidebar section **Notes** (below To-dos, Ctrl+6; Jobs and Settings moved to 7 and 8): every note of every website under its domain, click to read the Markdown; read-only there. Notes are edited on the website's Workspace tab (Edit button on an opened note: title, body, Save/Cancel; `SiteOrganizer::updateNote`). Code: `TodoList::filter` (replaces `showDone`), `NoteList`, `NotesPage.qml`. Fixed `AppSettings::kSectionCount` (was 5, so the last page was not restored for Jobs and Settings). Tags that Tag Manager loads: Screenshots tab → Capture in browser, then Profile tab → Ads and analytics.
+- **v0.3.0 round:** (1) The Python tools moved from `web-dashboard/scripts` to `tools/` at the project root and are part of the app now; `web-dashboard/` stays only as a reference. `ToolPaths` looks for `tools/pyproject.toml` upward from the executable; the release zip has a `tools` folder (run `uv sync --project tools` once). A tools folder saved in Settings that still points to the old path must be changed. (2) Long notes scroll inside their text box (add and edit). (3) Clicking a screenshot opens it in the default picture app. (4) Content tab: click a page to see its downloaded images as a grid (from `assets.json`, `CrawlStore::images`); click an image to open it in the default app; each page row shows its image count. (5) Web archive capture dates have an open-in-browser button. (6) Sidebar order is now Dashboard, Websites, Emails, To-dos, Notes, Jobs, Discover, Settings (Ctrl+1 to Ctrl+8; the saved "last page" number changed meaning, so the first start may open another page).

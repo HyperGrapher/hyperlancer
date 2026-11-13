@@ -445,7 +445,7 @@ PageBase {
                         glyph: Icons.folderOpen
                         title: qsTr("Tools folder")
                         description: page.integrations.scriptsDir.length > 0 ? page.integrations.scriptsDir
-                                     : qsTr("Not found. Pick the web-dashboard\\scripts folder.")
+                                     : qsTr("Not found. Pick the tools folder.")
 
                         Row {
                             spacing: Theme.spacingS
@@ -812,7 +812,7 @@ PageBase {
     FolderDialog {
         id: scriptsDialog
 
-        title: qsTr("Choose the Python tools folder (web-dashboard/scripts)")
+        title: qsTr("Choose the Python tools folder (tools)")
         onAccepted: page.integrations.setScriptsDir(selectedFolder.toString())
     }
 

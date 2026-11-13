@@ -9,7 +9,7 @@ QString findScriptsDir(const QString &startDir)
 {
     QDir dir(startDir);
     for (int depth = 0; depth < 6; ++depth) {
-        const QString candidate = dir.filePath(QStringLiteral("web-dashboard/scripts"));
+        const QString candidate = dir.filePath(QStringLiteral("tools"));
         if (QFileInfo::exists(QDir(candidate).filePath(QStringLiteral("pyproject.toml")))) {
             return QDir(candidate).absolutePath();
         }

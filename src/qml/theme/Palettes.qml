@@ -21,13 +21,6 @@ QtObject {
             accentSecondary: "#5CC8FF"
         },
         {
-            name: "Ember",        // Discover
-            blobs: ["#FF7A45", "#FF3D6E", "#FFC15E", "#5A1A3A"],
-            base: "#1E0A12",
-            accent: "#FF9A6B",
-            accentSecondary: "#FF5C8A"
-        },
-        {
             name: "Citrine",      // Emails
             blobs: ["#E5C100", "#FFE45E", "#5C4A00", "#FFA24A"],
             base: "#1A1403",
@@ -54,6 +47,13 @@ QtObject {
             base: "#0A1024",
             accent: "#8FB0FF",
             accentSecondary: "#C3B5FF"
+        },
+        {
+            name: "Ember",        // Discover
+            blobs: ["#FF7A45", "#FF3D6E", "#FFC15E", "#5A1A3A"],
+            base: "#1E0A12",
+            accent: "#FF9A6B",
+            accentSecondary: "#FF5C8A"
         },
         {
             name: "Moss",         // Settings

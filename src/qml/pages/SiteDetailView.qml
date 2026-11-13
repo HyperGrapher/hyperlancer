@@ -449,6 +449,7 @@ Item {
             capturing: view.detail.renderRunning
             onCheckRequested: view.detail.checkSpeed()
             onCaptureRequested: view.detail.startRender()
+            onOpenRequested: path => view.app.openLocalPath(path)
         }
 
         ActivityList {

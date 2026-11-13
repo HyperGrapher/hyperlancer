@@ -119,11 +119,11 @@ jobs:
           windeployqt --release --compiler-runtime --qmldir src\qml --dir $package "$package\Hyperlancer.exe"
           # Qt MySQL driver runtime (libmariadb.dll and its dependencies), built above.
           Copy-Item "$env:MYSQL_RUNTIME\*.dll" $package
-          # The analysis tools: the app finds web-dashboard\scripts next to the executable.
-          # Run "uv sync --project web-dashboard\scripts" in the unpacked folder once.
-          $tools = "$package\web-dashboard\scripts"
+          # The analysis tools: the app finds the tools folder next to the executable.
+          # Run "uv sync --project tools" in the unpacked folder once.
+          $tools = "$package\tools"
           New-Item -ItemType Directory -Force $tools | Out-Null
-          Copy-Item web-dashboard\scripts\* $tools -Recurse -Exclude .venv,__pycache__,.pytest_cache
+          Copy-Item tools\* $tools -Recurse -Exclude .venv,__pycache__,.pytest_cache
           Compress-Archive -Path $package -DestinationPath dist\hyperlancer-windows-x64.zip
 
       - name: Bundle Linux runtime

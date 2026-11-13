@@ -23,11 +23,11 @@ Window {
 
     readonly property int sectionDashboard: 0
     readonly property int sectionSites: 1
-    readonly property int sectionDiscover: 2
-    readonly property int sectionEmails: 3
-    readonly property int sectionTodos: 4
-    readonly property int sectionNotes: 5
-    readonly property int sectionJobs: 6
+    readonly property int sectionEmails: 2
+    readonly property int sectionTodos: 3
+    readonly property int sectionNotes: 4
+    readonly property int sectionJobs: 5
+    readonly property int sectionDiscover: 6
     readonly property int sectionSettings: 7
     // Set once the user chose Quit: the window may then close for real.
     property bool quitting: false
@@ -35,11 +35,11 @@ Window {
     readonly property var sections: [
         { title: qsTr("Dashboard"), glyph: Icons.squaresFour },
         { title: qsTr("Websites"), glyph: Icons.globe },
-        { title: qsTr("Discover"), glyph: Icons.binoculars },
         { title: qsTr("Emails"), glyph: Icons.envelope },
         { title: qsTr("To-dos"), glyph: Icons.checkSquare },
         { title: qsTr("Notes"), glyph: Icons.article },
         { title: qsTr("Jobs"), glyph: Icons.queue },
+        { title: qsTr("Discover"), glyph: Icons.binoculars },
         { title: qsTr("Settings"), glyph: Icons.gearSix }
     ]
 
@@ -259,12 +259,6 @@ Window {
                     }
                 },
                 Component {
-                    DiscoverPage {
-                        app: root.app
-                        onSettingsRequested: root.openSettings(0)
-                    }
-                },
-                Component {
                     EmailsPage {
                         app: root.app
                     }
@@ -286,6 +280,12 @@ Window {
                         app: root.app
                         ambientActive: root.ambientActive
                         onSiteOpened: siteId => root.openSite(siteId)
+                    }
+                },
+                Component {
+                    DiscoverPage {
+                        app: root.app
+                        onSettingsRequested: root.openSettings(0)
                     }
                 },
                 Component {

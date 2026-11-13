@@ -14,13 +14,27 @@ Item {
     readonly property var crawl: detail.crawl
     readonly property bool hasCrawl: crawl.id !== undefined
     property int maxPages: 100
+    // The page whose downloaded images are shown as a gallery; null shows the page list.
+    property var galleryPage: null
+    readonly property var galleryImages: galleryPage === null ? [] : detail.crawlImages.filter(image => image.pageIds.indexOf(galleryPage.id) >= 0)
 
     function resetScroll() {
+        galleryPage = null;
         pageList.positionViewAtBeginning();
+    }
+
+    // A new crawl or another website replaces the pages the gallery was showing.
+    Connections {
+        target: panel.detail
+
+        function onSiteIdChanged() {
+            panel.galleryPage = null;
+        }
     }
 
     GlassPanel {
         anchors.fill: parent
+        visible: panel.galleryPage === null
         radius: Theme.radiusCard
         clip: true
 
@@ -169,6 +183,16 @@ Item {
                     color: rowArea.containsMouse ? Theme.rowHover : "transparent"
                 }
 
+                // The whole row opens the gallery of the page's images; the buttons on top keep their own clicks.
+                MouseArea {
+                    id: rowArea
+
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: panel.galleryPage = row.modelData
+                }
+
                 Column {
                     anchors.left: parent.left
                     anchors.leftMargin: Theme.spacingM
@@ -205,9 +229,9 @@ Item {
                     anchors.right: openPage.left
                     anchors.rightMargin: Theme.spacingS
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 90
+                    width: 170
                     horizontalAlignment: Text.AlignRight
-                    text: qsTr("%n word(s)", "", row.modelData.wordCount)
+                    text: qsTr("%n word(s)", "", row.modelData.wordCount) + "  ·  " + qsTr("%n image(s)", "", row.modelData.imageCount)
                     color: Theme.textSecondary
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontCaption + 1
@@ -236,13 +260,6 @@ Item {
                     onClicked: panel.app.openLocalPath(row.modelData.file)
                 }
 
-                MouseArea {
-                    id: rowArea
-
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    acceptedButtons: Qt.NoButton
-                }
             }
         }
 
@@ -254,6 +271,141 @@ Item {
             title: panel.hasCrawl ? qsTr("No pages saved") : qsTr("No content saved yet")
             text: panel.hasCrawl ? qsTr("The crawl did not find readable pages. Open the folder for its log.")
                                  : qsTr("Press Crawl website. Up to three analyses and one crawl run at a time.")
+        }
+    }
+    // ---- the downloaded images of one page ----
+    GlassPanel {
+        anchors.fill: parent
+        visible: panel.galleryPage !== null
+        radius: Theme.radiusCard
+        clip: true
+
+        Item {
+            id: galleryBar
+
+            width: parent.width
+            height: 64
+
+            IconButton {
+                id: backButton
+
+                x: Theme.spacingM
+                anchors.verticalCenter: parent.verticalCenter
+                glyph: Icons.arrowLeft
+                flat: true
+                hint: qsTr("Back to the pages")
+                onClicked: panel.galleryPage = null
+            }
+
+            Column {
+                anchors.left: backButton.right
+                anchors.leftMargin: Theme.spacingM
+                anchors.right: parent.right
+                anchors.rightMargin: Theme.spacingL
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2
+
+                Text {
+                    width: parent.width
+                    text: panel.galleryPage ? (panel.galleryPage.title || panel.galleryPage.url) : ""
+                    color: Theme.textPrimary
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontHeading
+                    font.weight: Font.DemiBold
+                    elide: Text.ElideRight
+                    textFormat: Text.PlainText
+                }
+
+                Text {
+                    width: parent.width
+                    text: qsTr("%n downloaded image(s). Click one to open it in the default app.", "", panel.galleryImages.length)
+                    color: Theme.textSecondary
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontBody
+                    elide: Text.ElideRight
+                }
+            }
+        }
+
+        GridView {
+            id: grid
+
+            readonly property int columns: Math.max(1, Math.floor(width / 220))
+
+            anchors.top: galleryBar.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: 6
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            cellWidth: Math.floor(width / columns)
+            cellHeight: cellWidth * 0.85 + 34
+            model: panel.galleryImages
+
+            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+
+            delegate: Item {
+                id: cell
+
+                required property var modelData
+
+                width: grid.cellWidth
+                height: grid.cellHeight
+
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: 6
+                    radius: Theme.radiusSmall
+                    color: cellArea.containsMouse ? Theme.rowHover : Theme.glassFill
+
+                    Image {
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: caption.top
+                        anchors.margins: 6
+                        source: cell.modelData.source
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
+                        sourceSize.width: 360
+                    }
+
+                    Text {
+                        id: caption
+
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        anchors.margins: 8
+                        height: 20
+                        text: (cell.modelData.width > 0 ? cell.modelData.width + " × " + cell.modelData.height + "  ·  " : "") + Format.bytes(cell.modelData.bytes)
+                        color: Theme.textMuted
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontCaption + 1
+                        horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideRight
+                    }
+
+                    MouseArea {
+                        id: cellArea
+
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: panel.app.openLocalPath(cell.modelData.file)
+                    }
+                }
+            }
+        }
+
+        EmptyState {
+            anchors.centerIn: grid
+            width: grid.width
+            visible: panel.galleryImages.length === 0
+            glyph: Icons.article
+            title: qsTr("No images on this page")
+            text: qsTr("The crawl found no downloadable images here (they may be CSS backgrounds).")
         }
     }
 }

@@ -15,6 +15,8 @@ Item {
 
     signal checkRequested
     signal captureRequested
+    // The picture was clicked: open this file (a path relative to the data folder) in the default app.
+    signal openRequested(string path)
 
     PrimaryButton {
         id: captureButton
@@ -122,6 +124,13 @@ Item {
                 asynchronous: true
                 cache: false // the file is replaced by the next check
                 sourceSize.width: 1200
+
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: card.shot !== undefined
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: panel.openRequested(card.shot.path)
+                }
             }
         }
 

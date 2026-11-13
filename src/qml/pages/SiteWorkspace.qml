@@ -260,22 +260,26 @@ Flickable {
                 border.width: 1
                 border.color: noteField.activeFocus ? Theme.withAlpha(Theme.accent, 0.9) : Theme.glassStroke
 
-                TextArea {
-                    id: noteField
-
+                // The ScrollView lets a long text scroll inside the box.
+                ScrollView {
                     anchors.fill: parent
-                    placeholderText: qsTr("Write in Markdown… (Ctrl+Enter to save)")
-                    placeholderTextColor: Theme.textMuted
-                    color: Theme.textPrimary
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontBody + 1
-                    wrapMode: TextEdit.Wrap
-                    selectByMouse: true
-                    background: null
-                    Keys.onPressed: event => {
-                        if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ControlModifier)) {
-                            workspace.addNote();
-                            event.accepted = true;
+
+                    TextArea {
+                        id: noteField
+
+                        placeholderText: qsTr("Write in Markdown… (Ctrl+Enter to save)")
+                        placeholderTextColor: Theme.textMuted
+                        color: Theme.textPrimary
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontBody + 1
+                        wrapMode: TextEdit.Wrap
+                        selectByMouse: true
+                        background: null
+                        Keys.onPressed: event => {
+                            if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ControlModifier)) {
+                                workspace.addNote();
+                                event.accepted = true;
+                            }
                         }
                     }
                 }
@@ -448,16 +452,19 @@ Flickable {
                             border.width: 1
                             border.color: editBody.activeFocus ? Theme.withAlpha(Theme.accent, 0.9) : Theme.glassStroke
 
-                            TextArea {
-                                id: editBody
-
+                            ScrollView {
                                 anchors.fill: parent
-                                color: Theme.textPrimary
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontBody + 1
-                                wrapMode: TextEdit.Wrap
-                                selectByMouse: true
-                                background: null
+
+                                TextArea {
+                                    id: editBody
+
+                                    color: Theme.textPrimary
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontBody + 1
+                                    wrapMode: TextEdit.Wrap
+                                    selectByMouse: true
+                                    background: null
+                                }
                             }
                         }
 
