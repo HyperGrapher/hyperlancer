@@ -12,9 +12,7 @@ import re
 import urllib.parse
 from typing import Any
 
-import phonenumbers
 from bs4 import BeautifulSoup
-from phonenumbers import PhoneNumberType
 
 from .urls import get_host, strip_www
 
@@ -34,14 +32,6 @@ WIDGETS = (
     ("Elfsight", ("elfsight-app", "apps.elfsight.com")),
     ("WhatsApp Chat widget", ("whatsapp-chat-widget", "wa-widget", "whatsapp-button")),
 )
-TYPE_NAMES = {
-    PhoneNumberType.MOBILE: "mobile",
-    PhoneNumberType.FIXED_LINE: "fixed",
-    PhoneNumberType.FIXED_LINE_OR_MOBILE: "fixed or mobile",
-    PhoneNumberType.TOLL_FREE: "toll free",
-    PhoneNumberType.PREMIUM_RATE: "premium rate",
-    PhoneNumberType.VOIP: "voip",
-}
 REGION_BY_SUFFIX = {"tr": "TR", "de": "DE", "uk": "GB", "fr": "FR", "it": "IT", "es": "ES", "nl": "NL", "az": "AZ", "gr": "GR",
                     "bg": "BG", "ro": "RO", "us": "US", "ae": "AE", "sa": "SA", "ru": "RU", "ir": "IR", "pl": "PL"}
 
@@ -52,6 +42,18 @@ def default_region(host: str) -> str | None:
 
 def classify_phone(raw: str, region: str | None) -> dict[str, Any] | None:
     """E.164 form and line type of a number as written on a page; None when it is not a valid number."""
+    # Imported here so a missing package (an old "uv sync") only costs the phone numbers, not the whole profile.
+    import phonenumbers
+    from phonenumbers import PhoneNumberType
+
+    type_names = {
+        PhoneNumberType.MOBILE: "mobile",
+        PhoneNumberType.FIXED_LINE: "fixed",
+        PhoneNumberType.FIXED_LINE_OR_MOBILE: "fixed or mobile",
+        PhoneNumberType.TOLL_FREE: "toll free",
+        PhoneNumberType.PREMIUM_RATE: "premium rate",
+        PhoneNumberType.VOIP: "voip",
+    }
     text = raw.strip()
     if text.startswith("00"):
         text = "+" + text[2:]
@@ -63,7 +65,7 @@ def classify_phone(raw: str, region: str | None) -> dict[str, Any] | None:
         return None
     return {"e164": phonenumbers.format_number(number, phonenumbers.PhoneNumberFormat.E164),
             "display": phonenumbers.format_number(number, phonenumbers.PhoneNumberFormat.INTERNATIONAL),
-            "type": TYPE_NAMES.get(phonenumbers.number_type(number), "other"),
+            "type": type_names.get(phonenumbers.number_type(number), "other"),
             "country": phonenumbers.region_code_for_number(number)}
 
 

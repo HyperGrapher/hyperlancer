@@ -1,0 +1,2 @@
+-- Nothing to change: jobs.type is a plain VARCHAR here and already accepts 'render'.
+-- Kept so both backends have the same migration versions (see sqlite/0008_job_types.sql).

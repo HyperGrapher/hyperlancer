@@ -5,6 +5,7 @@
 #include <QTest>
 
 #include "CrawlStore.h"
+#include "JobStore.h"
 #include "PublicSuffixList.h"
 #include "RenderStore.h"
 #include "SiteOrganizer.h"
@@ -377,6 +378,8 @@ void SiteOrganizerTest::renderStoreSavesScreenshotsAndTrackers()
     const qint64 site = addSite(QStringLiteral("firma.com.tr"));
     const QString dataDir = m_database->dir();
     QVERIFY(RenderStore::latest(db, site).isEmpty());
+    // The jobs table has to accept the job type of the browser render.
+    QVERIFY(JobStore::create(db, QStringLiteral("render"), site, {}).error.isEmpty());
 
     const QString folder = dataDir + QStringLiteral("/jobs/5/render");
     QVERIFY(QDir().mkpath(folder));

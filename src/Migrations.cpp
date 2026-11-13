@@ -133,15 +133,24 @@ Result apply(QSqlDatabase &db, const QString &dir)
             continue;
         }
         const bool transactional = isSqlite(db);
+        QSqlQuery query(db);
         if (transactional) {
+            // A table rebuild must not trigger ON DELETE actions on the tables that point to it.
+            // The pragma has no effect inside a transaction, so it comes first.
+            query.exec(QStringLiteral("PRAGMA foreign_keys = OFF"));
             db.transaction();
         }
-        QSqlQuery query(db);
+        const auto restoreForeignKeys = [&]() {
+            if (transactional) {
+                query.exec(QStringLiteral("PRAGMA foreign_keys = ON"));
+            }
+        };
         for (const QString &statement : splitStatements(migration.sql)) {
             if (!query.exec(statement)) {
                 if (transactional) {
                     db.rollback();
                 }
+                restoreForeignKeys();
                 result.error =
                     QObject::tr("Migration %1 (%2) failed: %3\nStatement: %4")
                         .arg(migration.version, 4, 10, QChar(u'0'))
@@ -158,12 +167,15 @@ Result apply(QSqlDatabase &db, const QString &dir)
             if (transactional) {
                 db.rollback();
             }
+            restoreForeignKeys();
             result.error = QObject::tr("Could not record migration %1: %2")
                                .arg(migration.version)
                                .arg(query.lastError().text());
             return result;
         }
-        if (transactional && !db.commit()) {
+        const bool committed = !transactional || db.commit();
+        restoreForeignKeys();
+        if (!committed) {
             result.error = QObject::tr("Could not commit migration %1: %2")
                                .arg(migration.version)
                                .arg(db.lastError().text());

@@ -73,6 +73,7 @@ qt_add_resources(HyperlancerCore "hyperlancer_data"
         resources/migrations/sqlite/0005_saved_views.sql
         resources/migrations/sqlite/0006_crawls.sql
         resources/migrations/sqlite/0007_renders.sql
+        resources/migrations/sqlite/0008_job_types.sql
         resources/migrations/mysql/0001_init.sql
         resources/migrations/mysql/0002_organize.sql
         resources/migrations/mysql/0003_deadline_notes.sql
@@ -80,6 +81,7 @@ qt_add_resources(HyperlancerCore "hyperlancer_data"
         resources/migrations/mysql/0005_saved_views.sql
         resources/migrations/mysql/0006_crawls.sql
         resources/migrations/mysql/0007_renders.sql
+        resources/migrations/mysql/0008_job_types.sql
 )
 
 # Every file in resources/sounds is bundled and offered in Settings → Appearance → Sounds.
