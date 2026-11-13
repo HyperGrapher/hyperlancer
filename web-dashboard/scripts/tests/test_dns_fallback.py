@@ -33,3 +33,29 @@ def test_a_chosen_resolver_is_not_replaced(monkeypatch):
     monkeypatch.setattr(dns.resolver.Resolver, "resolve", fake_resolve)
     _, error, _ = dnsinfo.lookup("example.com", "A", 3, "192.0.2.1")
     assert error is not None
+
+
+def test_a_false_nxdomain_from_the_system_resolver_is_checked_against_public_ones(monkeypatch):
+    class Answer:
+        rrset = object()
+
+        def __iter__(self):
+            return iter([])
+
+    def fake_resolve(self, *args, **kwargs):
+        if self.nameservers != dnsinfo.PUBLIC_RESOLVERS:
+            raise dns.resolver.NXDOMAIN()
+        return Answer()
+
+    monkeypatch.setattr(dns.resolver.Resolver, "resolve", fake_resolve)
+    _, error, nxdomain = dnsinfo.lookup("example.com", "A", 3, None)
+    assert error is None and not nxdomain
+
+
+def test_a_real_nxdomain_stays_nxdomain(monkeypatch):
+    def fake_resolve(self, *args, **kwargs):
+        raise dns.resolver.NXDOMAIN()
+
+    monkeypatch.setattr(dns.resolver.Resolver, "resolve", fake_resolve)
+    _, error, nxdomain = dnsinfo.lookup("no-such-name.invalid", "A", 3, None)
+    assert nxdomain

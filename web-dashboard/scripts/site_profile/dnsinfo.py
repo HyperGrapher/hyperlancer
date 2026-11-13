@@ -46,12 +46,14 @@ def _values(record_type: str, answer: Any) -> list[str]:
 
 
 def resolve(name: str, record_type: str, timeout: float, resolver_ip: str | None, dnssec: bool = False) -> Any:
-    """dnspython's answer. The system resolver goes first; on a failure the public ones get a turn (unless one was chosen)."""
+    """dnspython's answer. The system resolver goes first. When it fails, or says the name does not exist
+    (a local filter, a VPN or a broken router can say so for real names), the public resolvers get a turn,
+    unless the user chose a resolver."""
     try:
         return make_resolver(timeout, resolver_ip, dnssec).resolve(name, record_type, raise_on_no_answer=False)
-    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+    except dns.resolver.NoAnswer:
         raise
-    except (dns.exception.DNSException, OSError):
+    except (dns.exception.DNSException, OSError):  # includes NXDOMAIN
         if resolver_ip:
             raise
     return make_resolver(timeout, None, dnssec, public=True).resolve(name, record_type, raise_on_no_answer=False)
