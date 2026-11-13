@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import re
 from dataclasses import dataclass, field
 from pathlib import PurePosixPath
@@ -45,6 +46,7 @@ class Extracted:
     images: list[str] = field(default_factory=list)  # asset ids
     files: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+    chrome: str = ""  # text of the header and footer, without menus (the same on every page, so kept once per site)
 
 
 def ignore_matcher(extra: list[str] = ()):
@@ -90,6 +92,7 @@ class PageExtractor:
 
         root = self._root(soup, out, fragment)
         if not fragment:
+            out.chrome = self._chrome_text(soup, root, url)
             self._remove_chrome(soup, root)
         if wix_page:
             for gallery in wix.galleries(soup, root, wix_scripts):
@@ -183,6 +186,22 @@ class PageExtractor:
                 return root
             out.notes.append(f"mainSelector {self.opts.main_selector!r} matched nothing; used the whole page")
         return soup.select_one("main, [role=main]") or soup.body or soup
+
+    def _chrome_text(self, soup: BeautifulSoup, root: Tag, url: str) -> str:
+        """Header and footer as Markdown, menus left out. Contact details often live only there."""
+        if self.opts.keep_chrome:
+            return ""
+        parts: list[str] = []
+        for element in soup.select("header, footer, [role=banner], [role=contentinfo]"):
+            inside_content = element.find_parent(["article", "main", "section"]) is not None
+            if inside_content or element is root or any(p is element for p in root.parents) or element.find_parent(["header", "footer"]):
+                continue
+            copied = copy.copy(element)
+            for menu in copied.select("nav, [role=navigation]"):
+                menu.decompose()
+            blocks = Renderer(url, lambda tag: None, self.assets.ignore, aria_hidden_is_hidden=True).render(copied)
+            parts.extend(block for block in blocks if block not in parts)
+        return "\n\n".join(parts)
 
     def _remove_chrome(self, soup: BeautifulSoup, root: Tag) -> None:
         if self.opts.keep_chrome:

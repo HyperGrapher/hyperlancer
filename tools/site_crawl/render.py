@@ -22,7 +22,7 @@ _WS = re.compile(r"\s+")
 
 SKIP_TAGS = {
     "script", "style", "noscript", "template", "svg", "button", "select", "option",
-    "input", "textarea", "form", "head", "title", "meta", "link", "canvas", "dialog",
+    "input", "textarea", "head", "title", "meta", "link", "canvas", "dialog",
 }
 INLINE_TAGS = {
     "a", "b", "strong", "i", "em", "span", "u", "small", "sup", "sub", "font", "label",
@@ -33,7 +33,10 @@ BLOCK_TAGS = {
     "h6", "section", "article", "blockquote", "figure", "figcaption", "header", "footer",
     "nav", "aside", "pre", "hr", "form", "dl", "dt", "dd", "main", "center", "details", "summary",
 }
-LAZY_SRC_ATTRS = ("src", "data-src", "data-lazy-src", "data-original", "data-lazy")
+# A <form> that holds one of these is the page itself, not a contact or search form.
+PAGE_PARTS = ["header", "footer", "main", "article", "h1", "h2"]
+# Lazy-loading scripts keep the real address in a data attribute and put a blank placeholder in src, so src goes last.
+LAZY_SRC_ATTRS = ("data-src", "data-lazy-src", "data-original", "data-lazy", "src")
 
 # image_cb(tag) -> (relative_path, alt_text) or None when the image is not exported
 ImageCb = Callable[[Tag], "tuple[str, str] | None"]
@@ -130,7 +133,7 @@ class Renderer:
                 continue
 
             name = child.name
-            if name in SKIP_TAGS or self._hidden(child):
+            if self._skipped(child):
                 continue
             if name == "br":
                 buf.append(BR)
@@ -250,7 +253,7 @@ class Renderer:
             if isinstance(child, NavigableString):
                 parts.append(collapse(str(child)))
             elif isinstance(child, Tag):
-                if child.name in SKIP_TAGS or child.name in ("img", "picture") or self._hidden(child):
+                if child.name in ("img", "picture") or self._skipped(child):
                     continue
                 if child.name == "br":
                     parts.append(BR)
@@ -328,6 +331,12 @@ class Renderer:
             return False
 
         return tag.find(is_block) is not None
+
+    def _skipped(self, tag: Tag) -> bool:
+        if tag.name == "form":
+            # A form with fields is noise, but ASP.NET WebForms wraps the whole page in one <form>.
+            return not tag.find(PAGE_PARTS) or self._hidden(tag)
+        return tag.name in SKIP_TAGS or self._hidden(tag)
 
     def _hidden(self, tag: Tag) -> bool:
         style = tag.get("style") or ""

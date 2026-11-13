@@ -19,7 +19,7 @@ from .assets import AssetStore
 from .extract import PageExtractor, ignore_matcher
 from .net import Fetcher, Robots
 from .options import Options
-from .output import PageRecord, RunFolder, new_manifest
+from .output import PageRecord, RunFolder, new_manifest, write_text_atomic
 from .urls import base_host, clean_url, host_allowed, key_of, page_slug, split_lang
 
 FLUSH_EVERY = 10
@@ -42,6 +42,7 @@ class Crawl:
         self.extractor = PageExtractor(opts, self.assets, self.base)
         self.folder = RunFolder(opts)
         self.manifest = new_manifest(opts, now())
+        self.site_text_written = False
         self.robots = Robots()
         self.queue: deque[tuple[str, int, str | None]] = deque()
         self.seen: set[str] = set()
@@ -131,6 +132,11 @@ class Crawl:
         page_id = f"p{len(self.folder.pages) + 1}"
         file, prefix, up = self.file_for(url)
         extracted = self.extractor.extract(html, url, page_id, up, fragment=fragment)
+        if extracted.chrome and not self.site_text_written:
+            self.site_text_written = True
+            write_text_atomic(self.folder.root / "site.md", f"# Header and footer text of {urlparse(url).netloc}\n\n"
+                              f"Taken from {url}. It is the same on every page, so it is saved once here and left out of the pages.\n\n"
+                              f"{extracted.chrome}\n")
         if self.default_lang is None and not fragment:
             self.default_lang = extracted.lang or "default"
         record = PageRecord(

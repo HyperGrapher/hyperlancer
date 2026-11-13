@@ -182,7 +182,8 @@ class RunFolder:
             "2. Open the Markdown file named in `pages[].file`. Each file starts with YAML front matter (`url`, `title`, `description`, `lang`, `source`).",
             "3. `assets.json` lists every image and file with its size, dimensions, alt texts and the pages that use it (`used_on`). Images are linked from the pages with relative paths such as `../images/logo.png`.",
             "4. `urls.json` records every URL that was seen: crawled, skipped (with the reason), failed or external.",
-            "5. Links between exported pages are relative `.md` links; links to pages that were not exported keep their original URL.", "",
+            "5. `site.md` (when present) holds the header and footer text, which is the same on every page, once.",
+            "6. Links between exported pages are relative `.md` links; links to pages that were not exported keep their original URL.", "",
         ]
         if empty:
             lines += ["## Pages with little or no text", "",
