@@ -60,7 +60,8 @@ class PageExtractor:
         self.assets = assets
         self.base = base
 
-    def extract(self, html: bytes | str, url: str, page_id: str, rel_prefix: str, *, fragment: bool = False) -> Extracted:
+    def extract(self, html: bytes | str, url: str, page_id: str, rel_prefix: str, *, fragment: bool = False,
+                with_chrome: bool = False) -> Extracted:
         from .urls import base_host, host_allowed
 
         soup = BeautifulSoup(html, "lxml")
@@ -85,14 +86,26 @@ class PageExtractor:
             if link[0] == "page":
                 (out.internal if host_allowed(link[1], self.base, self.opts.include_subdomains) else out.external).append(link[1])
 
+        # A page that only says "refresh to another address" (common for a language chooser at /) leads to the real one.
+        refresh = soup.find("meta", attrs={"http-equiv": re.compile(r"^refresh$", re.I)})
+        match = re.search(r"url\s*=\s*['\"]?([^'\";]+)", (refresh.get("content") or "") if refresh else "", re.I)
+        if match:
+            target = classify_link(match.group(1).strip(), url)
+            if target and target[1] not in seen:
+                seen.add(target[1])
+                out.discovered.append(target)
+                if target[0] == "page":
+                    (out.internal if host_allowed(target[1], self.base, self.opts.include_subdomains) else out.external).append(target[1])
+
         wix_page = wix.is_wix(soup)
         wix_scripts = wix.parse_scripts(soup) if wix_page else []  # the scripts are removed next
         for tag in soup(["script", "style", "noscript", "template"]):
             tag.decompose()
 
         root = self._root(soup, out, fragment)
+        chrome_parts: list[Tag] = []
         if not fragment:
-            out.chrome = self._chrome_text(soup, root, url)
+            chrome_parts = self._chrome_parts(soup, root) if with_chrome else []
             self._remove_chrome(soup, root)
         if wix_page:
             for gallery in wix.galleries(soup, root, wix_scripts):
@@ -126,7 +139,7 @@ class PageExtractor:
         image_ids: list[str] = []
         renderer: Renderer
 
-        def save_image(tag: Tag):
+        def save_image(tag: Tag, prefix: str = rel_prefix):
             src = renderer.img_url(tag)
             if not src:
                 return None
@@ -146,10 +159,16 @@ class PageExtractor:
                 return None
             if asset.id not in image_ids:
                 image_ids.append(asset.id)
-            return rel_prefix + asset.file, alt
+            return prefix + asset.file, alt
 
         renderer = Renderer(url, save_image, self.assets.ignore, aria_hidden_is_hidden=not wix_page)
         blocks = renderer.render(root)
+        # Header and footer images (logo, footer gallery) are saved too; site.md sits at the root, hence no "../".
+        chrome_renderer = Renderer(url, lambda tag: save_image(tag, ""), self.assets.ignore, aria_hidden_is_hidden=not wix_page)
+        chrome_blocks: list[str] = []
+        for part in chrome_parts:
+            chrome_blocks.extend(block for block in chrome_renderer.render(part) if block not in chrome_blocks)
+        out.chrome = "\n\n".join(chrome_blocks)
         if not blocks:
             out.notes.append("no text found (the page may be rendered by JavaScript)")
         title = out.title or url
@@ -187,11 +206,11 @@ class PageExtractor:
             out.notes.append(f"mainSelector {self.opts.main_selector!r} matched nothing; used the whole page")
         return soup.select_one("main, [role=main]") or soup.body or soup
 
-    def _chrome_text(self, soup: BeautifulSoup, root: Tag, url: str) -> str:
-        """Header and footer as Markdown, menus left out. Contact details often live only there."""
+    def _chrome_parts(self, soup: BeautifulSoup, root: Tag) -> list[Tag]:
+        """Copies of the header and footer, menus left out. Contact details often live only there."""
         if self.opts.keep_chrome:
-            return ""
-        parts: list[str] = []
+            return []
+        parts: list[Tag] = []
         for element in soup.select("header, footer, [role=banner], [role=contentinfo]"):
             inside_content = element.find_parent(["article", "main", "section"]) is not None
             if inside_content or element is root or any(p is element for p in root.parents) or element.find_parent(["header", "footer"]):
@@ -199,9 +218,8 @@ class PageExtractor:
             copied = copy.copy(element)
             for menu in copied.select("nav, [role=navigation]"):
                 menu.decompose()
-            blocks = Renderer(url, lambda tag: None, self.assets.ignore, aria_hidden_is_hidden=True).render(copied)
-            parts.extend(block for block in blocks if block not in parts)
-        return "\n\n".join(parts)
+            parts.append(copied)
+        return parts
 
     def _remove_chrome(self, soup: BeautifulSoup, root: Tag) -> None:
         if self.opts.keep_chrome:

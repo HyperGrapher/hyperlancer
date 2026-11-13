@@ -31,10 +31,10 @@ PAGE = """<html><head><title>Home</title></head><body>
 </body></html>"""
 
 
-def extract(html: str):
+def extract(html: str, with_chrome: bool = False):
     assets = FakeAssets()
     out = PageExtractor(Options.from_params({"startUrls": ["https://example.test/"]}, __import__("pathlib").Path("/tmp/unused")), assets,
-                        "example.test").extract(html, "https://example.test/", "p1", "../")
+                        "example.test").extract(html, "https://example.test/", "p1", "../", with_chrome=with_chrome)
     return out, assets
 
 
@@ -53,7 +53,12 @@ def test_lazy_data_src_wins_over_a_blank_placeholder():
 
 
 def test_header_and_footer_text_is_returned_once_without_menus():
-    out, _ = extract(PAGE)
+    out, _ = extract(PAGE, with_chrome=True)
     assert "Call 0342 909 85 89" in out.chrome
     assert "Footer menu" not in out.chrome and "Menu A" not in out.chrome
     assert "Call 0342" not in out.body
+
+
+def test_meta_refresh_target_is_followed():
+    out, _ = extract('<html><meta http-equiv="refresh" content="0; url=tr/" /></html>')
+    assert ("page", "https://example.test/tr/") in out.discovered

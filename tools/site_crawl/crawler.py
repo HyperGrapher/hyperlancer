@@ -131,8 +131,8 @@ class Crawl:
                  title: str = "", description: str = "", wp_meta: dict | None = None) -> None:
         page_id = f"p{len(self.folder.pages) + 1}"
         file, prefix, up = self.file_for(url)
-        extracted = self.extractor.extract(html, url, page_id, up, fragment=fragment)
-        if extracted.chrome and not self.site_text_written:
+        extracted = self.extractor.extract(html, url, page_id, up, fragment=fragment, with_chrome=not self.site_text_written)
+        if extracted.chrome and not self.site_text_written and not fragment:
             self.site_text_written = True
             write_text_atomic(self.folder.root / "site.md", f"# Header and footer text of {urlparse(url).netloc}\n\n"
                               f"Taken from {url}. It is the same on every page, so it is saved once here and left out of the pages.\n\n"
