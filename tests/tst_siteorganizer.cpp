@@ -125,6 +125,11 @@ void SiteOrganizerTest::notesAndTodos()
                               .toMap()
                               .value(QStringLiteral("id"))
                               .toLongLong();
+    QVERIFY(SiteOrganizer::updateNote(db, noteId, QStringLiteral("Called again"), QStringLiteral("Owner is back")));
+    QVERIFY(!SiteOrganizer::updateNote(db, noteId, QStringLiteral("x"), QStringLiteral("  "))); // an empty body is refused
+    const QVariantMap edited = SiteOrganizer::load(db, site).value(QStringLiteral("notes")).toList().front().toMap();
+    QCOMPARE(edited.value(QStringLiteral("title")).toString(), QStringLiteral("Called again"));
+    QCOMPARE(edited.value(QStringLiteral("body")).toString(), QStringLiteral("Owner is back"));
     QVERIFY(SiteOrganizer::deleteNote(db, noteId));
     QVERIFY(SiteOrganizer::load(db, site).value(QStringLiteral("notes")).toList().isEmpty());
 }

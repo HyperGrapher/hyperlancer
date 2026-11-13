@@ -298,9 +298,11 @@ Flickable {
 
                     required property var modelData
                     readonly property bool expanded: workspace.expandedNote === modelData.id
+                    // Notes are edited here and only here (the Notes page is read-only).
+                    property bool editing: false
 
                     width: parent.width
-                    height: noteHeader.height + (expanded ? noteBody.implicitHeight + Theme.spacingM * 2 : 0)
+                    height: noteHeader.height + (expanded ? (editing ? noteEditor.height : noteBody.implicitHeight) + Theme.spacingM * 2 : 0)
                     radius: Theme.radiusSmall
                     color: Theme.glassFill
                     clip: true
@@ -326,7 +328,7 @@ Flickable {
                         Text {
                             anchors.left: chevron.right
                             anchors.leftMargin: Theme.spacingS
-                            anchors.right: noteDate.left
+                            anchors.right: editNote.visible ? editNote.left : noteDate.left
                             anchors.rightMargin: Theme.spacingM
                             anchors.verticalCenter: parent.verticalCenter
                             text: noteCard.modelData.title.length > 0 ? noteCard.modelData.title : qsTr("Untitled note")
@@ -336,6 +338,23 @@ Flickable {
                             font.weight: Font.DemiBold
                             elide: Text.ElideRight
                             textFormat: Text.PlainText
+                        }
+
+                        SecondaryButton {
+                            id: editNote
+
+                            visible: noteCard.expanded && !noteCard.editing
+                            anchors.right: noteDate.left
+                            anchors.rightMargin: Theme.spacingM
+                            anchors.verticalCenter: parent.verticalCenter
+                            implicitHeight: 28
+                            text: qsTr("Edit")
+                            onClicked: {
+                                editTitle.text = noteCard.modelData.title;
+                                editBody.text = noteCard.modelData.body;
+                                noteCard.editing = true;
+                                editBody.forceActiveFocus();
+                            }
                         }
 
                         Text {
@@ -372,6 +391,8 @@ Flickable {
                             onTapped: eventPoint => {
                                 if (removeNote.contains(removeNote.mapFromItem(noteHeader, eventPoint.position)))
                                     return;
+                                if (editNote.visible && editNote.contains(editNote.mapFromItem(noteHeader, eventPoint.position)))
+                                    return;
                                 workspace.expandedNote = noteCard.expanded ? -1 : noteCard.modelData.id;
                                 if (!noteCard.expanded)
                                     return;
@@ -396,10 +417,70 @@ Flickable {
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontBody + 1
                         wrapMode: Text.Wrap
-                        opacity: noteCard.expanded ? 1 : 0
+                        opacity: noteCard.expanded && !noteCard.editing ? 1 : 0
                         onLinkActivated: link => workspace.app.openExternal(link)
 
                         Behavior on opacity { NumberAnimation { duration: Motion.normal } }
+                    }
+
+                    Column {
+                        id: noteEditor
+
+                        x: Theme.spacingM
+                        anchors.top: noteHeader.bottom
+                        width: parent.width - Theme.spacingM * 2
+                        spacing: Theme.spacingS
+                        visible: noteCard.editing
+
+                        StyledTextField {
+                            id: editTitle
+
+                            width: parent.width
+                            implicitHeight: 34
+                            placeholderText: qsTr("Title")
+                        }
+
+                        Rectangle {
+                            width: parent.width
+                            height: 140
+                            radius: Theme.radiusControl
+                            color: Theme.glassTint
+                            border.width: 1
+                            border.color: editBody.activeFocus ? Theme.withAlpha(Theme.accent, 0.9) : Theme.glassStroke
+
+                            TextArea {
+                                id: editBody
+
+                                anchors.fill: parent
+                                color: Theme.textPrimary
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.fontBody + 1
+                                wrapMode: TextEdit.Wrap
+                                selectByMouse: true
+                                background: null
+                            }
+                        }
+
+                        Row {
+                            spacing: Theme.spacingS
+
+                            PrimaryButton {
+                                implicitHeight: 34
+                                implicitWidth: 110
+                                text: qsTr("Save")
+                                enabled: editBody.text.trim().length > 0
+                                onClicked: {
+                                    workspace.detail.updateNote(noteCard.modelData.id, editTitle.text, editBody.text);
+                                    noteCard.editing = false;
+                                }
+                            }
+
+                            SecondaryButton {
+                                implicitHeight: 34
+                                text: qsTr("Cancel")
+                                onClicked: noteCard.editing = false
+                            }
+                        }
                     }
                 }
             }

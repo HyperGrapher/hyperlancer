@@ -112,7 +112,7 @@ set(HYPERLANCER_APP_SOURCES
     src/Integrations.h src/Integrations.cpp
     src/GmailService.h src/GmailService.cpp
     src/GmailInbox.h src/GmailInbox.cpp
-    src/TodoList.h src/TodoList.cpp
+    src/TodoList.h src/TodoList.cpp src/NoteList.h src/NoteList.cpp
     src/HealthModel.h src/HealthModel.cpp
 )
 
@@ -155,6 +155,7 @@ set(HYPERLANCER_QML_FILES
     src/qml/pages/SiteContent.qml
     src/qml/pages/SnapshotChanges.qml
     src/qml/pages/TodosPage.qml
+    src/qml/pages/NotesPage.qml
     src/qml/pages/DiscoverPage.qml
     src/qml/pages/JobsPage.qml
     src/qml/pages/SettingsPage.qml

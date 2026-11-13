@@ -6,8 +6,8 @@
 
 class Database;
 
-// Every to-do of every website, for the To-dos page: open ones soonest first (undated last),
-// or the completed ones, newest first.
+// Every to-do of every website, for the To-dos page. Open ones soonest first (undated last),
+// completed ones newest first, or all of them grouped by website.
 class TodoList : public QObject
 {
     Q_OBJECT
@@ -16,15 +16,19 @@ class TodoList : public QObject
 
     // { id, title, dueOn, done, siteId, siteKey }
     Q_PROPERTY(QVariantList items READ items NOTIFY itemsChanged)
-    Q_PROPERTY(bool showDone READ showDone WRITE setShowDone NOTIFY showDoneChanged)
+    // 0 = open, 1 = completed, 2 = all (ordered by website).
+    Q_PROPERTY(int filter READ filter WRITE setFilter NOTIFY filterChanged)
     Q_PROPERTY(int openCount READ openCount NOTIFY itemsChanged)
 
 public:
     explicit TodoList(Database &database, QObject *parent = nullptr);
 
     [[nodiscard]] QVariantList items() const { return m_items; }
-    [[nodiscard]] bool showDone() const { return m_showDone; }
-    void setShowDone(bool showDone);
+    enum Filter { Open, Completed, All };
+    Q_ENUM(Filter)
+
+    [[nodiscard]] int filter() const { return m_filter; }
+    void setFilter(int filter);
     [[nodiscard]] int openCount() const { return m_openCount; }
 
     Q_INVOKABLE void refresh();
@@ -33,12 +37,12 @@ public:
 
 signals:
     void itemsChanged();
-    void showDoneChanged();
+    void filterChanged();
 
 private:
     Database &m_database;
     QVariantList m_items;
-    bool m_showDone = false;
+    int m_filter = Open;
     int m_openCount = 0;
     int m_generation = 0;
 };

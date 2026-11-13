@@ -371,6 +371,13 @@ void SiteDetail::addNote(const QString &title, const QString &body)
     });
 }
 
+void SiteDetail::updateNote(qint64 noteId, const QString &title, const QString &body)
+{
+    saveOrganizer([noteId, title, body](QSqlDatabase &db) {
+        return SiteOrganizer::updateNote(db, noteId, title, body);
+    });
+}
+
 void SiteDetail::deleteNote(qint64 noteId)
 {
     saveOrganizer([noteId](QSqlDatabase &db) { return SiteOrganizer::deleteNote(db, noteId); });

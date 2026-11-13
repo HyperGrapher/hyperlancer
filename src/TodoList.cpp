@@ -14,17 +14,28 @@ struct Loaded
     int openCount = 0;
 };
 
-Loaded load(QSqlDatabase &db, bool showDone)
+Loaded load(QSqlDatabase &db, int filter)
 {
     Loaded loaded;
-    const QString where = showDone ? QStringLiteral("td.done_at IS NOT NULL") : QStringLiteral("td.done_at IS NULL");
-    // Open to-dos: dated ones first, soonest first. Completed: newest first.
-    const QString order = showDone ? QStringLiteral("td.done_at DESC, td.id DESC")
-                                   : QStringLiteral("(CASE WHEN td.due_on IS NULL THEN 1 ELSE 0 END), td.due_on, td.id");
+    QString where;
+    QString order;
+    if (filter == TodoList::Completed) {
+        where = QStringLiteral("td.done_at IS NOT NULL");
+        order = QStringLiteral("td.done_at DESC, td.id DESC");
+    } else if (filter == TodoList::All) {
+        // By website; inside one, open before completed, dated before undated.
+        where = QStringLiteral("1 = 1");
+        order = QStringLiteral("s.site_key, (CASE WHEN td.done_at IS NULL THEN 0 ELSE 1 END), "
+                               "(CASE WHEN td.due_on IS NULL THEN 1 ELSE 0 END), td.due_on, td.id");
+    } else {
+        // Open to-dos: dated ones first, soonest first.
+        where = QStringLiteral("td.done_at IS NULL");
+        order = QStringLiteral("(CASE WHEN td.due_on IS NULL THEN 1 ELSE 0 END), td.due_on, td.id");
+    }
     QSqlQuery query = SqlExec::run(
         db,
         QStringLiteral("SELECT td.id, td.title, td.due_on, td.done_at, s.id, s.site_key FROM todos td "
-                       "JOIN sites s ON s.id = td.site_id WHERE s.archived_at IS NULL AND %1 ORDER BY %2 LIMIT 500")
+                       "JOIN sites s ON s.id = td.site_id WHERE s.archived_at IS NULL AND %1 ORDER BY %2 LIMIT 2000")
             .arg(where, order));
     while (query.next()) {
         loaded.items.append(QVariantMap{{QStringLiteral("id"), query.value(0)},
@@ -50,22 +61,22 @@ TodoList::TodoList(Database &database, QObject *parent)
     , m_database(database)
 {}
 
-void TodoList::setShowDone(bool showDone)
+void TodoList::setFilter(int filter)
 {
-    if (m_showDone == showDone) {
+    if (m_filter == filter) {
         return;
     }
-    m_showDone = showDone;
-    emit showDoneChanged();
+    m_filter = filter;
+    emit filterChanged();
     refresh();
 }
 
 void TodoList::refresh()
 {
     const int generation = ++m_generation;
-    const bool showDone = m_showDone;
+    const int filter = m_filter;
     m_database.run(
-        this, [showDone](QSqlDatabase &db) { return load(db, showDone); },
+        this, [filter](QSqlDatabase &db) { return load(db, filter); },
         [this, generation](const Loaded &loaded) {
             if (generation != m_generation) {
                 return;

@@ -51,7 +51,7 @@ public:
     };
     Q_ENUM(AmbientSpeed)
 
-    static constexpr int kSectionCount = 5;
+    static constexpr int kSectionCount = 8;
     static constexpr double kMinimumIntensity = 0.2;
 
     explicit AppSettings(const QString &storagePath, QObject *parent = nullptr);

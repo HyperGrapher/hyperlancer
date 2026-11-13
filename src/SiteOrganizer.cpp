@@ -150,6 +150,16 @@ bool addNote(QSqlDatabase &db, qint64 siteId, const QString &title, const QStrin
                      {siteId, title.trimmed().left(200) + QStringLiteral(""), trimmed, now, now}); // never NULL
 }
 
+bool updateNote(QSqlDatabase &db, qint64 noteId, const QString &title, const QString &body)
+{
+    const QString trimmed = body.trimmed();
+    if (trimmed.isEmpty()) {
+        return false;
+    }
+    return succeeded(db, QStringLiteral("UPDATE notes SET title = ?, body = ?, updated_at = ? WHERE id = ?"),
+                     {title.trimmed().left(200) + QStringLiteral(""), trimmed, DbTime::now(), noteId});
+}
+
 bool deleteNote(QSqlDatabase &db, qint64 noteId)
 {
     return succeeded(db, QStringLiteral("DELETE FROM notes WHERE id = ?"), {noteId});

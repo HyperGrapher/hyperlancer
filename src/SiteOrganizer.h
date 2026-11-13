@@ -24,6 +24,7 @@ bool addTag(QSqlDatabase &db, qint64 siteId, const QString &name);
 bool removeTag(QSqlDatabase &db, qint64 siteId, qint64 tagId);
 
 bool addNote(QSqlDatabase &db, qint64 siteId, const QString &title, const QString &body);
+bool updateNote(QSqlDatabase &db, qint64 noteId, const QString &title, const QString &body);
 bool deleteNote(QSqlDatabase &db, qint64 noteId);
 
 bool addTodo(QSqlDatabase &db, qint64 siteId, const QString &title, const QString &dueOn);

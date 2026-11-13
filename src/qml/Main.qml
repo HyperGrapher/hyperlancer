@@ -26,8 +26,9 @@ Window {
     readonly property int sectionDiscover: 2
     readonly property int sectionEmails: 3
     readonly property int sectionTodos: 4
-    readonly property int sectionJobs: 5
-    readonly property int sectionSettings: 6
+    readonly property int sectionNotes: 5
+    readonly property int sectionJobs: 6
+    readonly property int sectionSettings: 7
     // Set once the user chose Quit: the window may then close for real.
     property bool quitting: false
 
@@ -37,6 +38,7 @@ Window {
         { title: qsTr("Discover"), glyph: Icons.binoculars },
         { title: qsTr("Emails"), glyph: Icons.envelope },
         { title: qsTr("To-dos"), glyph: Icons.checkSquare },
+        { title: qsTr("Notes"), glyph: Icons.article },
         { title: qsTr("Jobs"), glyph: Icons.queue },
         { title: qsTr("Settings"), glyph: Icons.gearSix }
     ]
@@ -269,6 +271,12 @@ Window {
                 },
                 Component {
                     TodosPage {
+                        app: root.app
+                        onSiteOpened: siteId => root.openSite(siteId)
+                    }
+                },
+                Component {
+                    NotesPage {
                         app: root.app
                         onSiteOpened: siteId => root.openSite(siteId)
                     }

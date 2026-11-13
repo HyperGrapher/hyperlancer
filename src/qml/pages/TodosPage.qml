@@ -3,7 +3,8 @@ import QtQuick.Controls
 import Hyperlancer
 
 // Every to-do of every website in one list. Open ones come soonest first, grouped by when
-// they are due; tick one off from here, or click its website to see it in context.
+// they are due; Completed shows the finished ones; All shows every to-do under its website.
+// Tick one off from here, or click its website to see it in context.
 PageBase {
     id: page
 
@@ -17,8 +18,28 @@ PageBase {
     // Rows for the list: a group heading, then its to-dos.
     readonly property var rows: {
         const items = todos.items;
-        if (todos.showDone)
+        if (todos.filter === TodoList.Completed)
             return items.map(item => ({ kind: "todo", item: item }));
+        if (todos.filter === TodoList.All) {
+            // The list arrives ordered by website: a heading whenever the website changes.
+            const byWebsite = [];
+            let current = "";
+            for (const item of items) {
+                if (item.siteKey !== current) {
+                    current = item.siteKey;
+                    byWebsite.push({ kind: "heading", name: current, count: 0, isSite: true, siteId: item.siteId });
+                }
+                byWebsite.push({ kind: "todo", item: item });
+            }
+            let heading = null;
+            for (const row of byWebsite) {
+                if (row.kind === "heading")
+                    heading = row;
+                else if (heading)
+                    heading.count += 1;
+            }
+            return byWebsite;
+        }
         const groups = [
             { name: qsTr("Overdue"), test: days => days !== null && days < 0 },
             { name: qsTr("Today"), test: days => days === 0 },
@@ -45,16 +66,17 @@ PageBase {
 
         width: parent.width
         title: qsTr("To-dos")
-        subtitle: page.todos.openCount === 0 ? qsTr("Nothing open. Add to-dos on a website's Workspace tab.")
+        subtitle: page.todos.filter === TodoList.All ? qsTr("Every to-do of every website, with or without a due date.")
+                  : page.todos.openCount === 0 ? qsTr("Nothing open. Add to-dos on a website's Workspace tab.")
                   : qsTr("%n open to-do(s) across all websites.", "", page.todos.openCount)
         opacity: page.reveal(0)
         transform: Translate { y: page.revealShift(0) }
 
         SegmentedControl {
             implicitHeight: Theme.inputHeight
-            options: [qsTr("Open"), qsTr("Completed")]
-            currentIndex: page.todos.showDone ? 1 : 0
-            onActivated: index => page.todos.showDone = index === 1
+            options: [qsTr("Open"), qsTr("Completed"), qsTr("All")]
+            currentIndex: page.todos.filter
+            onActivated: index => page.todos.filter = index
         }
     }
 
@@ -89,7 +111,7 @@ PageBase {
                 readonly property var days: !isHeading && item.dueOn.length > 0 ? Format.daysUntil(item.dueOn) : null
 
                 width: list.width
-                height: isHeading ? 40 : 46
+                height: isHeading ? (modelData.isSite ? 48 : 40) : 46
 
                 // ---- group heading ----
                 Text {
@@ -97,12 +119,25 @@ PageBase {
                     x: Theme.spacingL - 4
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: 6
-                    text: row.isHeading ? row.modelData.name.toUpperCase() + "  ·  " + row.modelData.count : ""
-                    color: row.modelData.name === qsTr("Overdue") ? Theme.danger : Theme.textMuted
+                    // A website's heading is its domain, as written; the date groups are small capitals.
+                    text: !row.isHeading ? "" : row.modelData.isSite ? row.modelData.name + "  ·  " + row.modelData.count
+                          : row.modelData.name.toUpperCase() + "  ·  " + row.modelData.count
+                    color: row.isHeading && row.modelData.isSite ? (siteHeadingHover.containsMouse ? Theme.accent : Theme.textPrimary)
+                           : row.modelData.name === qsTr("Overdue") ? Theme.danger : Theme.textMuted
                     font.family: Theme.fontFamily
-                    font.pixelSize: 10
+                    font.pixelSize: row.isHeading && row.modelData.isSite ? Theme.fontHeading : 10
                     font.weight: Font.DemiBold
-                    font.letterSpacing: 1.1
+                    font.letterSpacing: row.isHeading && row.modelData.isSite ? 0 : 1.1
+
+                    MouseArea {
+                        id: siteHeadingHover
+
+                        anchors.fill: parent
+                        enabled: row.isHeading && row.modelData.isSite
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: page.siteOpened(row.modelData.siteId)
+                    }
                 }
 
                 // ---- to-do ----
@@ -162,11 +197,12 @@ PageBase {
                 Text {
                     id: siteText
 
-                    visible: !row.isHeading
+                    // Under a website heading the domain would only repeat.
+                    visible: !row.isHeading && page.todos.filter !== TodoList.All
                     anchors.right: dueText.left
                     anchors.rightMargin: Theme.spacingL
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 160
+                    width: page.todos.filter === TodoList.All ? 0 : 160
                     horizontalAlignment: Text.AlignRight
                     text: row.isHeading ? "" : row.item.siteKey
                     color: siteHover.containsMouse ? Theme.accent : Theme.textSecondary
@@ -229,8 +265,10 @@ PageBase {
             width: parent.width
             visible: page.rows.length === 0
             glyph: Icons.checkSquare
-            title: page.todos.showDone ? qsTr("Nothing completed yet") : qsTr("All clear")
-            text: page.todos.showDone ? qsTr("Completed to-dos appear here.") : qsTr("Open a website's Workspace tab to add a to-do with a due date.")
+            title: page.todos.filter === TodoList.Completed ? qsTr("Nothing completed yet")
+                   : page.todos.filter === TodoList.All ? qsTr("No to-dos yet") : qsTr("All clear")
+            text: page.todos.filter === TodoList.Completed ? qsTr("Completed to-dos appear here.")
+                  : qsTr("Open a website's Workspace tab to add a to-do with a due date.")
         }
     }
 }

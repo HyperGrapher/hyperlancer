@@ -113,6 +113,7 @@ public:
     Q_INVOKABLE void removeTag(qint64 tagId);
     Q_INVOKABLE void setDeadline(const QString &dueOn);
     Q_INVOKABLE void addNote(const QString &title, const QString &body);
+    Q_INVOKABLE void updateNote(qint64 noteId, const QString &title, const QString &body);
     Q_INVOKABLE void deleteNote(qint64 noteId);
     Q_INVOKABLE void addTodo(const QString &title, const QString &dueOn);
     Q_INVOKABLE void setTodoDone(qint64 todoId, bool done);
