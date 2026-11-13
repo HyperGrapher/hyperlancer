@@ -40,7 +40,7 @@ set(HYPERLANCER_CORE_SOURCES
     src/LangSearchClient.h src/LangSearchClient.cpp
     src/GmailQuery.h src/GmailQuery.cpp
     src/ChromeProfile.h src/ChromeProfile.cpp
-    src/CrawlStore.h src/CrawlStore.cpp
+    src/CrawlStore.h src/CrawlStore.cpp src/RenderStore.h src/RenderStore.cpp
     src/SnapshotDiff.h src/SnapshotDiff.cpp
     src/MailStore.h src/MailStore.cpp
     src/SiteOrganizer.h src/SiteOrganizer.cpp
@@ -72,12 +72,14 @@ qt_add_resources(HyperlancerCore "hyperlancer_data"
         resources/migrations/sqlite/0004_screenshots.sql
         resources/migrations/sqlite/0005_saved_views.sql
         resources/migrations/sqlite/0006_crawls.sql
+        resources/migrations/sqlite/0007_renders.sql
         resources/migrations/mysql/0001_init.sql
         resources/migrations/mysql/0002_organize.sql
         resources/migrations/mysql/0003_deadline_notes.sql
         resources/migrations/mysql/0004_screenshots.sql
         resources/migrations/mysql/0005_saved_views.sql
         resources/migrations/mysql/0006_crawls.sql
+        resources/migrations/mysql/0007_renders.sql
 )
 
 # Every file in resources/sounds is bundled and offered in Settings → Appearance → Sounds.

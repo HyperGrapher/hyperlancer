@@ -26,7 +26,7 @@ def load_rules() -> list[dict[str, Any]]:
     return rules
 
 
-def detect(html: str) -> dict[str, Any]:
+def detect(html: str, source: str = "static") -> dict[str, Any]:
     items: list[dict[str, Any]] = []
     for rule in load_rules():
         hits = [m for p in rule["_patterns"] for m in [p.search(html)] if m]
@@ -40,7 +40,7 @@ def detect(html: str) -> dict[str, Any]:
                     ids.append(value)
         items.append({
             "vendor": rule["vendor"], "product": rule["product"], "kind": rule["kind"], "status": rule["status"],
-            "ids": ids[:MAX_IDS], "evidence": hits[0].group(0)[:120], "source": "static", "note": rule.get("note"),
+            "ids": ids[:MAX_IDS], "evidence": hits[0].group(0)[:120], "source": source, "note": rule.get("note"),
         })
     ads = [i for i in items if i["kind"] == "ads"]
     platforms = sorted({i["vendor"] for i in ads})
@@ -55,6 +55,11 @@ def detect(html: str) -> dict[str, Any]:
         "staleAnalytics": has_ua and not has_ga4,
         "hasTagManager": "Google Tag Manager" in products,
     }
+
+
+def detect_requests(urls: list[str]) -> dict[str, Any]:
+    """The rendered pass: the same rules, applied to the addresses the page really requested."""
+    return detect("\n".join(urls), source="rendered")
 
 
 def empty() -> dict[str, Any]:

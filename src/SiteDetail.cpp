@@ -7,6 +7,7 @@
 #include <QUrl>
 
 #include "CrawlStore.h"
+#include "RenderStore.h"
 #include "Database.h"
 #include "GmailService.h"
 #include "Integrations.h"
@@ -54,6 +55,18 @@ SiteDetail::SiteDetail(Database &database, JobRunner &runner, PageSpeedClient &p
             reload();
         }
     });
+    connect(&m_runner, &JobRunner::renderFinished, this,
+            [this](qint64, qint64 siteId, const QString &status) {
+                if (siteId != m_siteId) {
+                    return;
+                }
+                m_renderRunning = false;
+                emit renderRunningChanged();
+                if (status == QStringLiteral("failed")) {
+                    emit notice(tr("The browser render failed. The Jobs page has the details."), true);
+                }
+                reload();
+            });
     connect(&m_gmail, &GmailService::siteMessagesLoaded, this,
             [this](qint64 siteId, const QVariantList &messages, const QString &error) {
                 if (siteId != m_siteId) {
@@ -79,6 +92,9 @@ void SiteDetail::setSiteId(qint64 siteId)
     m_activity.clear();
     m_speed.clear();
     m_crawl.clear();
+    m_render.clear();
+    m_renderRunning = false;
+    emit renderRunningChanged();
     m_crawlPages.clear();
     m_crawlJobId = 0;
     setCrawlProgress(false, 0.0, QString());
@@ -113,6 +129,7 @@ void SiteDetail::reload()
                 detail.insert(QStringLiteral("crawlPages"),
                               CrawlStore::pages(dataDir, crawl.value(QStringLiteral("path")).toString()));
             }
+            detail.insert(QStringLiteral("render"), RenderStore::latest(db, siteId));
             detail.insert(QStringLiteral("organizer"), SiteOrganizer::load(db, siteId));
             return detail;
         },
@@ -128,6 +145,7 @@ void SiteDetail::reload()
             m_activity = detail.value(QStringLiteral("activity")).toList();
             m_speed = detail.value(QStringLiteral("speed")).toMap();
             m_crawl = detail.value(QStringLiteral("crawl")).toMap();
+            m_render = detail.value(QStringLiteral("render")).toMap();
             m_crawlPages = detail.value(QStringLiteral("crawlPages")).toList();
             m_speedDesktop = detail.value(QStringLiteral("speedDesktop")).toMap();
             m_screenshots.clear();
@@ -196,7 +214,8 @@ void SiteDetail::checkSpeed()
                                                   result.error);
                         SiteStore::addApiUsage(db, QStringLiteral("pagespeed"), 1);
                         if (!result.screenshot.isEmpty()) {
-                            SiteStore::saveScreenshot(db, dataDir, siteId, strategy, result.screenshot);
+                            SiteStore::saveScreenshot(db, dataDir, siteId, strategy, QStringLiteral("pagespeed"),
+                                                         result.screenshot);
                         }
                         return true;
                     },
@@ -240,6 +259,26 @@ void SiteDetail::startCrawl(int maxPages)
             emit notice(error, true);
         } else {
             m_crawlJobId = jobId;
+        }
+    });
+}
+
+void SiteDetail::startRender()
+{
+    if (m_siteId <= 0 || m_renderRunning) {
+        return;
+    }
+    QString url = m_site.value(QStringLiteral("final_url")).toString();
+    if (url.isEmpty()) {
+        url = m_site.value(QStringLiteral("url")).toString();
+    }
+    m_renderRunning = true;
+    emit renderRunningChanged();
+    m_runner.enqueueRender(m_siteId, url, [this](qint64, const QString &error) {
+        if (!error.isEmpty()) {
+            m_renderRunning = false;
+            emit renderRunningChanged();
+            emit notice(error, true);
         }
     });
 }

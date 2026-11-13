@@ -6,6 +6,7 @@
 
 #include "CrawlStore.h"
 #include "PublicSuffixList.h"
+#include "RenderStore.h"
 #include "SiteOrganizer.h"
 #include "SiteStore.h"
 #include "TestDatabase.h"
@@ -30,6 +31,7 @@ private slots:
     void dashboardListsDueTodosAndDeadlines();
     void diffComparesWithTheEarlierSuccessfulAnalysis();
     void crawlStoreKeepsOnlyTheLatestCrawl();
+    void renderStoreSavesScreenshotsAndTrackers();
     void deletingSiteRemovesItsRecords();
 
 private:
@@ -255,11 +257,11 @@ void SiteOrganizerTest::screenshotsKeepTheNewestPerKind()
 {
     QSqlDatabase db = m_database->db();
     const qint64 site = addSite(QStringLiteral("firma.com.tr"));
-    QVERIFY(SiteStore::saveScreenshot(db, m_database->dir(), site, QStringLiteral("mobile"), "one"));
-    QVERIFY(SiteStore::saveScreenshot(db, m_database->dir(), site, QStringLiteral("desktop"), "two"));
+    QVERIFY(SiteStore::saveScreenshot(db, m_database->dir(), site, QStringLiteral("mobile"), QStringLiteral("pagespeed"), "one"));
+    QVERIFY(SiteStore::saveScreenshot(db, m_database->dir(), site, QStringLiteral("desktop"), QStringLiteral("pagespeed"), "two"));
     QTest::qWait(3); // file names carry a millisecond stamp
-    QVERIFY(SiteStore::saveScreenshot(db, m_database->dir(), site, QStringLiteral("mobile"), "three"));
-    QVERIFY(!SiteStore::saveScreenshot(db, m_database->dir(), site, QStringLiteral("mobile"), QByteArray()));
+    QVERIFY(SiteStore::saveScreenshot(db, m_database->dir(), site, QStringLiteral("mobile"), QStringLiteral("pagespeed"), "three"));
+    QVERIFY(!SiteStore::saveScreenshot(db, m_database->dir(), site, QStringLiteral("mobile"), QStringLiteral("pagespeed"), QByteArray()));
 
     const QVariantMap shots = SiteStore::loadDetail(db, site).value(QStringLiteral("screenshots")).toMap();
     QCOMPARE(shots.size(), 2);
@@ -367,6 +369,43 @@ void SiteOrganizerTest::crawlStoreKeepsOnlyTheLatestCrawl()
     QVERIFY(!CrawlStore::ingest(db, dataDir, site, 3, QDir(dataDir).filePath(QStringLiteral("missing.json"))).error.isEmpty());
     CrawlStore::removeFiles(db, dataDir, site);
     QVERIFY(!QDir(QDir(dataDir).filePath(QStringLiteral("jobs/2/crawl"))).exists());
+}
+
+void SiteOrganizerTest::renderStoreSavesScreenshotsAndTrackers()
+{
+    QSqlDatabase db = m_database->db();
+    const qint64 site = addSite(QStringLiteral("firma.com.tr"));
+    const QString dataDir = m_database->dir();
+    QVERIFY(RenderStore::latest(db, site).isEmpty());
+
+    const QString folder = dataDir + QStringLiteral("/jobs/5/render");
+    QVERIFY(QDir().mkpath(folder));
+    for (const QString &name : {QStringLiteral("desktop"), QStringLiteral("mobile"), QStringLiteral("fullpage")}) {
+        QFile shot(folder + QLatin1Char('/') + name + QStringLiteral(".jpg"));
+        QVERIFY(shot.open(QIODevice::WriteOnly));
+        shot.write(name.toUtf8());
+    }
+    QFile report(folder + QStringLiteral("/render.json"));
+    QVERIFY(report.open(QIODevice::WriteOnly));
+    report.write(R"({"title":"Home","loadMs":900,"requestCount":42,
+        "trackers":{"items":[{"product":"Meta Pixel","kind":"ads","ids":["123"]}]},
+        "files":{"desktop":"desktop.jpg","mobile":"mobile.jpg","fullpage":"fullpage.jpg"}})");
+    report.close();
+
+    const QString reportPath = report.fileName();
+    QVERIFY(RenderStore::ingest(db, dataDir, site, 5, reportPath).error.isEmpty());
+    const QVariantMap render = RenderStore::latest(db, site);
+    QCOMPARE(render.value(QStringLiteral("requestCount")).toInt(), 42);
+    const QVariantList items = render.value(QStringLiteral("trackers")).toMap().value(QStringLiteral("items")).toList();
+    QCOMPARE(items.size(), 1);
+    QCOMPARE(items.front().toMap().value(QStringLiteral("product")).toString(), QStringLiteral("Meta Pixel"));
+
+    QSqlQuery shots(db);
+    QVERIFY(shots.exec(QStringLiteral("SELECT COUNT(*) FROM screenshots WHERE source = 'render'")));
+    QVERIFY(shots.next());
+    QCOMPARE(shots.value(0).toInt(), 3);
+    QVERIFY(!QDir(folder).exists()); // the raw files are gone once stored
+    QVERIFY(!RenderStore::ingest(db, dataDir, site, 6, reportPath).error.isEmpty());
 }
 
 void SiteOrganizerTest::deletingSiteRemovesItsRecords()

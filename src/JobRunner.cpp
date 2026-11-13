@@ -12,6 +12,7 @@
 #include "Database.h"
 #include "JobStore.h"
 #include "CrawlStore.h"
+#include "RenderStore.h"
 #include "ProfileIngest.h"
 #include "ToolPaths.h"
 
@@ -21,6 +22,7 @@ constexpr int kTickMs = 2000;          // heartbeat and timeout checks
 constexpr int kHardKillAfterMs = 5000; // after a soft cancel
 constexpr int kProfileLimit = 3;
 constexpr int kCrawlLimit = 1;
+constexpr int kRenderLimit = 1; // a browser is heavy
 
 // Exit codes of the Python tools (scripts/site_tools/exitcodes.py).
 constexpr int kExitOk = 0;
@@ -158,6 +160,26 @@ void JobRunner::enqueueCrawl(qint64 siteId, const QString &url, int maxPages,
         });
 }
 
+void JobRunner::enqueueRender(qint64 siteId, const QString &url,
+                              std::function<void(qint64, QString)> done)
+{
+    const QJsonObject params{{QStringLiteral("url"), url}};
+    m_database.run(
+        this,
+        [siteId, params](QSqlDatabase &db) {
+            return JobStore::create(db, QStringLiteral("render"), siteId, params);
+        },
+        [this, done = std::move(done)](const JobStore::CreateResult &result) {
+            if (done) {
+                done(result.jobId, result.error);
+            }
+            if (result.error.isEmpty() && !result.alreadyQueued) {
+                emit jobsChanged();
+                schedulePump();
+            }
+        });
+}
+
 void JobRunner::cancel(qint64 jobId)
 {
     const auto found = m_running.find(jobId);
@@ -235,7 +257,8 @@ void JobRunner::pump()
 void JobRunner::launch(qint64 jobId, const QString &type, qint64 siteId, const QJsonObject &params)
 {
     const bool isCrawl = type == QStringLiteral("crawl");
-    if (type != QStringLiteral("profile") && !isCrawl) {
+    const bool isRender = type == QStringLiteral("render");
+    if (type != QStringLiteral("profile") && !isCrawl && !isRender) {
         failBeforeStart(jobId, siteId, type, tr("Job type '%1' is not supported yet.").arg(type));
         return;
     }
@@ -261,8 +284,9 @@ void JobRunner::launch(qint64 jobId, const QString &type, qint64 siteId, const Q
     QDir().mkpath(job->dir);
     job->cancelFile = QDir(job->dir).filePath(QStringLiteral("cancel"));
     // The crawl reports the real manifest path when it finishes; this is where it goes by default.
-    job->resultPath = QDir(job->dir).filePath(isCrawl ? QStringLiteral("crawl/manifest.json")
-                                                       : QStringLiteral("profile.json"));
+    job->resultPath = QDir(job->dir).filePath(isCrawl    ? QStringLiteral("crawl/manifest.json")
+                                              : isRender ? QStringLiteral("render/render.json")
+                                                         : QStringLiteral("profile.json"));
     QFile::remove(job->cancelFile);
     QFile::remove(job->resultPath);
 
@@ -287,7 +311,10 @@ void JobRunner::launch(qint64 jobId, const QString &type, qint64 siteId, const Q
     process.setWorkingDirectory(tools.scriptsDir);
     process.setProgram(tools.python);
     process.setArguments(
-        {QStringLiteral("-m"), isCrawl ? QStringLiteral("site_crawl") : QStringLiteral("site_profile"),
+        {QStringLiteral("-m"),
+         isCrawl    ? QStringLiteral("site_crawl")
+         : isRender ? QStringLiteral("site_render")
+                    : QStringLiteral("site_profile"),
          QStringLiteral("--spec"), specPath});
     const QString logPath = QDir(job->dir).filePath(QStringLiteral("job.log"));
     process.setStandardErrorFile(logPath, QIODevice::Append);
@@ -409,6 +436,7 @@ void JobRunner::handleExit(qint64 jobId, int exitCode, QProcess::ExitStatus exit
     const QString type = job->type;
     const bool ingest = type == QStringLiteral("profile") && status != QStringLiteral("canceled");
     const bool ingestCrawl = type == QStringLiteral("crawl") && status != QStringLiteral("canceled");
+    const bool ingestRender = type == QStringLiteral("render") && status == QStringLiteral("succeeded");
     const QString crawlFolder = QFileInfo(resultPath).absolutePath();
     const QString dataDir = m_paths.dataDir;
     if (type == QStringLiteral("crawl") && status == QStringLiteral("canceled")) {
@@ -416,8 +444,15 @@ void JobRunner::handleExit(qint64 jobId, int exitCode, QProcess::ExitStatus exit
     }
     m_database.run(
         this,
-        [jobId, siteId, status, exitCode, error, resultPath, ingest, ingestCrawl, dataDir](QSqlDatabase &db) {
+        [jobId, siteId, status, exitCode, error, resultPath, ingest, ingestCrawl, ingestRender, dataDir](QSqlDatabase &db) {
             QJsonObject result;
+            if (ingestRender) {
+                const RenderStore::IngestResult stored =
+                    RenderStore::ingest(db, dataDir, siteId, jobId, resultPath);
+                if (!stored.error.isEmpty()) {
+                    result.insert(QStringLiteral("ingestError"), stored.error);
+                }
+            }
             if (ingestCrawl) {
                 const CrawlStore::IngestResult stored =
                     CrawlStore::ingest(db, dataDir, siteId, jobId, resultPath);
@@ -479,6 +514,8 @@ void JobRunner::reportProgress(const QString &type, qint64 jobId, qint64 siteId,
 {
     if (type == QStringLiteral("crawl")) {
         emit crawlProgress(jobId, siteId, current, total, label);
+    } else if (type == QStringLiteral("render")) {
+        emit renderProgress(jobId, siteId, current, total, label);
     } else {
         emit jobProgress(jobId, siteId, current, total, label);
     }
@@ -488,6 +525,8 @@ void JobRunner::reportFinished(const QString &type, qint64 jobId, qint64 siteId,
 {
     if (type == QStringLiteral("crawl")) {
         emit crawlFinished(jobId, siteId, status);
+    } else if (type == QStringLiteral("render")) {
+        emit renderFinished(jobId, siteId, status);
     } else {
         emit jobFinished(jobId, siteId, status);
     }
@@ -528,7 +567,10 @@ void JobRunner::tick()
 
 int JobRunner::limitFor(const QString &type) const
 {
-    return type == QStringLiteral("crawl") ? kCrawlLimit : kProfileLimit;
+    if (type == QStringLiteral("crawl")) {
+        return kCrawlLimit;
+    }
+    return type == QStringLiteral("render") ? kRenderLimit : kProfileLimit;
 }
 
 int JobRunner::runningOfType(const QString &type) const
@@ -544,5 +586,8 @@ int JobRunner::runningOfType(const QString &type) const
 
 int JobRunner::timeoutSeconds(const QString &type)
 {
-    return type == QStringLiteral("crawl") ? 2 * 60 * 60 : 120;
+    if (type == QStringLiteral("crawl")) {
+        return 2 * 60 * 60;
+    }
+    return type == QStringLiteral("render") ? 180 : 120;
 }

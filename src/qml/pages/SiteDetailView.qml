@@ -390,6 +390,7 @@ Item {
             anchors.fill: parent
             visible: view.currentTab === 0 && view.hasProfile
             summary: view.summary
+            render: view.detail.render
             speed: view.speed
             speedDesktop: view.detail.speedDesktop
             onCopyRequested: text => {
@@ -445,7 +446,9 @@ Item {
             visible: view.currentTab === 5
             screenshots: view.detail.screenshots
             running: view.detail.speedRunning
+            capturing: view.detail.renderRunning
             onCheckRequested: view.detail.checkSpeed()
+            onCaptureRequested: view.detail.startRender()
         }
 
         ActivityList {

@@ -111,10 +111,10 @@ bool setPreviewUrl(QSqlDatabase &db, qint64 siteId, const QString &url);
 void saveSpeedCheck(QSqlDatabase &db, qint64 siteId, const QString &strategy, int score,
                     const QVariantMap &metrics, const QString &error);
 
-// Writes a screenshot under <dataDir>/screenshots/<siteId>/ and records it; the previous one
+// Writes a screenshot ("pagespeed" or "render" as source) under <dataDir>/screenshots/<siteId>/ and records it; the previous one
 // of the same kind is removed. Returns false when the file cannot be written.
 bool saveScreenshot(QSqlDatabase &db, const QString &dataDir, qint64 siteId, const QString &kind,
-                    const QByteArray &jpeg);
+                    const QString &source, const QByteArray &jpeg);
 
 // Counts and short lists for the dashboard: totals, recently analyzed, expiring soon,
 // API usage this month.

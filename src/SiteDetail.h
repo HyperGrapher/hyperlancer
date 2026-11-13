@@ -42,6 +42,9 @@ class SiteDetail : public QObject
     // The latest content crawl (see CrawlStore::latest) and its pages; empty when never crawled.
     Q_PROPERTY(QVariantMap crawl READ crawl NOTIFY loadedChanged)
     Q_PROPERTY(QVariantList crawlPages READ crawlPages NOTIFY loadedChanged)
+    // The latest browser render (title, loadMs, requestCount, trackers); empty when never rendered.
+    Q_PROPERTY(QVariantMap render READ render NOTIFY loadedChanged)
+    Q_PROPERTY(bool renderRunning READ isRenderRunning NOTIFY renderRunningChanged)
     Q_PROPERTY(bool crawlRunning READ isCrawlRunning NOTIFY crawlProgressChanged)
     Q_PROPERTY(double crawlFraction READ crawlFraction NOTIFY crawlProgressChanged)
     Q_PROPERTY(QString crawlLabel READ crawlLabel NOTIFY crawlProgressChanged)
@@ -76,6 +79,8 @@ public:
     [[nodiscard]] QStringList statuses() const;
     [[nodiscard]] QVariantMap crawl() const { return m_crawl; }
     [[nodiscard]] QVariantList crawlPages() const { return m_crawlPages; }
+    [[nodiscard]] QVariantMap render() const { return m_render; }
+    [[nodiscard]] bool isRenderRunning() const { return m_renderRunning; }
     [[nodiscard]] bool isCrawlRunning() const { return m_crawlRunning; }
     [[nodiscard]] double crawlFraction() const { return m_crawlFraction; }
     [[nodiscard]] QString crawlLabel() const { return m_crawlLabel; }
@@ -96,6 +101,9 @@ public:
     // Crawls the website's pages into Markdown (up to maxPages) and downloads its images and
     // documents; the result is the "Content" tab.
     Q_INVOKABLE void startCrawl(int maxPages);
+    // Opens the page in a headless browser: desktop, mobile and full-page screenshots, plus the
+    // trackers the page loads at run time.
+    Q_INVOKABLE void startRender();
     Q_INVOKABLE void cancelCrawl();
 
     // Status, category, tags, notes and to-dos. Each saves, then reloads the detail.
@@ -120,6 +128,7 @@ signals:
     void loadedChanged();
     void progressChanged();
     void crawlProgressChanged();
+    void renderRunningChanged();
     void speedRunningChanged();
     void snapshotDiffChanged();
     // Both PageSpeed calls answered; ok is false when either failed.
@@ -150,6 +159,8 @@ private:
     QVariantMap m_speed;
     QVariantMap m_crawl;
     QVariantList m_crawlPages;
+    QVariantMap m_render;
+    bool m_renderRunning = false;
     bool m_crawlRunning = false;
     double m_crawlFraction = 0.0;
     QString m_crawlLabel;

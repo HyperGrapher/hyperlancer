@@ -463,7 +463,7 @@ void saveSpeedCheck(QSqlDatabase &db, qint64 siteId, const QString &strategy, in
 }
 
 bool saveScreenshot(QSqlDatabase &db, const QString &dataDir, qint64 siteId, const QString &kind,
-                    const QByteArray &jpeg)
+                    const QString &source, const QByteArray &jpeg)
 {
     if (jpeg.isEmpty()) {
         return false;
@@ -490,8 +490,8 @@ bool saveScreenshot(QSqlDatabase &db, const QString &dataDir, qint64 siteId, con
     QString error;
     SqlExec::run(db,
                  QStringLiteral("INSERT INTO screenshots (site_id, kind, source, path, created_at) "
-                                "VALUES (?, ?, 'pagespeed', ?, ?)"),
-                 {siteId, kind, relativePath, DbTime::now()}, &error);
+                                "VALUES (?, ?, ?, ?, ?)"),
+                 {siteId, kind, source, relativePath, DbTime::now()}, &error);
     return error.isEmpty();
 }
 

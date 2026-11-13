@@ -55,6 +55,11 @@ public:
     void enqueueCrawl(qint64 siteId, const QString &url, int maxPages,
                       std::function<void(qint64, QString)> done = {});
 
+    // Queues a browser render (site_render): desktop, mobile and full-page screenshots plus the
+    // trackers the page loads at run time. done(jobId, error) runs on the UI thread.
+    void enqueueRender(qint64 siteId, const QString &url,
+                       std::function<void(qint64, QString)> done = {});
+
     Q_INVOKABLE void cancel(qint64 jobId);
     Q_INVOKABLE void retry(qint64 jobId);
     // Asks every running job to stop (used when the app quits).
@@ -70,6 +75,9 @@ signals:
     // analysis in the places that listen for those.
     void crawlProgress(qint64 jobId, qint64 siteId, int current, int total, const QString &label);
     void crawlFinished(qint64 jobId, qint64 siteId, const QString &status);
+    // And for browser renders.
+    void renderProgress(qint64 jobId, qint64 siteId, int current, int total, const QString &label);
+    void renderFinished(qint64 jobId, qint64 siteId, const QString &status);
     void notice(const QString &message, bool isError);
 
 private:

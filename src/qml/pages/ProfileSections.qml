@@ -10,6 +10,8 @@ Flickable {
     property var summary: ({})
     property var speed: ({})
     property var speedDesktop: ({})
+    // The latest browser render; its trackers include what Tag Manager loaded at run time.
+    property var render: ({})
 
     signal copyRequested(string text)
     signal linkRequested(string url)
@@ -21,6 +23,11 @@ Flickable {
     readonly property var channels: (summary.contact || ({})).channels || ({})
     readonly property var emailAuth: summary.emailAuth || ({})
     readonly property var trackers: summary.trackers || ({})
+    // Products the browser saw that the HTML did not show.
+    readonly property var runtimeTrackers: {
+        const known = (trackers.items || []).map(t => t.product)
+        return (((render.trackers || {}).items) || []).filter(t => known.indexOf(t.product) < 0)
+    }
     readonly property var tls: summary.tls || ({})
     readonly property var domain: summary.domain || ({})
     readonly property var seo: summary.seo || ({})
@@ -259,14 +266,28 @@ Flickable {
                            + (modelData.status === "deprecated" ? "  ·  " + qsTr("deprecated") : "")
                     valueColor: modelData.status === "deprecated" ? Theme.warning : Theme.textPrimary
                     mono: modelData.ids.length > 0
-                    last: index === (sections.trackers.items || []).length - 1 && !sections.trackers.hasTagManager
+                    last: false
+                }
+            }
+
+            Repeater {
+                model: sections.runtimeTrackers
+
+                delegate: Fact {
+                    required property var modelData
+
+                    label: modelData.product
+                    value: (modelData.ids.length > 0 ? modelData.ids.join(", ") : qsTr("detected")) + "  ·  " + qsTr("loaded at run time")
+                    valueColor: modelData.kind === "ads" ? Theme.warning : Theme.textPrimary
+                    mono: modelData.ids.length > 0
                 }
             }
 
             Fact {
                 visible: !!sections.trackers.hasTagManager
                 label: qsTr("Note")
-                value: qsTr("Tag Manager found; tags it loads later are not in the HTML.")
+                value: sections.render.requestCount !== undefined ? qsTr("Tag Manager found; the browser capture lists what it loaded.")
+                       : qsTr("Tag Manager found; capture the page in a browser (Screenshots tab) to see the tags it loads.")
                 valueColor: Theme.textMuted
                 last: true
             }
