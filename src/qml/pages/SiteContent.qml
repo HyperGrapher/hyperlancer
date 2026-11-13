@@ -14,12 +14,24 @@ Item {
     readonly property var crawl: detail.crawl
     readonly property bool hasCrawl: crawl.id !== undefined
     property int maxPages: 100
+    property string pageFilter: ""
+    // The list shows the pages whose title or address contains the typed words (all of them must match).
+    readonly property var shownPages: {
+        const words = pageFilter.trim().toLowerCase().split(/\s+/).filter(word => word.length > 0);
+        if (words.length === 0)
+            return detail.crawlPages;
+        return detail.crawlPages.filter(page => {
+            const text = ((page.title || "") + " " + (page.url || "")).toLowerCase();
+            return words.every(word => text.indexOf(word) >= 0);
+        });
+    }
     // The page whose downloaded images are shown as a gallery; null shows the page list.
     property var galleryPage: null
     readonly property var galleryImages: galleryPage === null ? [] : detail.crawlImages.filter(image => image.pageIds.indexOf(galleryPage.id) >= 0)
 
     function resetScroll() {
         galleryPage = null;
+        pageFilter = "";
         pageList.positionViewAtBeginning();
     }
 
@@ -29,6 +41,7 @@ Item {
 
         function onSiteIdChanged() {
             panel.galleryPage = null;
+            panel.pageFilter = "";
         }
     }
 
@@ -155,17 +168,36 @@ Item {
             wrapMode: Text.WordWrap
         }
 
+        StyledTextField {
+            id: filterField
+
+            anchors.top: partialNote.bottom
+            anchors.topMargin: visible ? Theme.spacingM : 0
+            anchors.left: parent.left
+            anchors.leftMargin: Theme.spacingL
+            anchors.right: parent.right
+            anchors.rightMargin: Theme.spacingL
+            height: visible ? implicitHeight : 0
+            visible: panel.detail.crawlPages.length > 0
+            glyph: Icons.search
+            clearable: true
+            placeholderText: qsTr("Filter pages by title or address")
+            text: panel.pageFilter
+            onTextChanged: panel.pageFilter = text
+        }
+
         ListView {
             id: pageList
 
-            anchors.top: partialNote.bottom
+            anchors.top: filterField.bottom
+            anchors.topMargin: filterField.visible ? Theme.spacingS : 0
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             anchors.margins: 6
             clip: true
             boundsBehavior: Flickable.StopAtBounds
-            model: panel.detail.crawlPages
+            model: panel.shownPages
 
             ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
@@ -266,10 +298,10 @@ Item {
         EmptyState {
             anchors.centerIn: pageList
             width: pageList.width
-            visible: panel.detail.crawlPages.length === 0 && !panel.detail.crawlRunning
-            glyph: Icons.globe
-            title: panel.hasCrawl ? qsTr("No pages saved") : qsTr("No content saved yet")
-            text: panel.hasCrawl ? qsTr("The crawl did not find readable pages. Open the folder for its log.")
+            visible: panel.shownPages.length === 0 && !panel.detail.crawlRunning
+            glyph: panel.detail.crawlPages.length > 0 ? Icons.search : Icons.globe
+            title: panel.detail.crawlPages.length > 0 ? qsTr("No page matches") : panel.hasCrawl ? qsTr("No pages saved") : qsTr("No content saved yet")
+            text: panel.detail.crawlPages.length > 0 ? qsTr("Try a shorter or different word.") : panel.hasCrawl ? qsTr("The crawl did not find readable pages. Open the folder for its log.")
                                  : qsTr("Press Crawl website. Up to three analyses and one crawl run at a time.")
         }
     }
