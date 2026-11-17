@@ -1,7 +1,6 @@
 # Hyperlancer
 
-A Windows desktop app for a freelance web developer: find businesses with weak websites,
-analyze each site, and keep everything about a lead in one place. Built with C++, Qt 6.11
+A Windows desktop app for a freelance web developer. Built with C++, Qt 6.11
 (Qt Quick) and CMake. The site analysis itself runs in the Python tools under
 `tools/`.
 
