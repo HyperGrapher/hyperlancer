@@ -113,7 +113,7 @@ set(HYPERLANCER_APP_SOURCES
     src/Integrations.h src/Integrations.cpp
     src/GmailService.h src/GmailService.cpp
     src/GmailInbox.h src/GmailInbox.cpp
-    src/TodoList.h src/TodoList.cpp src/NoteList.h src/NoteList.cpp src/VisitorStats.h src/VisitorStats.cpp
+    src/DueNotifier.h src/DueNotifier.cpp src/TodoList.h src/TodoList.cpp src/NoteList.h src/NoteList.cpp src/VisitorStats.h src/VisitorStats.cpp
     src/HealthModel.h src/HealthModel.cpp
 )
 
@@ -135,6 +135,7 @@ set(HYPERLANCER_QML_FILES
     src/qml/Main.qml
     src/qml/MailNotifications.qml
     src/qml/VisitorNotifications.qml
+    src/qml/DueNotifications.qml
     ${HYPERLANCER_SINGLETONS}
     src/qml/shell/ResizeBorder.qml
     src/qml/shell/TitleBar.qml

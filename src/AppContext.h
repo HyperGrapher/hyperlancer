@@ -11,6 +11,7 @@
 #include "Discovery.h"
 #include "GmailInbox.h"
 #include "SoundPlayer.h"
+#include "DueNotifier.h"
 #include "NoteList.h"
 #include "TodoList.h"
 #include "VisitorStats.h"
@@ -58,6 +59,7 @@ class AppContext : public QObject
     Q_PROPERTY(TodoList *todos READ todos CONSTANT)
     Q_PROPERTY(NoteList *notes READ notes CONSTANT)
     Q_PROPERTY(VisitorStats *visitors READ visitors CONSTANT)
+    Q_PROPERTY(DueNotifier *dueNotifier READ dueNotifier CONSTANT)
     Q_PROPERTY(GmailInbox *inbox READ inbox CONSTANT)
     Q_PROPERTY(HealthModel *health READ health CONSTANT)
     Q_PROPERTY(QString version READ version CONSTANT)
@@ -82,6 +84,7 @@ public:
     [[nodiscard]] TodoList *todos() { return &m_todos; }
     [[nodiscard]] NoteList *notes() { return &m_notes; }
     [[nodiscard]] VisitorStats *visitors() { return &m_visitors; }
+    [[nodiscard]] DueNotifier *dueNotifier() { return &m_dueNotifier; }
     [[nodiscard]] GmailInbox *inbox() { return &m_inbox; }
     [[nodiscard]] HealthModel *health() { return &m_health; }
     [[nodiscard]] QString version() const;
@@ -133,6 +136,7 @@ private:
     TodoList m_todos;
     NoteList m_notes;
     VisitorStats m_visitors;
+    DueNotifier m_dueNotifier;
     JobListModel m_jobs;
     SiteDetail m_siteDetail;
     Dashboard m_dashboard;

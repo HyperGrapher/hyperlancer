@@ -38,6 +38,7 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     , m_todos(m_database)
     , m_notes(m_database)
     , m_visitors(m_secrets, m_settings)
+    , m_dueNotifier(m_database, m_settings)
     , m_jobs(m_database, m_runner)
     , m_siteDetail(m_database, m_runner, m_pageSpeed, m_integrations, m_gmail, paths.dataDir)
     , m_dashboard(m_database, m_runner)
@@ -51,6 +52,8 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     connect(&m_runner, &JobRunner::notice, this, &AppContext::notice);
     connect(&m_gmail, &GmailService::notice, this, &AppContext::notice);
     // Sounds for the moments the user cares about; which sound each plays is a setting.
+    connect(&m_dueNotifier, &DueNotifier::dueItems, &m_sounds,
+            [this](const QVariantList &) { m_sounds.playEvent(QStringLiteral("dueReminder")); });
     connect(&m_visitors, &VisitorStats::newVisitor, &m_sounds,
             [this](const QVariantMap &) { m_sounds.playEvent(QStringLiteral("visitorArrived")); });
     connect(&m_inbox, &GmailInbox::newMessages, &m_sounds,
@@ -118,6 +121,7 @@ void AppContext::onDatabaseReady()
     m_sites.loadSavedViews();
     m_todos.refresh();
     m_notes.refresh();
+    m_dueNotifier.start();
     m_jobs.refresh();
     m_dashboard.refresh();
     m_discovery.loadRecentRuns();

@@ -14,6 +14,8 @@ constexpr auto kGmailChromeProfileKey = "gmail/chromeProfile";
 constexpr auto kNotifyNewMailKey = "gmail/notifyNewMail";
 constexpr auto kConvexUrlKey = "visitors/convexUrl";
 constexpr auto kNotifyVisitorsKey = "visitors/notify";
+constexpr auto kNotifyDueKey = "notices/dueDates";
+constexpr auto kDueShownKey = "notices/dueShown";
 constexpr auto kSoundsEnabledKey = "sounds/enabled";
 constexpr auto kSoundVolumeKey = "sounds/volume";
 constexpr auto kSoundPrefix = "sounds/event/";
@@ -50,6 +52,7 @@ AppSettings::AppSettings(const QString &storagePath, QObject *parent)
     m_notifyNewMail = m_storage.value(kNotifyNewMailKey, m_notifyNewMail).toBool();
     m_convexUrl = m_storage.value(kConvexUrlKey).toString();
     m_notifyVisitors = m_storage.value(kNotifyVisitorsKey, m_notifyVisitors).toBool();
+    m_notifyDue = m_storage.value(kNotifyDueKey, m_notifyDue).toBool();
     m_soundsEnabled = m_storage.value(kSoundsEnabledKey, m_soundsEnabled).toBool();
     m_soundVolume = std::clamp(m_storage.value(kSoundVolumeKey, m_soundVolume).toDouble(), 0.0, 1.0);
     m_showFavicons = m_storage.value(kShowFaviconsKey, m_showFavicons).toBool();
@@ -105,6 +108,26 @@ void AppSettings::setConvexUrl(const QString &url)
     m_convexUrl = trimmed;
     m_storage.setValue(kConvexUrlKey, trimmed);
     emit convexUrlChanged();
+}
+
+void AppSettings::setNotifyDue(bool enabled)
+{
+    if (m_notifyDue == enabled) {
+        return;
+    }
+    m_notifyDue = enabled;
+    m_storage.setValue(kNotifyDueKey, enabled);
+    emit notifyDueChanged();
+}
+
+QStringList AppSettings::dueNoticesShown() const
+{
+    return m_storage.value(kDueShownKey).toStringList();
+}
+
+void AppSettings::setDueNoticesShown(const QStringList &keys)
+{
+    m_storage.setValue(kDueShownKey, keys);
 }
 
 void AppSettings::setNotifyVisitors(bool enabled)

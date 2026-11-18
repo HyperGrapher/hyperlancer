@@ -145,6 +145,22 @@ PageBase {
                 }
 
                 Group {
+                    title: qsTr("REMINDERS")
+
+                    SettingRow {
+                        width: parent.width
+                        glyph: Icons.calendar
+                        title: qsTr("Remind about due dates")
+                        description: qsTr("A notice and a sound once a day for each website deadline and to-do that is due today or overdue. Pick the sound under Appearance.")
+
+                        ToggleSwitch {
+                            checked: page.settings.notifyDue
+                            onToggled: page.settings.notifyDue = checked
+                        }
+                    }
+                }
+
+                Group {
                     title: qsTr("WEBSITE VISITORS (CONVEX)")
 
                     SettingRow {

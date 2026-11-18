@@ -158,8 +158,19 @@ Window {
     }
 
     VisitorNotifications {
+        id: visitorNotifications
+
         app: root.app
         onOpenRequested: (visitorId, sessionId) => root.openVisitor(visitorId, sessionId)
+    }
+
+    DueNotifications {
+        app: root.app
+        topOffset: visitorNotifications.visible ? visitorNotifications.height + 8 : 0
+        onOpenRequested: siteId => {
+            root.showFromTray();
+            root.openSite(siteId);
+        }
     }
 
     Connections {

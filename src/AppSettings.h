@@ -26,6 +26,7 @@ class AppSettings : public QObject
                    gmailChromeProfileChanged)
     // The Convex deployment of the portfolio site (https://<name>.convex.cloud), for the Visitors page.
     Q_PROPERTY(QString convexUrl READ convexUrl WRITE setConvexUrl NOTIFY convexUrlChanged)
+    Q_PROPERTY(bool notifyDue READ notifyDue WRITE setNotifyDue NOTIFY notifyDueChanged)
     Q_PROPERTY(bool notifyVisitors READ notifyVisitors WRITE setNotifyVisitors NOTIFY notifyVisitorsChanged)
     Q_PROPERTY(bool notifyNewMail READ notifyNewMail WRITE setNotifyNewMail NOTIFY notifyNewMailChanged)
     Q_PROPERTY(bool soundsEnabled READ soundsEnabled WRITE setSoundsEnabled NOTIFY soundsEnabledChanged)
@@ -69,6 +70,10 @@ public:
     [[nodiscard]] bool notifyNewMail() const { return m_notifyNewMail; }
     [[nodiscard]] QString convexUrl() const { return m_convexUrl; }
     [[nodiscard]] bool notifyVisitors() const { return m_notifyVisitors; }
+    [[nodiscard]] bool notifyDue() const { return m_notifyDue; }
+    // Keys of the due-date notices already shown (see DueNotifier), so a restart does not repeat them.
+    [[nodiscard]] QStringList dueNoticesShown() const;
+    void setDueNoticesShown(const QStringList &keys);
     [[nodiscard]] bool soundsEnabled() const { return m_soundsEnabled; }
     [[nodiscard]] double soundVolume() const { return m_soundVolume; }
     [[nodiscard]] QVariantMap soundAssignments() const;
@@ -84,6 +89,7 @@ public:
     void setNotifyNewMail(bool enabled);
     void setConvexUrl(const QString &url);
     void setNotifyVisitors(bool enabled);
+    void setNotifyDue(bool enabled);
     void setGmailChromeProfile(const QString &profileName);
 
     [[nodiscard]] bool performanceOverlay() const { return m_performanceOverlay; }
@@ -122,6 +128,7 @@ signals:
     void notifyNewMailChanged();
     void convexUrlChanged();
     void notifyVisitorsChanged();
+    void notifyDueChanged();
     void gmailChromeProfileChanged();
     void performanceOverlayChanged();
     void ambientSpeedChanged();
@@ -140,6 +147,7 @@ private:
     bool m_notifyNewMail = true;
     QString m_convexUrl;
     bool m_notifyVisitors = true;
+    bool m_notifyDue = true;
     QString m_gmailChromeProfile;
     bool m_performanceOverlay = false;
     AmbientSpeed m_ambientSpeed = AmbientSpeed::Normal;
