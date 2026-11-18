@@ -24,6 +24,9 @@ class AppSettings : public QObject
                    glassHighlightsChanged)
     Q_PROPERTY(QString gmailChromeProfile READ gmailChromeProfile WRITE setGmailChromeProfile NOTIFY
                    gmailChromeProfileChanged)
+    // The Convex deployment of the portfolio site (https://<name>.convex.cloud), for the Visitors page.
+    Q_PROPERTY(QString convexUrl READ convexUrl WRITE setConvexUrl NOTIFY convexUrlChanged)
+    Q_PROPERTY(bool notifyVisitors READ notifyVisitors WRITE setNotifyVisitors NOTIFY notifyVisitorsChanged)
     Q_PROPERTY(bool notifyNewMail READ notifyNewMail WRITE setNotifyNewMail NOTIFY notifyNewMailChanged)
     Q_PROPERTY(bool soundsEnabled READ soundsEnabled WRITE setSoundsEnabled NOTIFY soundsEnabledChanged)
     Q_PROPERTY(double soundVolume READ soundVolume WRITE setSoundVolume NOTIFY soundVolumeChanged)
@@ -51,7 +54,7 @@ public:
     };
     Q_ENUM(AmbientSpeed)
 
-    static constexpr int kSectionCount = 8;
+    static constexpr int kSectionCount = 9;
     static constexpr double kMinimumIntensity = 0.2;
 
     explicit AppSettings(const QString &storagePath, QObject *parent = nullptr);
@@ -64,6 +67,8 @@ public:
 
     [[nodiscard]] bool glassHighlights() const { return m_glassHighlights; }
     [[nodiscard]] bool notifyNewMail() const { return m_notifyNewMail; }
+    [[nodiscard]] QString convexUrl() const { return m_convexUrl; }
+    [[nodiscard]] bool notifyVisitors() const { return m_notifyVisitors; }
     [[nodiscard]] bool soundsEnabled() const { return m_soundsEnabled; }
     [[nodiscard]] double soundVolume() const { return m_soundVolume; }
     [[nodiscard]] QVariantMap soundAssignments() const;
@@ -77,6 +82,8 @@ public:
     void setSoundVolume(double volume);
     Q_INVOKABLE void setSoundFor(const QString &eventId, const QString &soundName);
     void setNotifyNewMail(bool enabled);
+    void setConvexUrl(const QString &url);
+    void setNotifyVisitors(bool enabled);
     void setGmailChromeProfile(const QString &profileName);
 
     [[nodiscard]] bool performanceOverlay() const { return m_performanceOverlay; }
@@ -113,6 +120,8 @@ signals:
     void soundVolumeChanged();
     void soundAssignmentsChanged();
     void notifyNewMailChanged();
+    void convexUrlChanged();
+    void notifyVisitorsChanged();
     void gmailChromeProfileChanged();
     void performanceOverlayChanged();
     void ambientSpeedChanged();
@@ -129,6 +138,8 @@ private:
     bool m_soundsEnabled = true;
     double m_soundVolume = 0.7;
     bool m_notifyNewMail = true;
+    QString m_convexUrl;
+    bool m_notifyVisitors = true;
     QString m_gmailChromeProfile;
     bool m_performanceOverlay = false;
     AmbientSpeed m_ambientSpeed = AmbientSpeed::Normal;

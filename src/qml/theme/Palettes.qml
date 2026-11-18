@@ -42,6 +42,13 @@ QtObject {
             accentSecondary: "#FF9E7A"
         },
         {
+            name: "Orchid",       // Visitors
+            blobs: ["#9B5DE5", "#F15BB5", "#3A1C71", "#00BBF9"],
+            base: "#150B24",
+            accent: "#D59BFF",
+            accentSecondary: "#6FD6FF"
+        },
+        {
             name: "Glacier",      // Jobs
             blobs: ["#5B8CFF", "#8FB8FF", "#2A3A7A", "#B7A6FF"],
             base: "#0A1024",

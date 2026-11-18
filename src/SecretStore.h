@@ -32,5 +32,6 @@ inline const QString kLangSearchApiKey = QStringLiteral("langsearch/api-key");
 inline const QString kGmailClientId = QStringLiteral("gmail/client-id");
 inline const QString kGmailClientSecret = QStringLiteral("gmail/client-secret");
 inline const QString kGmailRefreshToken = QStringLiteral("gmail/refresh-token");
+inline const QString kConvexAdminKey = QStringLiteral("convex/admin-key");
 inline const QString kMySqlPassword = QStringLiteral("mysql/password");
 } // namespace SecretKeys

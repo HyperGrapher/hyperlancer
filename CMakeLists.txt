@@ -45,6 +45,7 @@ set(HYPERLANCER_CORE_SOURCES
     src/MailStore.h src/MailStore.cpp
     src/SiteOrganizer.h src/SiteOrganizer.cpp
     src/PageSpeedClient.h src/PageSpeedClient.cpp
+    src/ConvexClient.h src/ConvexClient.cpp
 )
 
 if(WIN32)
@@ -55,7 +56,7 @@ endif()
 
 qt_add_library(HyperlancerCore STATIC ${HYPERLANCER_CORE_SOURCES})
 target_include_directories(HyperlancerCore PUBLIC src)
-target_link_libraries(HyperlancerCore PUBLIC Qt6::Core Qt6::Concurrent Qt6::Network Qt6::Sql)
+target_link_libraries(HyperlancerCore PUBLIC Qt6::Core Qt6::Concurrent Qt6::Network Qt6::Sql Qt6::WebSockets)
 if(WIN32)
     # Windows Credential Manager (CredWriteW/CredReadW).
     target_link_libraries(HyperlancerCore PRIVATE advapi32)
@@ -112,7 +113,7 @@ set(HYPERLANCER_APP_SOURCES
     src/Integrations.h src/Integrations.cpp
     src/GmailService.h src/GmailService.cpp
     src/GmailInbox.h src/GmailInbox.cpp
-    src/TodoList.h src/TodoList.cpp src/NoteList.h src/NoteList.cpp
+    src/TodoList.h src/TodoList.cpp src/NoteList.h src/NoteList.cpp src/VisitorStats.h src/VisitorStats.cpp
     src/HealthModel.h src/HealthModel.cpp
 )
 
@@ -133,6 +134,7 @@ set(HYPERLANCER_SINGLETONS
 set(HYPERLANCER_QML_FILES
     src/qml/Main.qml
     src/qml/MailNotifications.qml
+    src/qml/VisitorNotifications.qml
     ${HYPERLANCER_SINGLETONS}
     src/qml/shell/ResizeBorder.qml
     src/qml/shell/TitleBar.qml
@@ -156,6 +158,8 @@ set(HYPERLANCER_QML_FILES
     src/qml/pages/SnapshotChanges.qml
     src/qml/pages/TodosPage.qml
     src/qml/pages/NotesPage.qml
+    src/qml/pages/VisitorsPage.qml
+    src/qml/pages/VisitorDetail.qml
     src/qml/pages/DiscoverPage.qml
     src/qml/pages/JobsPage.qml
     src/qml/pages/SettingsPage.qml

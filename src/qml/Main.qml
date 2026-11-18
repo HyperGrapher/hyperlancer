@@ -26,9 +26,10 @@ Window {
     readonly property int sectionEmails: 2
     readonly property int sectionTodos: 3
     readonly property int sectionNotes: 4
-    readonly property int sectionJobs: 5
-    readonly property int sectionDiscover: 6
-    readonly property int sectionSettings: 7
+    readonly property int sectionVisitors: 5
+    readonly property int sectionJobs: 6
+    readonly property int sectionDiscover: 7
+    readonly property int sectionSettings: 8
     // Set once the user chose Quit: the window may then close for real.
     property bool quitting: false
 
@@ -38,6 +39,7 @@ Window {
         { title: qsTr("Emails"), glyph: Icons.envelope },
         { title: qsTr("To-dos"), glyph: Icons.checkSquare },
         { title: qsTr("Notes"), glyph: Icons.article },
+        { title: qsTr("Visitors"), glyph: Icons.users },
         { title: qsTr("Jobs"), glyph: Icons.queue },
         { title: qsTr("Discover"), glyph: Icons.binoculars },
         { title: qsTr("Settings"), glyph: Icons.gearSix }
@@ -86,6 +88,12 @@ Window {
             return;
         }
         Qt.quit();
+    }
+
+    function openVisitor(visitorId, sessionId) {
+        showFromTray();
+        sidebar.select(sectionVisitors);
+        app.visitors.openVisitor(visitorId, sessionId);
     }
 
     function openSettings(tab) {
@@ -147,6 +155,11 @@ Window {
 
         app: root.app
         appSettings: root.appSettings
+    }
+
+    VisitorNotifications {
+        app: root.app
+        onOpenRequested: (visitorId, sessionId) => root.openVisitor(visitorId, sessionId)
     }
 
     Connections {
@@ -273,6 +286,12 @@ Window {
                     NotesPage {
                         app: root.app
                         onSiteOpened: siteId => root.openSite(siteId)
+                    }
+                },
+                Component {
+                    VisitorsPage {
+                        app: root.app
+                        onSettingsRequested: root.openSettings(0)
                     }
                 },
                 Component {

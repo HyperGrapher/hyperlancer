@@ -145,6 +145,50 @@ PageBase {
                 }
 
                 Group {
+                    title: qsTr("WEBSITE VISITORS (CONVEX)")
+
+                    SettingRow {
+                        width: parent.width
+                        glyph: Icons.globe
+                        title: qsTr("Convex address")
+                        description: qsTr("The deployment of your portfolio site, like https://name-123.convex.cloud. The Visitors page reads its live data.")
+
+                        StyledTextField {
+                            width: 300
+                            placeholderText: qsTr("https://….convex.cloud")
+                            text: page.settings.convexUrl
+                            onEditingFinished: page.app.visitors.saveConnection(text, "")
+                        }
+                    }
+
+                    KeyRow {
+                        service: "convex"
+                        glyph: Icons.key
+                        title: qsTr("Access key")
+                        description: page.app.visitors.error.length > 0 ? page.app.visitors.error
+                                     : page.app.visitors.status === "live" ? qsTr("Connected. Saved: %1.").arg(page.app.visitors.keyHint)
+                                     : page.app.visitors.hasKey ? qsTr("Saved: %1. Test connects again.").arg(page.app.visitors.keyHint)
+                                     : qsTr("The ADMIN_KEY set in your Convex environment. It is kept in %1.").arg(page.integrations.secretStoreName)
+                        hasKey: page.app.visitors.hasKey
+                        onSaveRequested: key => page.app.visitors.saveConnection(page.settings.convexUrl, key)
+                        onRemoveRequested: page.app.visitors.clearKey()
+                        onTestRequested: page.app.visitors.reconnect()
+                    }
+
+                    SettingRow {
+                        width: parent.width
+                        glyph: Icons.users
+                        title: qsTr("Notify about new visitors")
+                        description: qsTr("A notice and a sound when a new person (not a bot) opens your site. Pick the sound under Appearance.")
+
+                        ToggleSwitch {
+                            checked: page.settings.notifyVisitors
+                            onToggled: page.settings.notifyVisitors = checked
+                        }
+                    }
+                }
+
+                Group {
                     title: qsTr("GMAIL (READ-ONLY)")
 
                     SettingRow {

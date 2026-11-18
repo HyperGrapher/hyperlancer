@@ -12,6 +12,8 @@ constexpr auto kAmbientSpeedKey = "motion/ambientSpeed";
 constexpr auto kGlassHighlightsKey = "appearance/glassHighlights";
 constexpr auto kGmailChromeProfileKey = "gmail/chromeProfile";
 constexpr auto kNotifyNewMailKey = "gmail/notifyNewMail";
+constexpr auto kConvexUrlKey = "visitors/convexUrl";
+constexpr auto kNotifyVisitorsKey = "visitors/notify";
 constexpr auto kSoundsEnabledKey = "sounds/enabled";
 constexpr auto kSoundVolumeKey = "sounds/volume";
 constexpr auto kSoundPrefix = "sounds/event/";
@@ -46,6 +48,8 @@ AppSettings::AppSettings(const QString &storagePath, QObject *parent)
     m_glassHighlights = m_storage.value(kGlassHighlightsKey, m_glassHighlights).toBool();
     m_gmailChromeProfile = m_storage.value(kGmailChromeProfileKey).toString();
     m_notifyNewMail = m_storage.value(kNotifyNewMailKey, m_notifyNewMail).toBool();
+    m_convexUrl = m_storage.value(kConvexUrlKey).toString();
+    m_notifyVisitors = m_storage.value(kNotifyVisitorsKey, m_notifyVisitors).toBool();
     m_soundsEnabled = m_storage.value(kSoundsEnabledKey, m_soundsEnabled).toBool();
     m_soundVolume = std::clamp(m_storage.value(kSoundVolumeKey, m_soundVolume).toDouble(), 0.0, 1.0);
     m_showFavicons = m_storage.value(kShowFaviconsKey, m_showFavicons).toBool();
@@ -90,6 +94,27 @@ void AppSettings::setGmailChromeProfile(const QString &profileName)
     m_gmailChromeProfile = trimmed;
     m_storage.setValue(kGmailChromeProfileKey, trimmed);
     emit gmailChromeProfileChanged();
+}
+
+void AppSettings::setConvexUrl(const QString &url)
+{
+    const QString trimmed = url.trimmed();
+    if (m_convexUrl == trimmed) {
+        return;
+    }
+    m_convexUrl = trimmed;
+    m_storage.setValue(kConvexUrlKey, trimmed);
+    emit convexUrlChanged();
+}
+
+void AppSettings::setNotifyVisitors(bool enabled)
+{
+    if (m_notifyVisitors == enabled) {
+        return;
+    }
+    m_notifyVisitors = enabled;
+    m_storage.setValue(kNotifyVisitorsKey, enabled);
+    emit notifyVisitorsChanged();
 }
 
 void AppSettings::setNotifyNewMail(bool enabled)

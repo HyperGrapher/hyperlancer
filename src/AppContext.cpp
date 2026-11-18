@@ -37,6 +37,7 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     , m_sites(m_database, m_runner)
     , m_todos(m_database)
     , m_notes(m_database)
+    , m_visitors(m_secrets, m_settings)
     , m_jobs(m_database, m_runner)
     , m_siteDetail(m_database, m_runner, m_pageSpeed, m_integrations, m_gmail, paths.dataDir)
     , m_dashboard(m_database, m_runner)
@@ -50,6 +51,8 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     connect(&m_runner, &JobRunner::notice, this, &AppContext::notice);
     connect(&m_gmail, &GmailService::notice, this, &AppContext::notice);
     // Sounds for the moments the user cares about; which sound each plays is a setting.
+    connect(&m_visitors, &VisitorStats::newVisitor, &m_sounds,
+            [this](const QVariantMap &) { m_sounds.playEvent(QStringLiteral("visitorArrived")); });
     connect(&m_inbox, &GmailInbox::newMessages, &m_sounds,
             [this](const QVariantList &) { m_sounds.playEvent(QStringLiteral("mailArrived")); });
     connect(&m_runner, &JobRunner::jobFinished, &m_sounds,
@@ -93,6 +96,7 @@ AppContext::~AppContext() = default;
 void AppContext::start()
 {
     m_health.refresh();
+    m_visitors.start();
     m_database.start(databaseConfig());
 }
 

@@ -13,6 +13,7 @@
 #include "SoundPlayer.h"
 #include "NoteList.h"
 #include "TodoList.h"
+#include "VisitorStats.h"
 #include "GmailService.h"
 #include "HealthModel.h"
 #include "Integrations.h"
@@ -56,6 +57,7 @@ class AppContext : public QObject
     Q_PROPERTY(SoundPlayer *sounds READ sounds CONSTANT)
     Q_PROPERTY(TodoList *todos READ todos CONSTANT)
     Q_PROPERTY(NoteList *notes READ notes CONSTANT)
+    Q_PROPERTY(VisitorStats *visitors READ visitors CONSTANT)
     Q_PROPERTY(GmailInbox *inbox READ inbox CONSTANT)
     Q_PROPERTY(HealthModel *health READ health CONSTANT)
     Q_PROPERTY(QString version READ version CONSTANT)
@@ -79,6 +81,7 @@ public:
     [[nodiscard]] SoundPlayer *sounds() { return &m_sounds; }
     [[nodiscard]] TodoList *todos() { return &m_todos; }
     [[nodiscard]] NoteList *notes() { return &m_notes; }
+    [[nodiscard]] VisitorStats *visitors() { return &m_visitors; }
     [[nodiscard]] GmailInbox *inbox() { return &m_inbox; }
     [[nodiscard]] HealthModel *health() { return &m_health; }
     [[nodiscard]] QString version() const;
@@ -129,6 +132,7 @@ private:
     SiteListModel m_sites;
     TodoList m_todos;
     NoteList m_notes;
+    VisitorStats m_visitors;
     JobListModel m_jobs;
     SiteDetail m_siteDetail;
     Dashboard m_dashboard;

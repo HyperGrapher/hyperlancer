@@ -24,7 +24,7 @@ Item {
     property int stepIndex: 0
     property int stressSwitches: 0
     readonly property int stressTotal: 40
-    readonly property var stressPattern: [1, 3, 0, 2, 7, 1, 4, 0, 6, 5]
+    readonly property var stressPattern: [1, 3, 0, 2, 8, 1, 4, 0, 6, 5, 7]
 
     readonly property var steps: [
         { wait: 0, run: () => navigateRequested(0) },
@@ -39,10 +39,12 @@ Item {
         { wait: 0, run: () => navigateRequested(4) },
         { wait: 1300, run: () => capture("06-notes") },
         { wait: 0, run: () => navigateRequested(5) },
-        { wait: 1300, run: () => capture("06b-jobs") },
+        { wait: 1300, run: () => capture("06a-visitors") },
         { wait: 0, run: () => navigateRequested(6) },
-        { wait: 1300, run: () => capture("06c-discover") },
+        { wait: 1300, run: () => capture("06b-jobs") },
         { wait: 0, run: () => navigateRequested(7) },
+        { wait: 1300, run: () => capture("06c-discover") },
+        { wait: 0, run: () => navigateRequested(8) },
         { wait: 1300, run: () => capture("07-settings") },
         { wait: 0, run: () => settingsTabRequested(3) },
         { wait: 900, run: () => capture("07c-settings-appearance") },
