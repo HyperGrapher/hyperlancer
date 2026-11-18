@@ -134,7 +134,8 @@ AddResult addSite(QSqlDatabase &db, const NormalizedUrl &url, const QString &sou
 ListResult listSites(QSqlDatabase &db, const ListQuery &listQuery)
 {
     ListResult result;
-    QString where = QStringLiteral("s.archived_at IS NULL");
+    QString where = listQuery.filter == Filter::Archived ? QStringLiteral("s.archived_at IS NOT NULL")
+                                                         : QStringLiteral("s.archived_at IS NULL");
     QVariantList binds;
     if (!listQuery.search.trimmed().isEmpty()) {
         where += QStringLiteral(
@@ -158,6 +159,7 @@ ListResult listSites(QSqlDatabase &db, const ListQuery &listQuery)
     }
     switch (listQuery.filter) {
     case Filter::All:
+    case Filter::Archived:
         break;
     case Filter::Failed:
         where += QStringLiteral(" AND s.last_fetch_outcome = 'failed'");
@@ -422,6 +424,19 @@ bool deleteSite(QSqlDatabase &db, qint64 siteId)
 {
     QString error;
     SqlExec::run(db, QStringLiteral("DELETE FROM sites WHERE id = ?"), {siteId}, &error);
+    return error.isEmpty();
+}
+
+bool setArchived(QSqlDatabase &db, qint64 siteId, bool archived)
+{
+    QString error;
+    const QString now = DbTime::now();
+    SqlExec::run(db, QStringLiteral("UPDATE sites SET archived_at = ?, updated_at = ? WHERE id = ?"),
+                 {SqlExec::textOrNull(archived ? now : QString()), now, siteId}, &error);
+    if (error.isEmpty()) {
+        logActivity(db, siteId, archived ? QStringLiteral("site.archived") : QStringLiteral("site.restored"),
+                    archived ? QObject::tr("Site archived") : QObject::tr("Site restored from the archive"));
+    }
     return error.isEmpty();
 }
 

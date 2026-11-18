@@ -29,6 +29,7 @@ QtObject {
     readonly property string play: ""
     readonly property string pause: ""
     readonly property string stop: ""
+    readonly property string archive: "\ue00c"
     readonly property string reset: ""
     readonly property string refresh: ""
     readonly property string plus: ""

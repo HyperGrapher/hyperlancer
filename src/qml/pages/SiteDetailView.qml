@@ -133,6 +133,16 @@ Item {
             spacing: Theme.spacingS
 
             IconButton {
+                readonly property bool archived: !!view.site.archived_at
+
+                implicitWidth: 40
+                implicitHeight: 40
+                glyph: archived ? Icons.reset : Icons.archive
+                hint: archived ? qsTr("Restore from the archive") : qsTr("Archive: hide it from the lists, keep its data")
+                onClicked: view.app.archiveSite(view.detail.siteId, !archived)
+            }
+
+            IconButton {
                 implicitWidth: 40
                 implicitHeight: 40
                 glyph: Icons.trash

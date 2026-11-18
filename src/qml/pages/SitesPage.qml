@@ -18,7 +18,8 @@ PageBase {
         .concat(app.sites.categories.map(name => ({ value: name, label: name })))
     readonly property var healthFilterOptions: [{ value: 0, label: qsTr("All websites") },
                                                 { value: 1, label: qsTr("Unreachable") },
-                                                { value: 2, label: qsTr("Expiring") }]
+                                                { value: 2, label: qsTr("Expiring") },
+                                                { value: 3, label: qsTr("Archived") }]
 
     // Clicking the active column flips the direction; a new column starts ascending, except
     // "Analyzed", where newest first is the useful order.
@@ -83,6 +84,11 @@ PageBase {
         }
 
         function onSiteRemoved(siteId) {
+            if (page.app.siteDetail.siteId === siteId)
+                page.closeDetail();
+        }
+
+        function onSiteArchiveChanged(siteId) {
             if (page.app.siteDetail.siteId === siteId)
                 page.closeDetail();
         }
@@ -305,6 +311,15 @@ PageBase {
                 }
 
                 SecondaryButton {
+                    readonly property bool inArchive: page.app.sites.filter === 3
+
+                    implicitHeight: 32
+                    text: inArchive ? qsTr("Restore") : qsTr("Archive")
+                    glyph: inArchive ? Icons.reset : Icons.archive
+                    onClicked: page.app.sites.archiveSelected(!inArchive)
+                }
+
+                SecondaryButton {
                     implicitHeight: 32
                     text: qsTr("Remove")
                     glyph: Icons.trash
@@ -411,10 +426,13 @@ PageBase {
                 anchors.centerIn: list
                 width: list.width
                 visible: page.app.sites.loaded && page.app.sites.count === 0
-                glyph: page.app.sites.total === 0 ? Icons.globe : Icons.funnel
-                title: page.app.sites.total === 0 ? qsTr("No websites yet") : qsTr("Nothing matches")
-                text: page.app.sites.total === 0
-                      ? qsTr("Add a website above, or find businesses in Discover and import them here.")
+                readonly property bool inArchive: page.app.sites.filter === 3
+                readonly property bool none: page.app.sites.total === 0 && !inArchive
+
+                glyph: inArchive ? Icons.archive : none ? Icons.globe : Icons.funnel
+                title: inArchive ? qsTr("Nothing archived") : none ? qsTr("No websites yet") : qsTr("Nothing matches")
+                text: inArchive ? qsTr("Archive a website from its page, or select websites here and press Archive. Archived websites keep all their data.")
+                      : none ? qsTr("Add a website above, or find businesses in Discover and import them here.")
                       : qsTr("Try another search or filter.")
             }
         }

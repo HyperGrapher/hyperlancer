@@ -26,6 +26,7 @@ private slots:
     void listSorts();
     void deadlineAndNoteTitle();
     void categoryFilter();
+    void archivedSitesLeaveTheListAndComeBack();
     void mailMovesStatusForwardOnly();
     void screenshotsKeepTheNewestPerKind();
     void speedChecksAreKeptPerStrategy();
@@ -225,6 +226,30 @@ void SiteOrganizerTest::categoryFilter()
     const SiteStore::ListResult result = SiteStore::listSites(db, query);
     QCOMPARE(result.rows.size(), size_t(1));
     QCOMPARE(result.categories, QStringList{QStringLiteral("Dental")});
+}
+
+void SiteOrganizerTest::archivedSitesLeaveTheListAndComeBack()
+{
+    QSqlDatabase db = m_database->db();
+    const qint64 first = addSite(QStringLiteral("firma.com.tr"));
+    addSite(QStringLiteral("baska.com"));
+    QVERIFY(SiteOrganizer::addTodo(db, first, QStringLiteral("Call"), QString()));
+
+    QVERIFY(SiteStore::setArchived(db, first, true));
+    SiteStore::ListQuery query;
+    QCOMPARE(SiteStore::listSites(db, query).rows.size(), size_t(1));
+    query.filter = SiteStore::Filter::Archived;
+    const SiteStore::ListResult archived = SiteStore::listSites(db, query);
+    QCOMPARE(archived.rows.size(), size_t(1));
+    QCOMPARE(archived.rows.front().id, first);
+    QVERIFY(!SiteStore::loadDetail(db, first).value(QStringLiteral("site")).toMap().value(QStringLiteral("archived_at")).toString().isEmpty());
+    QCOMPARE(SiteStore::dashboard(db).value(QStringLiteral("openTodos")).toInt(), 0); // its to-do is not counted
+
+    QVERIFY(SiteStore::setArchived(db, first, false));
+    query.filter = SiteStore::Filter::All;
+    QCOMPARE(SiteStore::listSites(db, query).rows.size(), size_t(2));
+    query.filter = SiteStore::Filter::Archived;
+    QVERIFY(SiteStore::listSites(db, query).rows.empty());
 }
 
 void SiteOrganizerTest::mailMovesStatusForwardOnly()

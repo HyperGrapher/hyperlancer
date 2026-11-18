@@ -98,6 +98,7 @@ public:
     Q_INVOKABLE void removeSites(const QVariantList &siteIds);
     Q_INVOKABLE void analyzeSite(qint64 siteId, const QString &url);
     Q_INVOKABLE void removeSite(qint64 siteId);
+    Q_INVOKABLE void archiveSite(qint64 siteId, bool archived);
     Q_INVOKABLE void openExternal(const QString &url) const;
     Q_INVOKABLE void copyText(const QString &text) const;
     Q_INVOKABLE void openDataFolder() const;
@@ -114,10 +115,12 @@ signals:
     void siteAdded(qint64 siteId, bool created);
     void sitesAdded(int added, int existing, const QStringList &invalid);
     void siteRemoved(qint64 siteId);
+    void siteArchiveChanged(qint64 siteId);
     void openEmailsRequested();
 
 private:
     void onDatabaseReady();
+    void refreshAfterArchive();
     [[nodiscard]] DatabaseConfig databaseConfig() const;
 
     AppPaths m_paths;

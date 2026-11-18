@@ -137,7 +137,7 @@ void SiteListModel::setSearch(const QString &search)
 void SiteListModel::setFilter(int filter)
 {
     const auto value = static_cast<SiteStore::Filter>(
-        std::clamp(filter, 0, static_cast<int>(SiteStore::Filter::Expiring)));
+        std::clamp(filter, 0, static_cast<int>(SiteStore::Filter::Archived)));
     if (m_filter == value) {
         return;
     }
@@ -323,6 +323,12 @@ void SiteListModel::setCategoryForSelected(const QString &name)
 void SiteListModel::addTagToSelected(const QString &name)
 {
     runOnSelected([name](QSqlDatabase &db, qint64 id) { return SiteOrganizer::addTag(db, id, name); });
+}
+
+void SiteListModel::archiveSelected(bool archived)
+{
+    runOnSelected([archived](QSqlDatabase &db, qint64 id) { return SiteStore::setArchived(db, id, archived); });
+    emit archiveChanged();
 }
 
 void SiteListModel::analyzeSelected()

@@ -90,6 +90,7 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     connect(&m_siteDetail, &SiteDetail::organizerChanged, &m_sites, &SiteListModel::refreshSoon);
     connect(&m_siteDetail, &SiteDetail::organizerChanged, &m_todos, &TodoList::refresh);
     connect(&m_siteDetail, &SiteDetail::organizerChanged, &m_notes, &NoteList::refresh);
+    connect(&m_sites, &SiteListModel::archiveChanged, this, &AppContext::refreshAfterArchive);
     connect(&m_discovery, &Discovery::notice, this, &AppContext::notice);
     connect(&m_integrations, &Integrations::restartRequested, this, &AppContext::restart);
 }
@@ -250,6 +251,26 @@ void AppContext::removeSite(qint64 siteId)
                 emit siteRemoved(siteId);
             }
         });
+}
+
+void AppContext::archiveSite(qint64 siteId, bool archived)
+{
+    m_database.run(
+        this, [siteId, archived](QSqlDatabase &db) { return SiteStore::setArchived(db, siteId, archived); },
+        [this, siteId](bool changed) {
+            if (changed) {
+                refreshAfterArchive();
+                emit siteArchiveChanged(siteId);
+            }
+        });
+}
+
+void AppContext::refreshAfterArchive()
+{
+    m_sites.refresh();
+    m_dashboard.refresh();
+    m_todos.refresh();
+    m_notes.refresh();
 }
 
 void AppContext::openLocalPath(const QString &path) const

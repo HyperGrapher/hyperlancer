@@ -54,7 +54,8 @@ enum class Filter
 {
     All,
     Failed,
-    Expiring
+    Expiring,
+    Archived // only the archived sites; every other filter shows the sites that are not archived
 };
 
 enum class SortKey
@@ -104,6 +105,9 @@ struct ListResult
 // Registrable domains of a site, for mail matching.
 [[nodiscard]] QStringList siteDomains(QSqlDatabase &db, qint64 siteId);
 bool deleteSite(QSqlDatabase &db, qint64 siteId);
+// Archived sites leave the lists, the dashboard, reminders and the To-dos and Notes pages, but keep
+// all their data. They show under the "Archived" filter of the Websites page.
+bool setArchived(QSqlDatabase &db, qint64 siteId, bool archived);
 bool setPreviewUrl(QSqlDatabase &db, qint64 siteId, const QString &url);
 
 // Stores a PageSpeed Insights result (strategy "mobile" or "desktop"). A mobile score is also

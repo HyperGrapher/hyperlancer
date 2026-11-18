@@ -113,6 +113,7 @@ public:
     Q_INVOKABLE void setCategoryForSelected(const QString &name);
     Q_INVOKABLE void addTagToSelected(const QString &name);
     // Queues an analysis for every selected website that is not already being analyzed.
+    Q_INVOKABLE void archiveSelected(bool archived);
     Q_INVOKABLE void analyzeSelected();
     Q_INVOKABLE void refresh();
     // Debounced refresh, for bursts of changes.
@@ -121,6 +122,8 @@ public:
 signals:
     void searchChanged();
     void filterChanged();
+    // Sites were archived or restored: other pages that list sites should refresh.
+    void archiveChanged();
     void statusFilterChanged();
     void categoryFilterChanged();
     void selectionChanged();
