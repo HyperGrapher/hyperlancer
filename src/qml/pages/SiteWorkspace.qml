@@ -66,6 +66,34 @@ Flickable {
                     onCreated: text => workspace.detail.setCategory(text)
                 }
 
+                FieldLabel { text: qsTr("Preview link") }
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacingS
+
+                    StyledTextField {
+                        id: previewField
+
+                        Layout.fillWidth: true
+                        Layout.maximumWidth: 480
+                        glyph: Icons.link
+                        clearable: true
+                        placeholderText: qsTr("https://… (the redesign on Vercel, for example)")
+                        text: workspace.detail.site.preview_url || ""
+                        onEditingFinished: {
+                            if (text.trim() !== (workspace.detail.site.preview_url || ""))
+                                workspace.detail.setPreviewUrl(text);
+                        }
+                    }
+
+                    IconButton {
+                        glyph: Icons.openExternal
+                        hint: qsTr("Open the preview link")
+                        enabled: !!workspace.detail.site.preview_url
+                        onClicked: workspace.app.openExternal(workspace.detail.site.preview_url)
+                    }
+                }
+
                 FieldLabel { text: qsTr("Deadline") }
                 DateField {
                     id: deadlineField

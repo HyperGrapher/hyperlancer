@@ -115,6 +115,9 @@ public:
     Q_INVOKABLE void addTag(const QString &name);
     Q_INVOKABLE void removeTag(qint64 tagId);
     Q_INVOKABLE void setDeadline(const QString &dueOn);
+    // The link of the redesigned site (for example on Vercel). A missing scheme becomes https;
+    // an empty text removes the link.
+    Q_INVOKABLE void setPreviewUrl(const QString &url);
     Q_INVOKABLE void addNote(const QString &title, const QString &body);
     Q_INVOKABLE void updateNote(qint64 noteId, const QString &title, const QString &body);
     Q_INVOKABLE void deleteNote(qint64 noteId);

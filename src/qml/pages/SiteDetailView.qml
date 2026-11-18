@@ -160,6 +160,15 @@ Item {
             }
 
             IconButton {
+                visible: !!view.site.preview_url
+                implicitWidth: 40
+                implicitHeight: 40
+                glyph: Icons.eye
+                hint: qsTr("Open the preview link")
+                onClicked: view.app.openExternal(view.site.preview_url)
+            }
+
+            IconButton {
                 implicitWidth: 40
                 implicitHeight: 40
                 glyph: Icons.deviceMobile

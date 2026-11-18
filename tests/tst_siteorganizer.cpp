@@ -27,6 +27,7 @@ private slots:
     void deadlineAndNoteTitle();
     void categoryFilter();
     void archivedSitesLeaveTheListAndComeBack();
+    void previewLinkIsSavedAndCleared();
     void mailMovesStatusForwardOnly();
     void screenshotsKeepTheNewestPerKind();
     void speedChecksAreKeptPerStrategy();
@@ -250,6 +251,18 @@ void SiteOrganizerTest::archivedSitesLeaveTheListAndComeBack()
     QCOMPARE(SiteStore::listSites(db, query).rows.size(), size_t(2));
     query.filter = SiteStore::Filter::Archived;
     QVERIFY(SiteStore::listSites(db, query).rows.empty());
+}
+
+void SiteOrganizerTest::previewLinkIsSavedAndCleared()
+{
+    QSqlDatabase db = m_database->db();
+    const qint64 site = addSite(QStringLiteral("firma.com.tr"));
+    QVERIFY(SiteStore::loadDetail(db, site).value(QStringLiteral("site")).toMap().value(QStringLiteral("preview_url")).toString().isEmpty());
+    QVERIFY(SiteStore::setPreviewUrl(db, site, QStringLiteral("https://firma-redesign.vercel.app/")));
+    QCOMPARE(SiteStore::loadDetail(db, site).value(QStringLiteral("site")).toMap().value(QStringLiteral("preview_url")).toString(),
+             QStringLiteral("https://firma-redesign.vercel.app/"));
+    QVERIFY(SiteStore::setPreviewUrl(db, site, QString()));
+    QVERIFY(SiteStore::loadDetail(db, site).value(QStringLiteral("site")).toMap().value(QStringLiteral("preview_url")).toString().isEmpty());
 }
 
 void SiteOrganizerTest::mailMovesStatusForwardOnly()

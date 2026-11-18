@@ -361,6 +361,25 @@ void SiteDetail::removeTag(qint64 tagId)
     });
 }
 
+void SiteDetail::setPreviewUrl(const QString &url)
+{
+    QString text = url.trimmed();
+    if (!text.isEmpty()) {
+        if (!text.contains(QStringLiteral("://"))) {
+            text.prepend(QStringLiteral("https://"));
+        }
+        const QUrl parsed(text, QUrl::StrictMode);
+        const bool isWeb = parsed.scheme() == QStringLiteral("http") || parsed.scheme() == QStringLiteral("https");
+        if (!parsed.isValid() || !isWeb || parsed.host().isEmpty()) {
+            emit notice(tr("That is not a web address."), true);
+            reload(); // puts the saved link back into the field
+            return;
+        }
+        text = parsed.toString();
+    }
+    saveOrganizer([siteId = m_siteId, text](QSqlDatabase &db) { return SiteStore::setPreviewUrl(db, siteId, text); });
+}
+
 void SiteDetail::setDeadline(const QString &dueOn)
 {
     saveOrganizer([siteId = m_siteId, dueOn](QSqlDatabase &db) {
