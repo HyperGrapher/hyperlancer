@@ -32,9 +32,11 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     , m_pageSpeed(m_network)
     , m_integrations(m_secrets, m_settings, m_database, m_runner, m_langSearch, m_pageSpeed,
                      m_paths.dataDir)
-    , m_gmail(m_secrets, m_database, m_network, SecretKeys::kGmailRefreshToken)
+    , m_gmail(m_secrets, m_database, m_network,
+              {SecretKeys::kGmailClientId, SecretKeys::kGmailClientSecret, SecretKeys::kGmailRefreshToken})
     , m_inbox(m_gmail, m_database, m_network)
-    , m_gmail2(m_secrets, m_database, m_network, SecretKeys::kGmailRefreshToken2)
+    , m_gmail2(m_secrets, m_database, m_network,
+               {SecretKeys::kGmailClientId2, SecretKeys::kGmailClientSecret2, SecretKeys::kGmailRefreshToken2})
     , m_inbox2(m_gmail2, m_database, m_network)
     , m_sites(m_database, m_runner)
     , m_todos(m_database)
@@ -57,12 +59,6 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
             [this]() { m_gmail2.setChromeProfile(m_settings.gmailChromeProfile()); });
     connect(&m_gmail, &GmailService::notice, this, &AppContext::notice);
     connect(&m_gmail2, &GmailService::notice, this, &AppContext::notice);
-    // Forgetting the shared OAuth client signs both mailboxes out.
-    connect(&m_gmail, &GmailService::clientRemoved, &m_gmail2, [this]() {
-        if (m_gmail2.isConnected()) {
-            m_gmail2.disconnectAccount();
-        }
-    });
     // Sounds for the moments the user cares about; which sound each plays is a setting.
     connect(&m_dueNotifier, &DueNotifier::dueItems, &m_sounds,
             [this](const QVariantList &) { m_sounds.playEvent(QStringLiteral("dueReminder")); });

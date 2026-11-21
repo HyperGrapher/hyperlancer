@@ -271,11 +271,36 @@ PageBase {
 
                     SettingRow {
                         width: parent.width
+                        glyph: Icons.key
+                        title: qsTr("Second mailbox: OAuth client")
+                        description: page.app.gmail2.clientConfigured
+                                     ? qsTr("Imported (%1). Optional second Gmail account with its own client, for example a personal account next to a Workspace one.").arg(page.app.gmail2.clientIdHint)
+                                     : qsTr("Optional. Import the client file made in the Google Cloud project of the second account (a Workspace client refuses accounts outside its organisation).")
+
+                        Row {
+                            spacing: Theme.spacingS
+
+                            SecondaryButton {
+                                text: page.app.gmail2.clientConfigured ? qsTr("Replace…") : qsTr("Import file…")
+                                glyph: Icons.folderOpen
+                                onClicked: clientFileDialog2.open()
+                            }
+
+                            IconButton {
+                                visible: page.app.gmail2.clientConfigured
+                                glyph: Icons.trash
+                                danger: true
+                                hint: qsTr("Forget the client (double-click)")
+                                onDoubleClicked: page.app.gmail2.removeClient()
+                            }
+                        }
+                    }
+
+                    SettingRow {
+                        width: parent.width
                         glyph: Icons.googleLogo
                         title: page.app.gmail2.connected ? page.app.gmail2.email : qsTr("Second mailbox")
-                        description: page.app.gmail2.connected || page.app.gmail2.busy
-                                     ? page.app.gmail2.status
-                                     : qsTr("Optional. Another Gmail account that uses the same OAuth client; its inbox and new-mail notices appear next to the first.")
+                        description: page.app.gmail2.status
 
                         Row {
                             spacing: Theme.spacingS
@@ -293,7 +318,7 @@ PageBase {
                                 implicitWidth: 130
                                 text: qsTr("Connect")
                                 glyph: Icons.plugsConnected
-                                enabled: page.gmail.clientConfigured && !page.app.gmail2.busy
+                                enabled: page.app.gmail2.clientConfigured && !page.app.gmail2.busy
                                 onClicked: page.app.gmail2.connectAccount()
                             }
 
@@ -904,6 +929,14 @@ PageBase {
         title: qsTr("Choose the Google OAuth client file")
         nameFilters: [qsTr("JSON files (*.json)")]
         onAccepted: page.gmail.importClientFile(selectedFile.toString())
+    }
+
+    FileDialog {
+        id: clientFileDialog2
+
+        title: qsTr("Choose the Google OAuth client file for the second mailbox")
+        nameFilters: [qsTr("JSON files (*.json)")]
+        onAccepted: page.app.gmail2.importClientFile(selectedFile.toString())
     }
 
     FolderDialog {

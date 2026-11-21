@@ -38,10 +38,17 @@ public:
     static inline const QByteArray kScope =
         QByteArrayLiteral("https://www.googleapis.com/auth/gmail.readonly");
 
-    // `refreshTokenKey` tells the mailboxes apart: each one keeps its own sign-in in the secret
-    // store, while the OAuth client (client ID and secret) is shared.
+    // The secret-store keys of one mailbox: its OAuth client and its sign-in. Each mailbox has
+    // its own, because the two accounts may belong to different Google organisations.
+    struct Keys
+    {
+        QString clientId;
+        QString clientSecret;
+        QString refreshToken;
+    };
+
     GmailService(SecretStore &secrets, Database &database, QNetworkAccessManager &network,
-                 const QString &refreshTokenKey, QObject *parent = nullptr);
+                 const Keys &keys, QObject *parent = nullptr);
     ~GmailService() override;
 
     [[nodiscard]] bool isClientConfigured() const;
@@ -82,8 +89,6 @@ public:
 
 signals:
     void stateChanged();
-    // The OAuth client was forgotten: the other mailbox cannot stay signed in either.
-    void clientRemoved();
     void siteMessagesLoaded(qint64 siteId, const QVariantList &messages, const QString &error);
     void messageBodyLoaded(const QString &gmailId, const QString &body, const QString &error);
     // The mailbox row exists: its id and the stored history position for polling.
@@ -103,7 +108,7 @@ private:
     void flushTokenWaiters(const QString &token);
 
     SecretStore &m_secrets;
-    QString m_refreshTokenKey;
+    Keys m_keys;
     Database &m_database;
     QNetworkAccessManager &m_network;
     QOAuth2AuthorizationCodeFlow m_flow;

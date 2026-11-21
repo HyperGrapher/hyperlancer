@@ -32,7 +32,10 @@ inline const QString kLangSearchApiKey = QStringLiteral("langsearch/api-key");
 inline const QString kGmailClientId = QStringLiteral("gmail/client-id");
 inline const QString kGmailClientSecret = QStringLiteral("gmail/client-secret");
 inline const QString kGmailRefreshToken = QStringLiteral("gmail/refresh-token");
-// The second mailbox shares the OAuth client above and only has its own sign-in.
+// The second mailbox has its own OAuth client: a personal Gmail account cannot use a client
+// that belongs to a Google Workspace organisation (error org_internal).
+inline const QString kGmailClientId2 = QStringLiteral("gmail/client-id-2");
+inline const QString kGmailClientSecret2 = QStringLiteral("gmail/client-secret-2");
 inline const QString kGmailRefreshToken2 = QStringLiteral("gmail/refresh-token-2");
 inline const QString kConvexAdminKey = QStringLiteral("convex/admin-key");
 inline const QString kMySqlPassword = QStringLiteral("mysql/password");
