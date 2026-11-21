@@ -11,8 +11,9 @@ Window {
     required property AppContext app
     required property AppSettings appSettings
 
-    // Newest first: { gmailId, from, subject, snippet }
+    // Newest first: { gmailId, account, from, subject, snippet }
     property var pending: []
+    readonly property bool twoMailboxes: app.gmail2.connected
     readonly property int maxShown: 4
     readonly property int cardHeight: 92
     readonly property int headerHeight: pending.length > 1 ? 38 : 0
@@ -42,25 +43,33 @@ Window {
     x: Screen.virtualX + Screen.desktopAvailableWidth - width - 8
     y: Screen.virtualY + Screen.desktopAvailableHeight - height - 8
 
-    Connections {
-        target: popup.app.inbox
+    // One watcher per mailbox. A notice names its account only when two are connected.
+    Repeater {
+        model: [popup.app.inbox, popup.app.inbox2]
 
-        function onNewMessages(messages) {
-            if (!popup.appSettings.notifyNewMail)
-                return;
-            const fresh = messages.map(message => ({
-                gmailId: message.gmailId,
-                from: message.from,
-                subject: message.subject,
-                snippet: message.snippet
-            }));
-            popup.pending = fresh.concat(popup.pending);
-        }
+        delegate: Connections {
+            required property var modelData
 
-        // The Emails page was opened (or the badge cleared elsewhere): the user has seen them.
-        function onNewCountChanged() {
-            if (popup.app.inbox.newCount === 0)
-                popup.pending = [];
+            target: modelData
+
+            function onNewMessages(messages) {
+                if (!popup.appSettings.notifyNewMail)
+                    return;
+                const fresh = messages.map(message => ({
+                    gmailId: message.gmailId,
+                    account: message.account,
+                    from: message.from,
+                    subject: message.subject,
+                    snippet: message.snippet
+                }));
+                popup.pending = fresh.concat(popup.pending);
+            }
+
+            // That inbox was opened (or its badge cleared elsewhere): the user has seen its mail.
+            function onNewCountChanged() {
+                if (modelData.newCount === 0)
+                    popup.pending = popup.pending.filter(message => message.account !== modelData.account);
+            }
         }
     }
 
@@ -146,7 +155,7 @@ Window {
 
                     Text {
                         width: parent.width
-                        text: card.modelData.subject || qsTr("(no subject)")
+                        text: (popup.twoMailboxes && card.modelData.account ? card.modelData.account + "  ·  " : "") + (card.modelData.subject || qsTr("(no subject)"))
                         color: Theme.textSecondary
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontBody

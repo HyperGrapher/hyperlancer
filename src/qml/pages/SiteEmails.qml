@@ -91,7 +91,7 @@ Item {
                 width: list.width
                 message: modelData
                 onOpened: panel.openMessage = modelData
-                onGmailRequested: panel.app.gmail.openThread(modelData.threadId)
+                onGmailRequested: panel.app.gmailFor(modelData.account).openThread(modelData.threadId)
             }
         }
 

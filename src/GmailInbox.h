@@ -26,6 +26,8 @@ class GmailInbox : public QObject
     QML_UNCREATABLE("GmailInbox is created by the application.")
 
     Q_PROPERTY(QVariantList messages READ messages NOTIFY changed)
+    // The address this inbox belongs to (empty while disconnected).
+    Q_PROPERTY(QString account READ account NOTIFY changed)
     Q_PROPERTY(bool loading READ isLoading NOTIFY changed)
     Q_PROPERTY(QString error READ error NOTIFY changed)
     Q_PROPERTY(int unreadCount READ unreadCount NOTIFY changed)
@@ -41,6 +43,7 @@ public:
                QObject *parent = nullptr);
 
     [[nodiscard]] QVariantList messages() const { return m_messages; }
+    [[nodiscard]] QString account() const;
     [[nodiscard]] bool isLoading() const { return m_loading; }
     [[nodiscard]] QString error() const { return m_error; }
     [[nodiscard]] int unreadCount() const;

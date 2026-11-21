@@ -61,6 +61,9 @@ class AppContext : public QObject
     Q_PROPERTY(VisitorStats *visitors READ visitors CONSTANT)
     Q_PROPERTY(DueNotifier *dueNotifier READ dueNotifier CONSTANT)
     Q_PROPERTY(GmailInbox *inbox READ inbox CONSTANT)
+    // The optional second mailbox (own sign-in, same OAuth client).
+    Q_PROPERTY(GmailService *gmail2 READ gmail2 CONSTANT)
+    Q_PROPERTY(GmailInbox *inbox2 READ inbox2 CONSTANT)
     Q_PROPERTY(HealthModel *health READ health CONSTANT)
     Q_PROPERTY(QString version READ version CONSTANT)
 
@@ -86,6 +89,11 @@ public:
     [[nodiscard]] VisitorStats *visitors() { return &m_visitors; }
     [[nodiscard]] DueNotifier *dueNotifier() { return &m_dueNotifier; }
     [[nodiscard]] GmailInbox *inbox() { return &m_inbox; }
+    [[nodiscard]] GmailService *gmail2() { return &m_gmail2; }
+    [[nodiscard]] GmailInbox *inbox2() { return &m_inbox2; }
+
+    // The mailbox that owns a message: the second one when the address is its account.
+    Q_INVOKABLE GmailService *gmailFor(const QString &account);
     [[nodiscard]] HealthModel *health() { return &m_health; }
     [[nodiscard]] QString version() const;
 
@@ -135,6 +143,8 @@ private:
     Integrations m_integrations;
     GmailService m_gmail;
     GmailInbox m_inbox;
+    GmailService m_gmail2;
+    GmailInbox m_inbox2;
     SiteListModel m_sites;
     TodoList m_todos;
     NoteList m_notes;

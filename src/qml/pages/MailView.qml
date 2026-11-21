@@ -26,16 +26,19 @@ GlassPanel {
 
     radius: Theme.radiusCard
     clip: true
+    // The mailbox the message belongs to (messages carry the address of their account).
+    readonly property GmailService service: app.gmailFor(message.account || "")
+
     onGmailIdChanged: {
         scroller.contentY = 0;
         body = "";
         bodyError = "";
         if (gmailId.length > 0)
-            app.gmail.loadMessageBody(gmailId);
+            service.loadMessageBody(gmailId);
     }
 
     Connections {
-        target: view.app.gmail
+        target: view.service
 
         function onMessageBodyLoaded(gmailId, text, error) {
             if (gmailId !== view.gmailId)
@@ -66,7 +69,7 @@ GlassPanel {
             anchors.verticalCenter: parent.verticalCenter
             glyph: Icons.openExternal
             hint: qsTr("Open in Gmail")
-            onClicked: view.app.gmail.openThread(view.message.threadId)
+            onClicked: view.service.openThread(view.message.threadId)
         }
 
         Rectangle {

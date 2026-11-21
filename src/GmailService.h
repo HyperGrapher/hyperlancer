@@ -38,8 +38,10 @@ public:
     static inline const QByteArray kScope =
         QByteArrayLiteral("https://www.googleapis.com/auth/gmail.readonly");
 
+    // `refreshTokenKey` tells the mailboxes apart: each one keeps its own sign-in in the secret
+    // store, while the OAuth client (client ID and secret) is shared.
     GmailService(SecretStore &secrets, Database &database, QNetworkAccessManager &network,
-                 QObject *parent = nullptr);
+                 const QString &refreshTokenKey, QObject *parent = nullptr);
     ~GmailService() override;
 
     [[nodiscard]] bool isClientConfigured() const;
@@ -70,7 +72,8 @@ public:
     // Fetches the readable body of one message. Bodies are never stored (PRD): each call
     // asks Gmail and emits messageBodyLoaded.
     Q_INVOKABLE void loadMessageBody(const QString &gmailId);
-    // Opens the thread in Gmail, in the configured Chrome profile when there is one.
+    // Opens the thread in Gmail (this mailbox's account), in the configured Chrome profile when
+    // there is one.
     Q_INVOKABLE void openThread(const QString &threadId) const;
     void setChromeProfile(const QString &profileName) { m_chromeProfile = profileName; }
 
@@ -79,6 +82,8 @@ public:
 
 signals:
     void stateChanged();
+    // The OAuth client was forgotten: the other mailbox cannot stay signed in either.
+    void clientRemoved();
     void siteMessagesLoaded(qint64 siteId, const QVariantList &messages, const QString &error);
     void messageBodyLoaded(const QString &gmailId, const QString &body, const QString &error);
     // The mailbox row exists: its id and the stored history position for polling.
@@ -98,6 +103,7 @@ private:
     void flushTokenWaiters(const QString &token);
 
     SecretStore &m_secrets;
+    QString m_refreshTokenKey;
     Database &m_database;
     QNetworkAccessManager &m_network;
     QOAuth2AuthorizationCodeFlow m_flow;

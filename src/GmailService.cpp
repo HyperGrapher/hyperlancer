@@ -75,9 +75,11 @@ QVariantList loadSiteMessages(QSqlDatabase &db, qint64 siteId)
     QSqlQuery query = SqlExec::run(
         db,
         QStringLiteral(
-            "SELECT gmail_id, thread_id, direction, from_addr, to_addrs, subject, snippet, "
-            "sent_at, has_attachments, is_bounce, is_auto_reply FROM mail_messages WHERE "
-            "site_id = ? ORDER BY sent_at DESC LIMIT 200"),
+            "SELECT m.gmail_id, m.thread_id, m.direction, m.from_addr, m.to_addrs, m.subject, "
+            "m.snippet, "
+            "m.sent_at, m.has_attachments, m.is_bounce, m.is_auto_reply, a.email FROM mail_messages m "
+            "JOIN mail_accounts a ON a.id = m.account_id WHERE "
+            "m.site_id = ? ORDER BY m.sent_at DESC LIMIT 200"),
         {siteId});
     while (query.next()) {
         messages.append(QVariantMap{
@@ -92,6 +94,7 @@ QVariantList loadSiteMessages(QSqlDatabase &db, qint64 siteId)
             {QStringLiteral("hasAttachments"), query.value(8).toBool()},
             {QStringLiteral("isBounce"), query.value(9).toBool()},
             {QStringLiteral("isAutoReply"), query.value(10).toBool()},
+            {QStringLiteral("account"), query.value(11)},
         });
     }
     return messages;
@@ -108,9 +111,10 @@ QNetworkRequest GmailService::apiRequest(const QUrl &url, const QString &token)
 }
 
 GmailService::GmailService(SecretStore &secrets, Database &database, QNetworkAccessManager &network,
-                           QObject *parent)
+                           const QString &refreshTokenKey, QObject *parent)
     : QObject(parent)
     , m_secrets(secrets)
+    , m_refreshTokenKey(refreshTokenKey)
     , m_database(database)
     , m_network(network)
 {
@@ -173,7 +177,7 @@ void GmailService::setState(bool connected, bool busy, const QString &status)
 
 void GmailService::start()
 {
-    const std::optional<QString> refreshToken = m_secrets.read(SecretKeys::kGmailRefreshToken);
+    const std::optional<QString> refreshToken = m_secrets.read(m_refreshTokenKey);
     if (!isClientConfigured() || !refreshToken || refreshToken->isEmpty()) {
         return;
     }
@@ -230,6 +234,7 @@ void GmailService::removeClient()
     m_secrets.remove(SecretKeys::kGmailClientSecret);
     configureFlow();
     setState(false, false, tr("Import the OAuth client file first"));
+    emit clientRemoved();
 }
 
 void GmailService::connectAccount()
@@ -238,6 +243,8 @@ void GmailService::connectAccount()
         emit notice(tr("Import the OAuth client file first."), true);
         return;
     }
+    // The client may have been imported through the other mailbox's object.
+    configureFlow();
     // A fresh loopback listener per attempt, on a free port of 127.0.0.1.
     m_replyHandler = std::make_unique<QOAuthHttpServerReplyHandler>(QHostAddress::LocalHost, 0);
     if (!m_replyHandler->isListening()) {
@@ -255,7 +262,7 @@ void GmailService::connectAccount()
 void GmailService::disconnectAccount()
 {
     const QString token =
-        m_secrets.read(SecretKeys::kGmailRefreshToken).value_or(m_flow.refreshToken());
+        m_secrets.read(m_refreshTokenKey).value_or(m_flow.refreshToken());
     if (!token.isEmpty()) {
         QNetworkRequest request(kRevokeUrl);
         request.setHeader(QNetworkRequest::ContentTypeHeader,
@@ -265,7 +272,7 @@ void GmailService::disconnectAccount()
         QNetworkReply *reply = m_network.post(request, body.toString(QUrl::FullyEncoded).toUtf8());
         connect(reply, &QNetworkReply::finished, reply, &QObject::deleteLater);
     }
-    m_secrets.remove(SecretKeys::kGmailRefreshToken);
+    m_secrets.remove(m_refreshTokenKey);
     m_flow.setRefreshToken(QString());
     m_flow.setToken(QString());
     const QString email = m_email;
@@ -287,7 +294,7 @@ void GmailService::onGranted()
         m_replyHandler->close();
     }
     const QString refreshToken = m_flow.refreshToken();
-    if (!refreshToken.isEmpty() && !m_secrets.write(SecretKeys::kGmailRefreshToken, refreshToken)) {
+    if (!refreshToken.isEmpty() && !m_secrets.write(m_refreshTokenKey, refreshToken)) {
         emit notice(
             tr("Could not save the Gmail sign-in in %1; you will need to connect again next time.")
                 .arg(SecretStore::backendName()),
@@ -523,7 +530,10 @@ void GmailService::loadMessageBody(const QString &gmailId)
 
 void GmailService::openThread(const QString &threadId) const
 {
-    const QUrl url(QStringLiteral("https://mail.google.com/mail/u/0/#all/") + threadId);
+    // /u/<address> picks the right signed-in Google account when the browser has several.
+    const QUrl url(QStringLiteral("https://mail.google.com/mail/u/") +
+                   (m_email.isEmpty() ? QStringLiteral("0") : m_email) +
+                   QStringLiteral("/#all/") + threadId);
     if (!ChromeProfile::open(url, m_chromeProfile)) {
         QDesktopServices::openUrl(url);
     }

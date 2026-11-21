@@ -72,6 +72,11 @@ GmailInbox::GmailInbox(GmailService &gmail, Database &database, QNetworkAccessMa
     connect(&m_gmail, &GmailService::stateChanged, this, &GmailInbox::onStateChanged);
 }
 
+QString GmailInbox::account() const
+{
+    return m_gmail.email();
+}
+
 int GmailInbox::unreadCount() const
 {
     return static_cast<int>(std::count_if(m_messages.begin(), m_messages.end(), [](const QVariant &message) {
@@ -161,7 +166,9 @@ void GmailInbox::refresh()
                           [](const auto &a, const auto &b) { return a.sentAt > b.sentAt; });
                 QVariantList list;
                 for (const GmailQuery::MessageMeta &meta : metas) {
-                    list.append(GmailQuery::toVariantMap(meta));
+                    QVariantMap map = GmailQuery::toVariantMap(meta);
+                    map.insert(QStringLiteral("account"), self->m_gmail.email());
+                    list.append(map);
                 }
                 self->m_messages = list;
                 self->m_loading = false;
@@ -330,7 +337,9 @@ void GmailInbox::handleNewMessages(const QList<GmailQuery::MessageMeta> &incomin
     std::sort(messages.begin(), messages.end(), [](const auto &a, const auto &b) { return a.sentAt > b.sentAt; });
     QVariantList added;
     for (const GmailQuery::MessageMeta &meta : messages) {
-        added.append(GmailQuery::toVariantMap(meta));
+        QVariantMap map = GmailQuery::toVariantMap(meta);
+        map.insert(QStringLiteral("account"), m_gmail.email());
+        added.append(map);
     }
     m_messages = added + m_messages;
     m_newCount += static_cast<int>(added.size());

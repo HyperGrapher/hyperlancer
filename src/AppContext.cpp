@@ -32,8 +32,10 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     , m_pageSpeed(m_network)
     , m_integrations(m_secrets, m_settings, m_database, m_runner, m_langSearch, m_pageSpeed,
                      m_paths.dataDir)
-    , m_gmail(m_secrets, m_database, m_network)
+    , m_gmail(m_secrets, m_database, m_network, SecretKeys::kGmailRefreshToken)
     , m_inbox(m_gmail, m_database, m_network)
+    , m_gmail2(m_secrets, m_database, m_network, SecretKeys::kGmailRefreshToken2)
+    , m_inbox2(m_gmail2, m_database, m_network)
     , m_sites(m_database, m_runner)
     , m_todos(m_database)
     , m_notes(m_database)
@@ -50,13 +52,25 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
             [this]() { m_gmail.setChromeProfile(m_settings.gmailChromeProfile()); });
     connect(&m_database, &Database::ready, this, &AppContext::onDatabaseReady);
     connect(&m_runner, &JobRunner::notice, this, &AppContext::notice);
+    m_gmail2.setChromeProfile(m_settings.gmailChromeProfile());
+    connect(&m_settings, &AppSettings::gmailChromeProfileChanged, this,
+            [this]() { m_gmail2.setChromeProfile(m_settings.gmailChromeProfile()); });
     connect(&m_gmail, &GmailService::notice, this, &AppContext::notice);
+    connect(&m_gmail2, &GmailService::notice, this, &AppContext::notice);
+    // Forgetting the shared OAuth client signs both mailboxes out.
+    connect(&m_gmail, &GmailService::clientRemoved, &m_gmail2, [this]() {
+        if (m_gmail2.isConnected()) {
+            m_gmail2.disconnectAccount();
+        }
+    });
     // Sounds for the moments the user cares about; which sound each plays is a setting.
     connect(&m_dueNotifier, &DueNotifier::dueItems, &m_sounds,
             [this](const QVariantList &) { m_sounds.playEvent(QStringLiteral("dueReminder")); });
     connect(&m_visitors, &VisitorStats::newVisitor, &m_sounds,
             [this](const QVariantMap &) { m_sounds.playEvent(QStringLiteral("visitorArrived")); });
     connect(&m_inbox, &GmailInbox::newMessages, &m_sounds,
+            [this](const QVariantList &) { m_sounds.playEvent(QStringLiteral("mailArrived")); });
+    connect(&m_inbox2, &GmailInbox::newMessages, &m_sounds,
             [this](const QVariantList &) { m_sounds.playEvent(QStringLiteral("mailArrived")); });
     connect(&m_runner, &JobRunner::jobFinished, &m_sounds,
             [this](qint64, qint64, const QString &status) {
@@ -86,6 +100,8 @@ AppContext::AppContext(const AppPaths &paths, AppSettings &settings, QObject *pa
     });
     connect(&m_gmail, &GmailService::siteMailChanged, &m_sites, &SiteListModel::refreshSoon);
     connect(&m_inbox, &GmailInbox::siteMailChanged, &m_sites, &SiteListModel::refreshSoon);
+    connect(&m_gmail2, &GmailService::siteMailChanged, &m_sites, &SiteListModel::refreshSoon);
+    connect(&m_inbox2, &GmailInbox::siteMailChanged, &m_sites, &SiteListModel::refreshSoon);
     connect(&m_siteDetail, &SiteDetail::notice, this, &AppContext::notice);
     connect(&m_siteDetail, &SiteDetail::organizerChanged, &m_sites, &SiteListModel::refreshSoon);
     connect(&m_siteDetail, &SiteDetail::organizerChanged, &m_todos, &TodoList::refresh);
@@ -118,6 +134,7 @@ void AppContext::onDatabaseReady()
 {
     m_runner.start();
     m_gmail.start();
+    m_gmail2.start();
     m_sites.refresh();
     m_sites.loadSavedViews();
     m_todos.refresh();
@@ -315,4 +332,11 @@ void AppContext::restart()
     QProcess::startDetached(QCoreApplication::applicationFilePath(),
                             QCoreApplication::arguments().mid(1));
     QCoreApplication::quit();
+}
+
+GmailService *AppContext::gmailFor(const QString &account)
+{
+    return m_gmail2.isConnected() && account.compare(m_gmail2.email(), Qt::CaseInsensitive) == 0
+               ? &m_gmail2
+               : &m_gmail;
 }

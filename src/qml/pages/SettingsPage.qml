@@ -271,9 +271,46 @@ PageBase {
 
                     SettingRow {
                         width: parent.width
+                        glyph: Icons.googleLogo
+                        title: page.app.gmail2.connected ? page.app.gmail2.email : qsTr("Second mailbox")
+                        description: page.app.gmail2.connected || page.app.gmail2.busy
+                                     ? page.app.gmail2.status
+                                     : qsTr("Optional. Another Gmail account that uses the same OAuth client; its inbox and new-mail notices appear next to the first.")
+
+                        Row {
+                            spacing: Theme.spacingS
+
+                            ThinProgress {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 60
+                                value: -1
+                                visible: page.app.gmail2.busy
+                            }
+
+                            PrimaryButton {
+                                visible: !page.app.gmail2.connected
+                                implicitHeight: 40
+                                implicitWidth: 130
+                                text: qsTr("Connect")
+                                glyph: Icons.plugsConnected
+                                enabled: page.gmail.clientConfigured && !page.app.gmail2.busy
+                                onClicked: page.app.gmail2.connectAccount()
+                            }
+
+                            SecondaryButton {
+                                visible: page.app.gmail2.connected
+                                text: qsTr("Disconnect")
+                                glyph: Icons.signOut
+                                onClicked: page.app.gmail2.disconnectAccount()
+                            }
+                        }
+                    }
+
+                    SettingRow {
+                        width: parent.width
                         glyph: Icons.envelope
                         title: qsTr("Notify about new mail")
-                        description: qsTr("A desktop notification when a new message reaches your inbox. Checked every minute.")
+                        description: qsTr("A desktop notification when a new message reaches an inbox. Checked every minute.")
 
                         ToggleSwitch {
                             checked: page.settings.notifyNewMail
