@@ -41,6 +41,7 @@ Window {
                 visitorId: session.visitorId,
                 place: place.length > 0 ? place : qsTr("Unknown place"),
                 device: device,
+                site: session.origin,
                 landing: session.landingPath,
                 returning: !session.isNewVisitor
             };
@@ -130,7 +131,7 @@ Window {
 
                     Text {
                         width: parent.width
-                        text: [card.modelData.device, card.modelData.landing].filter(part => part && part.length > 0).join("  ·  ")
+                        text: [card.modelData.site, card.modelData.device, card.modelData.landing].filter(part => part && part.length > 0).join("  ·  ")
                         color: Theme.textSecondary
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontBody

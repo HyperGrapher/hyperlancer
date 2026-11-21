@@ -139,8 +139,8 @@ PageBase {
 
                 Repeater {
                     model: page.tab === 0
-                           ? [[qsTr("When"), 120], [qsTr("Where"), 170], [qsTr("Device"), 230], [qsTr("Landing"), 130], [qsTr("Pages"), 50], [qsTr("Source"), 90]]
-                           : [[qsTr("Last seen"), 120], [qsTr("Where"), 170], [qsTr("Device"), 230], [qsTr("Visits"), 60], [qsTr("First seen"), 130], [qsTr(""), 70]]
+                           ? [[qsTr("When"), 120], [qsTr("Where"), 170], [qsTr("Site"), 140], [qsTr("Device"), 180], [qsTr("Landing"), 130], [qsTr("Pages"), 50], [qsTr("Source"), 90]]
+                           : [[qsTr("Last seen"), 120], [qsTr("Where"), 170], [qsTr("Site"), 140], [qsTr("Device"), 180], [qsTr("Visits"), 60], [qsTr("First seen"), 130], [qsTr(""), 70]]
 
                     delegate: Text {
                         required property var modelData
@@ -229,7 +229,16 @@ PageBase {
                     }
 
                     Text {
-                        width: 230
+                        width: 140
+                        text: row.session.origin || ""
+                        color: Theme.textPrimary
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontBody
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        width: 180
                         text: page.device(row.session)
                         color: Theme.textSecondary
                         font.family: Theme.fontFamily

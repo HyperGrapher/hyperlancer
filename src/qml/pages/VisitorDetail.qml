@@ -267,6 +267,7 @@ Item {
                             [qsTr("Last activity"), view.when(view.current.lastActivityAt)],
                             [qsTr("Active time"), view.duration(view.current.activeMs)],
                             [qsTr("Pages"), String(view.current.pageviews)],
+                            [qsTr("Site"), view.current.origin || ""],
                             [qsTr("Landing"), view.current.landingPath],
                             [qsTr("Exit"), view.current.exitPath],
                             [qsTr("Source"), view.current.referrerType + (view.current.referrer ? " · " + view.current.referrer : "")],
